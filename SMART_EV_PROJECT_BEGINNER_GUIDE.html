@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart EV Charging Station Platform - Installation & Operations Guide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+    
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+    
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      color: #1e293b;
+      background-color: #ffffff;
+      padding: 30px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #0f172a;
+      font-size: 28px;
+      border-bottom: 3px solid #10b981;
+      padding-bottom: 10px;
+      margin-top: 0;
+    }
+
+    h2 {
+      color: #0f172a;
+      font-size: 20px;
+      margin-top: 30px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+
+    h3 {
+      color: #334155;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+
+    blockquote {
+      background-color: #f0fdf4;
+      border-left: 4px solid #10b981;
+      margin: 20px 0;
+      padding: 12px 18px;
+      color: #166534;
+      font-size: 14px;
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    pre {
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding: 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    pre code {
+      background-color: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .badge-green { background-color: #dcfce7; color: #15803d; }
+    .badge-amber { background-color: #fef3c7; color: #b45309; }
+    .badge-red { background-color: #fee2e2; color: #b91c1c; }
+
+    @media print {
+      body {
+        padding: 0;
+        max-width: 100%;
+      }
+      .no-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print" style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; text-align: center;">
+    <strong>📄 Share / Export to PDF:</strong> Press <code>Ctrl + P</code> in your browser and select <strong>"Save as PDF"</strong> to save this exact document as a printable PDF report to share with your friend!
+  </div>
+
+  <h1>⚡ Smart EV Charging Station Platform</h1>
+  <p><strong>Beginner-Friendly Installation, Build, and Operations Guide</strong></p>
+
+  <blockquote>
+    <strong>Project Title:</strong> Smart EV Charging Station: Time-of-Day (ToD) Tariff & Priority Preemption System<br>
+    <strong>Target Application:</strong> Electric Two-Wheelers (1.0 kW to 3.3 kW Single-Phase AC)<br>
+    <strong>Status:</strong> Live & Running Locally on Port 3000 (Frontend) and Port 8080 (Backend)<br>
+    <strong>Guide Prepared For:</strong> Beginners, Teammates, and Project Evaluators
+  </blockquote>
+
+  <h2>📌 1. Project Overview & Key Features</h2>
+  <p>This project is a complete <strong>IoT-enabled Smart Electric Two-Wheeler (2W) Charging Infrastructure Platform</strong>. It addresses power quality monitoring, dynamic time-based electricity tariffs, priority emergency eviction, and dynamic Bharat-QR/UPI payments.</p>
+
+  <h3>Core Features:</h3>
+  <ul>
+    <li><strong>Time-of-Day (ToD) Tariff System (Commercial LT-6)</strong>:
+      <ul>
+        <li><span class="badge badge-green">Off-Peak (10 PM – 6 AM)</span> <strong>₹8.00 / kWh (S₁)</strong> — Lowest tariff tier when grid demand is minimal.</li>
+        <li><span class="badge badge-amber">Standard (6 AM – 6 PM)</span> <strong>₹10.50 / kWh (S₂)</strong> — Daytime solar & standard rate.</li>
+        <li><span class="badge badge-red">Peak (6 PM – 10 PM)</span> <strong>₹14.00 / kWh (S₃)</strong> — Evening grid surcharge.</li>
+      </ul>
+    </li>
+    <li><strong>Priority Preemption Eviction Protocol (KLETECH EV Station 2)</strong>:
+      <ul>
+        <li>Dedicated VIP / Emergency Bay with ₹8.00/kWh surge premium.</li>
+        <li>Active 120-second eviction countdown upon emergency vehicle arrival.</li>
+        <li>Automatic hardware relay trip and <strong>₹500 penalty</strong> if not unplugged within 120s.</li>
+      </ul>
+    </li>
+    <li><strong>2W Metrology Engine (PZEM-004T AC Sensor)</strong>:
+      <ul>
+        <li>Real-time single-phase AC measurements (Voltage 230V, Current ≤ 14.3A, Active Power kW, Power Factor 0.98, THD 2.1%).</li>
+        <li>Vehicle Presets: Ather 450X (3.7 kWh), Ola S1 Pro (4 kWh), TVS iQube (3.4 kWh), Ultraviolette F77 (10.3 kWh), Revolt RV400 (3.24 kWh).</li>
+      </ul>
+    </li>
+    <li><strong>Dynamic Bharat-QR & UPI Gateway</strong>:
+      <ul>
+        <li>Instant QR generation for GPay, PhonePe, Paytm, or BHIM UPI upon session completion.</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2>🛠️ 2. System Architecture & Installed Packages</h2>
+
+  <h3>A. Technology Stack</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Layer</th>
+        <th>Framework / Library</th>
+        <th>Function</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Frontend</strong></td>
+        <td>Next.js 16 (App Router), React 19, TypeScript</td>
+        <td>User web interface, live metrology graphs, control dashboard</td>
+      </tr>
+      <tr>
+        <td><strong>Styling</strong></td>
+        <td>Tailwind CSS v4, Lucide Icons, Framer Motion</td>
+        <td>Modern dark-mode UI & dynamic animations</td>
+      </tr>
+      <tr>
+        <td><strong>Charts</strong></td>
+        <td>Recharts</td>
+        <td>Real-time metrology (Voltage, Current, kW, THD) telemetry charts</td>
+      </tr>
+      <tr>
+        <td><strong>Backend</strong></td>
+        <td>Spring Boot 3.2.4 (Java 17)</td>
+        <td>REST API, WebSockets, business logic, billing engine</td>
+      </tr>
+      <tr>
+        <td><strong>Database</strong></td>
+        <td>H2 In-Memory DB (Fallback) / PostgreSQL</td>
+        <td>Session persistence, chargers, and user bills</td>
+      </tr>
+      <tr>
+        <td><strong>Messaging</strong></td>
+        <td>Eclipse Paho MQTT Client, WebSockets</td>
+        <td>IoT telemetry stream</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>B. Packages Installed</h3>
+  <h4>1. Frontend Packages (<code>frontend/package.json</code>)</h4>
+  <ul>
+    <li><code>next</code> (16.3.7), <code>react</code> (19.2.8), <code>react-dom</code> (19.2.8)</li>
+    <li><code>recharts</code> (^3.10.1) — Metrology graphing</li>
+    <li><code>lucide-react</code> (^1.48.0) — Modern SVG icons</li>
+    <li><code>framer-motion</code> (^13.4.6) — Smooth animations</li>
+    <li><code>tailwindcss</code> (^4) — Utility-first styling</li>
+    <li><code>typescript</code> (^5) — Static typing</li>
+  </ul>
+
+  <h4>2. Backend Dependencies (<code>backend/pom.xml</code>)</h4>
+  <ul>
+    <li><code>spring-boot-starter-web</code> — REST API engine</li>
+    <li><code>spring-boot-starter-security</code> — Security filter chain</li>
+    <li><code>spring-boot-starter-data-jpa</code> — Entity ORM</li>
+    <li><code>h2</code> — Embedded SQL database engine</li>
+    <li><code>org.eclipse.paho.client.mqttv3</code> — MQTT telemetry client</li>
+  </ul>
+
+  <h2>💻 3. Prerequisites for Running on Any Computer</h2>
+  <ol>
+    <li><strong>Node.js (v18+)</strong> & <strong>npm</strong> (Download from nodejs.org)</li>
+    <li><strong>Java JDK 17</strong> (Download OpenJDK 17 from adoptium.net)</li>
+    <li><strong>Apache Maven (3.8+)</strong> (Download from maven.apache.org)</li>
+  </ol>
+
+  <h2>🚀 4. Step-by-Step Terminal Commands (Beginner Guide)</h2>
+
+  <h3>Step 1: Extract Zip File</h3>
+  <pre><code># Open PowerShell in the zip folder
+Expand-Archive -Path "electrical-vehicle-project-main (1).zip" -DestinationPath "." -Force
+cd "electrical-vehicle-project-main"</code></pre>
+
+  <h3>Step 2: Configure Environment Variables</h3>
+  <pre><code>cd frontend
+Set-Content -Path ".env.local" -Value @"
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws-ev
+NEXT_PUBLIC_DATA_MODE=mock
+"@</code></pre>
+
+  <h3>Step 3: Install Frontend Packages</h3>
+  <pre><code># Run inside frontend folder
+npm install</code></pre>
+
+  <h3>Step 4: Compile Backend Server</h3>
+  <pre><code># Open new PowerShell window in backend folder
+cd "electrical-vehicle-project-main\backend"
+mvn clean compile</code></pre>
+
+  <h3>Step 5: Launch Backend Server (Port 8080)</h3>
+  <pre><code>mvn spring-boot:run</code></pre>
+
+  <h3>Step 6: Launch Frontend Server (Port 3000)</h3>
+  <pre><code># Open new PowerShell window in frontend folder
+cd "electrical-vehicle-project-main\frontend"
+npm run dev</code></pre>
+
+  <h3>Step 7: Access Application in Browser</h3>
+  <p>Open browser at: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></p>
+
+  <h2>🧮 5. Billing Formula & Example Calculation</h2>
+  <p>$$\text{Total Amount} = (\text{kWh} \times \text{ToD Rate}) + \text{Service Fee (₹5.00)} + 18\% \text{ GST} + (\text{Emergency Penalty ₹500 if applicable})$$</p>
+
+  <p><strong>Example Calculation (Ather 450X - 3.0 kWh during Peak Hours S₃)</strong>:</p>
+  <ul>
+    <li>Energy Cost = 3.0 kWh × ₹14.00 = ₹42.00</li>
+    <li>Service Fee = ₹5.00</li>
+    <li>Subtotal = ₹47.00</li>
+    <li>GST (18%) = ₹8.46</li>
+    <li><strong>Total Payable = ₹55.46</strong></li>
+  </ul>
+
+  <h2>📋 6. Summary of Running Status</h2>
+  <ul>
+    <li><strong>Frontend URL</strong>: <a href="http://localhost:3000">http://localhost:3000</a> (Status: Active)</li>
+    <li><strong>Backend URL</strong>: <a href="http://localhost:8080">http://localhost:8080</a> (Status: Active)</li>
+    <li><strong>Database</strong>: H2 In-Memory Database (Status: Connected)</li>
+  </ul>
+
+</body>
+</html>

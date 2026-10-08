@@ -1,0 +1,27 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: smart-ev-backend
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:smartevdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+app:
+  data-mode: ${NEXT_PUBLIC_DATA_MODE:mock}
+  mqtt:
+    broker-url: ${MQTT_BROKER_URL:tcp://localhost:1883}
+    client-id: smart-ev-backend-service
+  jwt:
+    secret: ${JWT_SECRET:dGhpcy1pcy1hLXNlY3VyZS1qd3Qtc2VjcmV0LWtleS1mb3Itc21hcnQtZXYtcGxhdGZvcm0tMjAyNg==}
+    expiration-ms: 86400000
