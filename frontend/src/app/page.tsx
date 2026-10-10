@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Zap, 
   ShieldCheck, 
@@ -78,7 +79,29 @@ const REAL_EV_BIKE_SHOWCASE = [
 ];
 
 export default function HomePage() {
-  const { chargers } = useStore();
+  const router = useRouter();
+  const { chargers, currentUser } = useStore();
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace('/auth/login');
+    } else if (currentUser.role === 'OPERATOR') {
+      router.replace('/operator');
+    } else if (currentUser.role === 'ADMIN') {
+      router.replace('/admin');
+    }
+  }, [currentUser, router]);
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-9 h-9 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-400 font-medium">Redirecting to Smart EV Sign In Portal...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-24 pb-24">

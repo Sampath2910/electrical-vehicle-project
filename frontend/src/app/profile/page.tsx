@@ -1,11 +1,32 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { User as UserIcon, Mail, Phone, ShieldCheck, Key } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { currentUser } = useStore();
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace('/auth/login');
+    }
+  }, [currentUser, router]);
+
+  if (!currentUser) {
+    return (
+      <div className="max-w-md mx-auto py-16 text-center space-y-4">
+        <h2 className="text-xl font-bold text-white">Please Sign In</h2>
+        <p className="text-xs text-slate-400">You need to be logged in to view your profile.</p>
+        <Link href="/auth/login" className="inline-block px-5 py-2.5 rounded-xl bg-cyan-500 text-navy-950 font-bold text-xs">
+          Go to Sign In
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">

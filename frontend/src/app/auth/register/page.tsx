@@ -1,111 +1,89 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Zap, Lock, Mail, User as UserIcon, Phone } from 'lucide-react';
-import { useStore } from '@/lib/storeContext';
+import { Zap, Radio, ShieldAlert, ArrowRight, UserPlus } from 'lucide-react';
 
-export default function RegisterPage() {
-  const router = useRouter();
-  const { switchRole } = useStore();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    switchRole('USER');
-    router.push('/dashboard');
-  };
+export default function AuthRegisterHubPage() {
+  const registerRoles = [
+    {
+      id: 'user',
+      title: 'EV Driver / User',
+      subtitle: 'Create a personal account with two-wheeler preset & UPI wallet',
+      icon: Zap,
+      href: '/auth/register/user',
+      borderColor: 'border-cyan-500/30 hover:border-cyan-400',
+      badgeBg: 'bg-cyan-500/10 text-cyan-400',
+    },
+    {
+      id: 'operator',
+      title: 'Station Operator',
+      subtitle: 'Bind your operator ID to a specific charging station to manage local metrology',
+      icon: Radio,
+      href: '/auth/register/operator',
+      borderColor: 'border-amber-500/30 hover:border-amber-400',
+      badgeBg: 'bg-amber-500/10 text-amber-400',
+    },
+    {
+      id: 'admin',
+      title: 'System Administrator',
+      subtitle: 'Provision master fleet executive access using system passcode',
+      icon: ShieldAlert,
+      href: '/auth/register/admin',
+      borderColor: 'border-rose-500/30 hover:border-rose-400',
+      badgeBg: 'bg-rose-500/10 text-rose-400',
+    },
+  ];
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-      <div className="w-full max-w-md space-y-8 glass-card rounded-3xl p-8 border border-slate-800 bg-navy-900/90 shadow-2xl">
+    <div className="min-h-[85vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+      <div className="w-full max-w-2xl space-y-8 glass-card rounded-3xl p-8 lg:p-10 border border-slate-800 bg-navy-900/90 shadow-2xl relative">
         
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 mx-auto">
-            <Zap className="w-7 h-7 stroke-[2.5]" />
+          <div className="w-14 h-14 rounded-2xl bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 mx-auto shadow-lg shadow-cyan-500/20">
+            <UserPlus className="w-8 h-8 stroke-[2.5]" />
           </div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight">Create Driver Account</h2>
-          <p className="text-xs text-slate-400">Join the Smart EV charging ecosystem</p>
+          <h2 className="text-3xl font-extrabold text-white tracking-tight">Create Smart EV Account</h2>
+          <p className="text-xs text-slate-400">Select the account type you want to create</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300 block">Full Name</label>
-            <div className="relative">
-              <UserIcon className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                required
-                placeholder="e.g. Alex Rivera"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {registerRoles.map((role) => {
+            const Icon = role.icon;
+            return (
+              <Link
+                key={role.id}
+                href={role.href}
+                className={`glass-card rounded-2xl p-5 border ${role.borderColor} bg-navy-950/80 hover:bg-navy-850/80 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] shadow-lg group text-left`}
+              >
+                <div className="space-y-3">
+                  <div className={`w-10 h-10 rounded-xl ${role.badgeBg} flex items-center justify-center border border-white/5`}>
+                    <Icon className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white group-hover:text-cyan-300 transition-colors">
+                      {role.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                      {role.subtitle}
+                    </p>
+                  </div>
+                </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300 block">Email Address</label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                required
-                placeholder="alex@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-          </div>
+                <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-bold text-slate-300 group-hover:text-white">
+                  <span>Register</span>
+                  <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300 block">Phone Number</label>
-            <div className="relative">
-              <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="tel"
-                required
-                placeholder="+91 98765 43210"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300 block">Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-navy-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/20 transition-all hover:scale-[1.01]"
-          >
-            Create Account & Sign In
-          </button>
-        </form>
-
-        <div className="text-center pt-2">
+        <div className="text-center pt-2 border-t border-slate-800/80">
           <p className="text-xs text-slate-400">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-cyan-400 font-semibold hover:underline">
-              Sign In
+            <Link href="/auth/login" className="text-cyan-400 font-bold hover:underline">
+              Sign In to Your Portal →
             </Link>
           </p>
         </div>

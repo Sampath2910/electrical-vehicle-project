@@ -1,14 +1,37 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Zap, MapPin, Sliders, Settings, RefreshCw } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ChargerStatus } from '@/types/ev';
 
 export default function AdminChargersPage() {
-  const { chargers, updateChargerStatus } = useStore();
+  const router = useRouter();
+  const { chargers, updateChargerStatus, updateChargerRating, currentUser } = useStore();
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace('/auth/login/admin');
+    } else if (currentUser.role === 'OPERATOR') {
+      router.replace('/operator');
+    } else if (currentUser.role === 'USER') {
+      router.replace('/dashboard');
+    }
+  }, [currentUser, router]);
+
+  if (!currentUser || currentUser.role !== 'ADMIN') {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-400 font-semibold">Verifying Fleet Administrator Permissions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -31,14 +54,25 @@ export default function AdminChargersPage() {
               <h3 className="text-base font-bold text-white mb-1">{c.name}</h3>
               <p className="text-xs text-slate-400 truncate">{c.location}</p>
 
-              <div className="grid grid-cols-2 gap-2 py-3 border-y border-slate-800 my-3 text-xs">
+              <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-800 my-3 text-xs">
                 <div>
-                  <span className="text-slate-500 text-[10px] block">Rating</span>
-                  <span className="font-bold text-white">{c.powerRating} kW</span>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block mb-1">Rating</span>
+                  <select
+                    value={c.powerRating}
+                    onChange={(e) => updateChargerRating(c.id, Number(e.target.value))}
+                    className="w-full bg-navy-950 border border-slate-700 hover:border-cyan-400 focus:border-cyan-400 rounded-xl px-2.5 py-1.5 text-xs text-white font-bold font-mono transition-colors cursor-pointer"
+                  >
+                    <option value={1}>1 kW</option>
+                    <option value={3.3}>3.3 kW</option>
+                    <option value={7}>7 kW</option>
+                    <option value={12}>12 kW</option>
+                  </select>
                 </div>
                 <div>
-                  <span className="text-slate-500 text-[10px] block">Tariff</span>
-                  <span className="font-bold text-cyan-400">₹{c.pricePerKwh}/kWh</span>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block mb-1">Tariff</span>
+                  <div className="py-1.5 font-bold text-cyan-400 font-mono text-xs">
+                    ₹{c.pricePerKwh}/kWh
+                  </div>
                 </div>
               </div>
             </div>

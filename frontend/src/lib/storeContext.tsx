@@ -30,8 +30,9 @@ import {
 import { getCurrentToDSlot } from './providers';
 
 interface StoreContextType {
-  currentUser: User;
-  setCurrentUser: (user: User) => void;
+  currentUser: User | null;
+  setCurrentUser: (user: User | null) => void;
+  logout: () => void;
   switchRole: (role: 'USER' | 'OPERATOR' | 'ADMIN') => void;
   
   theme: 'dark' | 'light';
@@ -43,6 +44,7 @@ interface StoreContextType {
   
   chargers: Charger[];
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
+  updateChargerRating: (chargerId: string, rating: number) => void;
   
   activeSession: ChargingSession | null;
   historySessions: ChargingSession[];
@@ -89,7 +91,18 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem('smart_ev_user');
+      if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser));
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
   const [chargers, setChargers] = useState<Charger[]>(mockChargers);
   const [sessions, setSessions] = useState<ChargingSession[]>(mockSessions);
   const [wallet, setWallet] = useState<Wallet>(mockWallet);
@@ -101,6 +114,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [faults, setFaults] = useState<Fault[]>(mockFaults);
   const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
   const [dataMode] = useState<'mock' | 'real'>('mock');
+
+  const updateUserSession = (user: User | null) => {
+    setCurrentUser(user);
+    if (typeof window !== 'undefined') {
+      if (user) {
+        localStorage.setItem('smart_ev_user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('smart_ev_user');
+      }
+    }
+  };
+
+  const logout = () => {
+    updateUserSession(null);
+    playSound('beep');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login';
+    }
+  };
 
   // PDF Section 2 Preemption eviction state
   const [isEvictionWarningActive, setIsEvictionWarningActive] = useState<boolean>(false);
@@ -228,7 +260,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const newNotif: NotificationItem = {
       id: `notif-${Date.now()}`,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest-user',
       type: 'EMERGENCY_PREEMPTION',
       title: 'CRITICAL: EMERGENCY VEHICLE OVERRIDE TRIGGERED',
       message: 'Ambulance / Emergency vehicle detected at Priority Bay! Unplug within 120 seconds to avoid ₹500 penalty.',
@@ -252,12 +284,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const switchRole = (role: 'USER' | 'OPERATOR' | 'ADMIN') => {
     const user = mockUsers.find(u => u.role === role) || mockUsers[0];
-    setCurrentUser(user);
+    updateUserSession(user);
     playSound('beep');
   };
 
   const updateChargerStatus = (chargerId: string, status: Charger['status']) => {
     setChargers(prev => prev.map(c => c.id === chargerId ? { ...c, status, lastSeenAt: new Date().toISOString() } : c));
+  };
+
+  const updateChargerRating = (chargerId: string, rating: number) => {
+    setChargers(prev => prev.map(c => c.id === chargerId ? { ...c, powerRating: rating, lastSeenAt: new Date().toISOString() } : c));
+    fetch('/api/stations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stationId: chargerId, powerRating: rating }),
+    }).catch(console.error);
+    playSound('beep');
   };
 
   const startChargingSession = async (
@@ -285,7 +327,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const newSession: ChargingSession = {
       id: `ses-${Date.now()}`,
       sessionCode: `SES-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest-user',
       chargerId: charger.id,
       chargerName: charger.name,
       chargerLocation: charger.location,
@@ -314,7 +356,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Add notification
     const newNotif: NotificationItem = {
       id: `notif-${Date.now()}`,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest-user',
       type: 'CHARGING_STARTED',
       title: 'Bike Charging Session Authorized',
       message: `Session ${newSession.sessionCode} started at ${charger.name} via QR / UPI Online Payment. Tariff: ₹${effectiveRate}/kWh.`,
@@ -355,7 +397,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setSessions(prev => prev.map(s => s.id === sessionId ? updatedSession : s));
-    updateChargerStatus(targetSession.chargerId, 'AVAILABLE');
+    setChargers(prev => prev.map(c => {
+      if (c.id === targetSession.chargerId) {
+        return {
+          ...c,
+          status: 'AVAILABLE',
+          totalEarnedRevenue: (c.totalEarnedRevenue ?? 0) + finalTotal,
+          totalEnergyConsumedKwh: (c.totalEnergyConsumedKwh ?? 0) + finalEnergy,
+          lastSeenAt: new Date().toISOString(),
+        };
+      }
+      return c;
+    }));
     playSound(penaltyFee > 0 ? 'alert' : 'success');
 
     // Create official digital bill conforming to PDF Section 6
@@ -363,7 +416,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: `bill-${Date.now()}`,
       billNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       sessionId,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest-user',
       chargerName: targetSession.chargerName,
       energyKwh: finalEnergy,
       tariffRate: targetSession.tariffRate,
@@ -381,7 +434,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setNotifications(prev => [{
       id: `notif-${Date.now()}`,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest-user',
       type: 'CHARGING_COMPLETED',
       title: penaltyFee > 0 ? 'Session Ended with Eviction Penalty' : 'Charging Session Settled via UPI',
       message: `Session ${targetSession?.sessionCode} finished. Total ${finalEnergy} kWh delivered. Billed: ₹${finalTotal}${penaltyFee > 0 ? ' (includes ₹500 non-yield penalty)' : ''}.`,
@@ -418,7 +471,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addRfidCard = (identifier: string) => {
     const newCard: RfidCard = {
       id: `rfid-${Date.now()}`,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest-user',
       displayIdentifier: identifier.toUpperCase().startsWith('CARD-') ? identifier.toUpperCase() : `CARD-${identifier.toUpperCase()}`,
       status: 'ACTIVE',
       createdAt: new Date().toISOString(),
@@ -431,7 +484,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const newV: Vehicle = {
       ...v,
       id: `veh-${Date.now()}`,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest-user',
       createdAt: new Date().toISOString(),
     };
     setVehicles(prev => [...prev, newV]);
@@ -459,7 +512,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <StoreContext.Provider value={{
       currentUser,
-      setCurrentUser,
+      setCurrentUser: updateUserSession,
+      logout,
       switchRole,
       theme,
       toggleTheme,
@@ -468,6 +522,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       playSound,
       chargers,
       updateChargerStatus,
+      updateChargerRating,
       activeSession,
       historySessions,
       startChargingSession,

@@ -46,6 +46,15 @@ public class Charger {
     @Column(name = "last_seen_at")
     private LocalDateTime lastSeenAt;
 
+    @Column(name = "assigned_operator_id")
+    private String assignedOperatorId;
+
+    @Column(name = "total_earned_revenue")
+    private BigDecimal totalEarnedRevenue;
+
+    @Column(name = "total_energy_consumed_kwh")
+    private Double totalEnergyConsumedKwh;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

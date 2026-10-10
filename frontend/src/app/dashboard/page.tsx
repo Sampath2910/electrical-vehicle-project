@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Zap, 
   Wallet, 
@@ -29,7 +30,26 @@ import { ThingSpeakBench } from '@/components/ui/ThingSpeakBench';
 import { getCurrentToDSlot } from '@/lib/providers';
 
 export default function DriverDashboardPage() {
+  const router = useRouter();
   const { currentUser, wallet, activeSession, historySessions, vehicles } = useStore();
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace('/auth/login/user');
+    }
+  }, [currentUser, router]);
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-400 font-semibold">Redirecting to Driver Sign In...</p>
+        </div>
+      </div>
+    );
+  }
+
   const todInfo = getCurrentToDSlot();
 
   const totalEnergy = historySessions.reduce((acc, s) => acc + s.energyKwh, 0);

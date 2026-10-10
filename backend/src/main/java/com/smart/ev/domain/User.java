@@ -36,6 +36,15 @@ public class User {
     @Column(nullable = false)
     private String status;
 
+    @Column(name = "assigned_station_id")
+    private String assignedStationId; // Linked station for OPERATOR
+
+    @Column(name = "operator_badge_id")
+    private String operatorBadgeId;
+
+    @Column(name = "vehicle_model")
+    private String vehicleModel;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

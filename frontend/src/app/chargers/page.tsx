@@ -23,12 +23,15 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ChargerStatus } from '@/types/ev';
 
 export default function ChargersPage() {
-  const { chargers } = useStore();
+  const { chargers, currentUser } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [stationTypeFilter, setStationTypeFilter] = useState<'ALL' | 'PLUG' | 'SWAP'>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [powerFilter, setPowerFilter] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+
+  const isOperator = currentUser?.role === 'OPERATOR';
+  const assignedStationId = currentUser?.assignedStationId;
 
   const filteredChargers = chargers.filter(charger => {
     const matchesSearch = charger.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -84,6 +87,36 @@ export default function ChargersPage() {
           </button>
         </div>
       </div>
+
+      {/* Operator Scope Notice Banner */}
+      {isOperator && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-lg shrink-0">
+              ⚡
+            </div>
+            <div>
+              <div className="text-sm font-bold text-white flex flex-wrap items-center gap-2">
+                <span>Station Operator Mode</span>
+                <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-xs font-mono font-bold border border-amber-500/30">
+                  {chargers.find(c => c.id === assignedStationId || c.chargerCode === assignedStationId)?.name || assignedStationId}
+                </span>
+                <span className="text-xs text-amber-400 font-medium font-mono">({assignedStationId})</span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                You have full control permissions exclusively over your assigned station. Other stations in the fleet are locked and restricted.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/operator"
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md shrink-0 flex items-center gap-1.5"
+          >
+            <span>Open Station Console</span>
+            <span>&rarr;</span>
+          </Link>
+        </div>
+      )}
 
       {/* Station Category Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -184,19 +217,42 @@ export default function ChargersPage() {
           ) : (
             filteredChargers.map((charger) => {
               const isSwap = charger.stationType === 'BATTERY_SWAP_STATION';
+              const isOwnStation = isOperator && (charger.id === assignedStationId || charger.chargerCode === assignedStationId);
+              const isOtherStationRestricted = isOperator && !isOwnStation;
+
+              let cardStyles = 'border-slate-800 bg-slate-900/70';
+              if (isOwnStation) {
+                cardStyles = 'border-amber-500/60 bg-gradient-to-b from-navy-900/95 to-amber-950/20 shadow-xl shadow-amber-500/10 ring-1 ring-amber-500/40';
+              } else if (isOtherStationRestricted) {
+                cardStyles = 'border-slate-800/80 bg-slate-950/40 opacity-75';
+              } else if (isSwap) {
+                cardStyles = 'border-emerald-500/40 bg-slate-900/80 shadow-emerald-500/5';
+              }
 
               return (
                 <div 
                   key={charger.id} 
-                  className={`glass-card glass-card-hover rounded-2xl p-6 border flex flex-col justify-between transition-all ${
-                    isSwap ? 'border-emerald-500/40 bg-slate-900/80 shadow-emerald-500/5' : 'border-slate-800 bg-slate-900/70'
-                  }`}
+                  className={`glass-card rounded-2xl p-6 border flex flex-col justify-between transition-all ${cardStyles}`}
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-cyan-400 font-bold">{charger.chargerCode}</span>
-                        {isSwap && (
+                        <span className={`text-xs font-mono font-bold ${
+                          isOwnStation ? 'text-amber-400' : isOtherStationRestricted ? 'text-slate-500' : 'text-cyan-400'
+                        }`}>
+                          {charger.chargerCode}
+                        </span>
+                        {isOwnStation && (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[9px] font-mono font-bold border border-amber-500/30">
+                            ★ YOUR STATION
+                          </span>
+                        )}
+                        {isOtherStationRestricted && (
+                          <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[9px] font-mono font-semibold">
+                            🔒 RESTRICTED
+                          </span>
+                        )}
+                        {isSwap && !isOtherStationRestricted && !isOwnStation && (
                           <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold">
                             BSS SWAP HUB
                           </span>
@@ -243,24 +299,42 @@ export default function ChargersPage() {
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <Link
-                        href={`/chargers/${charger.id}`}
-                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
-                      >
-                        Details
-                      </Link>
-
-                      {charger.status === 'AVAILABLE' && (
+                      {isOwnStation ? (
                         <Link
-                          href={`/charging/start?chargerId=${charger.id}`}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md ${
-                            isSwap 
-                              ? 'bg-emerald-400 hover:bg-emerald-300 text-slate-950' 
-                              : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
-                          }`}
+                          href="/operator"
+                          className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md flex items-center gap-1.5"
                         >
-                          {isSwap ? 'Swap Pack' : 'Charge Bike'}
+                          <span>Manage Console &rarr;</span>
                         </Link>
+                      ) : isOtherStationRestricted ? (
+                        <div
+                          title="Access restricted: You do not operate this station"
+                          className="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-500 text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed select-none"
+                        >
+                          <span>🔒 Restricted (Other Station)</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Link
+                            href={`/chargers/${charger.id}`}
+                            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
+                          >
+                            Details
+                          </Link>
+
+                          {charger.status === 'AVAILABLE' && (
+                            <Link
+                              href={`/charging/start?chargerId=${charger.id}`}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md ${
+                                isSwap 
+                                  ? 'bg-emerald-400 hover:bg-emerald-300 text-slate-950' 
+                                  : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
+                              }`}
+                            >
+                              {isSwap ? 'Swap Pack' : 'Charge Bike'}
+                            </Link>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -279,15 +353,44 @@ export default function ChargersPage() {
             <h3 className="text-base font-bold text-white">2-Wheeler Regional Station Map</h3>
             <p className="text-xs text-slate-400">Displaying {filteredChargers.length} active bike plug points and battery swap kiosks with real-time availability.</p>
             <div className="flex flex-wrap gap-2 justify-center pt-2">
-              {filteredChargers.map(c => (
-                <Link
-                  key={c.id}
-                  href={`/chargers/${c.id}`}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-cyan-400 text-[11px] font-mono text-cyan-300"
-                >
-                  📍 {c.chargerCode} ({c.stationType === 'BATTERY_SWAP_STATION' ? 'BSS Swap' : 'Plug'})
-                </Link>
-              ))}
+              {filteredChargers.map(c => {
+                const isOwn = isOperator && (c.id === assignedStationId || c.chargerCode === assignedStationId);
+                const isOther = isOperator && !isOwn;
+
+                if (isOther) {
+                  return (
+                    <span
+                      key={c.id}
+                      title="Restricted: You do not operate this station"
+                      className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-600 cursor-not-allowed flex items-center gap-1"
+                    >
+                      🔒 {c.chargerCode} (Restricted)
+                    </span>
+                  );
+                }
+
+                if (isOwn) {
+                  return (
+                    <Link
+                      key={c.id}
+                      href="/operator"
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 hover:border-amber-400 text-[11px] font-mono text-amber-300 font-bold flex items-center gap-1"
+                    >
+                      ★ {c.chargerCode} (Manage Console)
+                    </Link>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={c.id}
+                    href={`/chargers/${c.id}`}
+                    className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 hover:border-cyan-400 text-[11px] font-mono text-cyan-300"
+                  >
+                    📍 {c.chargerCode} ({c.stationType === 'BATTERY_SWAP_STATION' ? 'BSS Swap' : 'Plug'})
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>

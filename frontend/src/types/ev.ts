@@ -8,6 +8,9 @@ export interface User {
   role: UserRole;
   avatarUrl?: string;
   createdAt: string;
+  assignedStationId?: string; // Station ID assigned to this operator (e.g. ch-101 or ch-102)
+  operatorBadgeId?: string; // Employee/Operator Badge ID
+  vehicleModel?: string; // EV vehicle model for drivers
 }
 
 export type ChargerStatus = 
@@ -49,6 +52,10 @@ export interface Charger {
   availableBatteries?: number;
   totalBatterySlots?: number;
   isPriorityBay?: boolean; // Section 2 Priority Preemption / VIP bay
+  assignedOperatorId?: string; // Bound Operator User ID
+  assignedOperatorName?: string; // Display name of assigned operator
+  totalEarnedRevenue?: number; // Total ₹ collected specifically by this station
+  totalEnergyConsumedKwh?: number; // Total kWh metered specifically by this station
 }
 
 export type SessionStatus = 

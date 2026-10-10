@@ -12,16 +12,75 @@ import {
   Activity, 
   QrCode, 
   CreditCard,
-  AlertTriangle
+  AlertTriangle,
+  Lock,
+  Radio
 } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export default function ChargerDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const { chargers } = useStore();
+  const { chargers, currentUser } = useStore();
 
   const charger = chargers.find(c => c.id === resolvedParams.id || c.chargerCode === resolvedParams.id) || chargers[0];
+
+  const isOperator = currentUser?.role === 'OPERATOR';
+  const assignedStationId = currentUser?.assignedStationId;
+  const isOwnStation = isOperator && (charger.id === assignedStationId || charger.chargerCode === assignedStationId);
+  const isBlockedOperator = isOperator && !isOwnStation;
+
+  if (isBlockedOperator) {
+    const assignedStation = chargers.find(c => c.id === assignedStationId || c.chargerCode === assignedStationId);
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-6">
+        <div className="glass-card rounded-3xl p-8 border border-rose-500/40 bg-navy-900/90 shadow-2xl space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-mono font-bold border border-rose-500/30">
+              ACCESS RESTRICTED &bull; OPERATOR SCOPE
+            </span>
+            <h1 className="text-2xl font-bold text-white">Station Access Not Permitted</h1>
+            <p className="text-sm text-slate-300 max-w-lg mx-auto">
+              You are authenticated as the operator for{' '}
+              <strong className="text-amber-300">{assignedStation?.name || assignedStationId}</strong>.
+              Operators are restricted to managing their own assigned station. Access to other station bays is restricted.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800 text-xs text-slate-400 space-y-1 max-w-md mx-auto text-left">
+            <div className="flex justify-between">
+              <span>Target Station:</span>
+              <span className="font-mono text-white font-bold">{charger?.name} ({charger?.chargerCode})</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Your Authorized Station:</span>
+              <span className="font-mono text-amber-400 font-bold">{assignedStation?.name || assignedStationId}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link
+              href="/operator"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+            >
+              <Radio className="w-4 h-4" />
+              <span>Go to My Assigned Station Console</span>
+            </Link>
+            <Link
+              href="/chargers"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-navy-800 hover:bg-navy-700 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Return to Fleet List</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -31,6 +90,24 @@ export default function ChargerDetailsPage({ params }: { params: Promise<{ id: s
         <ArrowLeft className="w-4 h-4" />
         <span>Back to Charger Discovery</span>
       </Link>
+
+      {isOwnStation && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⚡</span>
+            <div>
+              <p className="text-xs font-bold text-white">You are the Assigned Operator for this Station</p>
+              <p className="text-[11px] text-slate-300">You have full control to override operational status, adjust power ratings (1, 3.3, 7, 12 kW), and trip relay contactors.</p>
+            </div>
+          </div>
+          <Link
+            href="/operator"
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shrink-0"
+          >
+            Open Operator Console &rarr;
+          </Link>
+        </div>
+      )}
 
       {/* Main Charger Card */}
       <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-800 bg-navy-900/80 space-y-6">

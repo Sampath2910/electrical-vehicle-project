@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { 
   Zap, 
   RefreshCw, 
-  ShieldAlert, 
   CreditCard, 
   Cpu, 
   ChevronUp, 
@@ -19,7 +18,7 @@ import { useStore } from '@/lib/storeContext';
 
 export const VivaDemoDock: React.FC = () => {
   const router = useRouter();
-  const { playSound, chargers, startChargingSession, triggerEmergencyOverride, isEvictionWarningActive } = useStore();
+  const { playSound, chargers, startChargingSession } = useStore();
   const [alertNotice, setAlertNotice] = useState<string | null>(null);
 
   const firstAvailableCharger = chargers.find(c => c.status === 'AVAILABLE') || chargers[0];
@@ -40,12 +39,6 @@ export const VivaDemoDock: React.FC = () => {
     playSound('alert');
     setAlertNotice('⚠️ OVERVOLTAGE TEST: Simulated 264.8V AC grid surge! ESP32 GPIO 26 Relay contactor TRIPPED in 8ms.');
     setTimeout(() => setAlertNotice(null), 5000);
-  };
-
-  const handleEmergencyOverrideTest = () => {
-    triggerEmergencyOverride();
-    setAlertNotice('🚨 PRIORITY PREEMPTION: Ambulance Arrived! 120-second eviction buzzer sequence started.');
-    setTimeout(() => setAlertNotice(null), 6000);
   };
 
   return (
@@ -89,20 +82,6 @@ export const VivaDemoDock: React.FC = () => {
               >
                 <Zap className="w-3.5 h-3.5 fill-slate-950" />
                 <span>UPI Quick Charge</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleEmergencyOverrideTest}
-                title="Trigger Section 2 Emergency Preemption (120s Eviction Sequence)"
-                className={`px-3 py-1.5 rounded-xl border font-bold text-[11px] flex items-center gap-1.5 transition-all active:scale-95 ${
-                  isEvictionWarningActive 
-                    ? 'bg-rose-600 text-white border-rose-400 animate-pulse'
-                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
-                }`}
-              >
-                <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-                <span>Override (Ambulance)</span>
               </button>
 
               <button

@@ -1,23 +1,55 @@
 'use client';
 
-import React, { use, useState } from 'react';
+import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Zap, Cpu, Settings, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ChargerStatus } from '@/types/ev';
 
 export default function AdminChargerDetail({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const resolvedParams = use(params);
-  const { chargers, updateChargerStatus } = useStore();
+  const { chargers, updateChargerStatus, updateChargerRating, currentUser } = useStore();
 
   const charger = chargers.find(c => c.id === resolvedParams.id || c.chargerCode === resolvedParams.id) || chargers[0];
-  const [status, setStatus] = useState<ChargerStatus>(charger.status);
+  const [status, setStatus] = useState<ChargerStatus>(charger?.status || 'AVAILABLE');
+  const [rating, setRating] = useState<number>(charger?.powerRating || 3.3);
   const [savedMsg, setSavedMsg] = useState(false);
+
+  useEffect(() => {
+    if (charger) {
+      setStatus(charger.status);
+      setRating(charger.powerRating);
+    }
+  }, [charger?.status, charger?.powerRating]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace('/auth/login/admin');
+    } else if (currentUser.role === 'OPERATOR') {
+      router.replace('/operator');
+    } else if (currentUser.role === 'USER') {
+      router.replace('/dashboard');
+    }
+  }, [currentUser, router]);
+
+  if (!currentUser || currentUser.role !== 'ADMIN') {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-400 font-semibold">Verifying Fleet Administrator Permissions...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateChargerStatus(charger.id, status);
+    updateChargerRating(charger.id, rating);
     setSavedMsg(true);
     setTimeout(() => setSavedMsg(false), 2000);
   };
@@ -48,22 +80,38 @@ export default function AdminChargerDetail({ params }: { params: Promise<{ id: s
         )}
 
         <form onSubmit={handleSave} className="space-y-4 text-xs">
-          <div>
-            <label className="text-slate-300 font-semibold block mb-1">Operational State Override</label>
-            <select
-              value={status}
-              onChange={(e: any) => setStatus(e.target.value)}
-              className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
-            >
-              <option value="AVAILABLE">AVAILABLE</option>
-              <option value="PREPARING">PREPARING</option>
-              <option value="CONNECTED">CONNECTED</option>
-              <option value="CHARGING">CHARGING</option>
-              <option value="PAUSED">PAUSED</option>
-              <option value="MAINTENANCE">MAINTENANCE</option>
-              <option value="FAULT">FAULT</option>
-              <option value="OFFLINE">OFFLINE</option>
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-slate-300 font-semibold block mb-1">Operational State Override</label>
+              <select
+                value={status}
+                onChange={(e: any) => setStatus(e.target.value)}
+                className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
+              >
+                <option value="AVAILABLE">AVAILABLE</option>
+                <option value="PREPARING">PREPARING</option>
+                <option value="CONNECTED">CONNECTED</option>
+                <option value="CHARGING">CHARGING</option>
+                <option value="PAUSED">PAUSED</option>
+                <option value="MAINTENANCE">MAINTENANCE</option>
+                <option value="FAULT">FAULT</option>
+                <option value="OFFLINE">OFFLINE</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-slate-300 font-semibold block mb-1">Power Rating</label>
+              <select
+                value={rating}
+                onChange={(e: any) => setRating(Number(e.target.value))}
+                className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono font-bold"
+              >
+                <option value={1}>1 kW</option>
+                <option value={3.3}>3.3 kW</option>
+                <option value={7}>7 kW</option>
+                <option value={12}>12 kW</option>
+              </select>
+            </div>
           </div>
 
           <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800 space-y-2">
