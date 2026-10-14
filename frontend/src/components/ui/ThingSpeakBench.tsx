@@ -61,6 +61,15 @@ export const ThingSpeakBench: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
   const [selectedChartField, setSelectedChartField] = useState<number>(1);
+  const [secondsSinceSync, setSecondsSinceSync] = useState<number>(0);
+
+  // Live seconds ticker since last sync
+  useEffect(() => {
+    const ticker = setInterval(() => {
+      setSecondsSinceSync(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(ticker);
+  }, []);
 
   // Load stored credentials on mount, defaulting to user's real keys
   useEffect(() => {
@@ -97,7 +106,7 @@ export const ThingSpeakBench: React.FC = () => {
   };
 
   // Fetch feeds from ThingSpeak REST API
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isManual = false) => {
     const activeChannel = channelId.trim() || DEFAULT_CHANNEL_ID;
     const activeRead = readApiKey.trim() || DEFAULT_READ_KEY;
 
@@ -120,8 +129,15 @@ export const ThingSpeakBench: React.FC = () => {
       }
 
       if (data.feeds && data.feeds.length > 0) {
+        const latest = data.feeds[data.feeds.length - 1];
         setHistoryFeeds(data.feeds);
-        setLastFeed(data.feeds[data.feeds.length - 1]);
+        setLastFeed(latest);
+        setSecondsSinceSync(0);
+        
+        if (isManual) {
+          setPublishSuccessMsg(`Synced with ThingSpeak Channel #${activeChannel}! Showing latest Entry #${latest.entry_id} (V=${latest.field1}V, I=${latest.field2}A, P=${latest.field3}W).`);
+          setTimeout(() => setPublishSuccessMsg(null), 5000);
+        }
       } else {
         setLastFeed(null);
         setHistoryFeeds([]);
@@ -133,10 +149,10 @@ export const ThingSpeakBench: React.FC = () => {
     }
   }, [channelId, readApiKey]);
 
-  // Auto-refresh feed every 16 seconds (adheres to ThingSpeak free tier limits)
+  // Auto-refresh feed every 15 seconds (adheres to ThingSpeak free tier limits)
   useEffect(() => {
-    fetchData();
-    const timer = setInterval(fetchData, 16000);
+    fetchData(false);
+    const timer = setInterval(() => fetchData(false), 15000);
     return () => clearInterval(timer);
   }, [fetchData]);
 
@@ -239,9 +255,13 @@ export const ThingSpeakBench: React.FC = () => {
             )}
           </h3>
           {lastFeed?.created_at && (
-            <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5 font-mono">
+            <p className="text-[11px] text-slate-400 mt-1 flex flex-wrap items-center gap-1.5 font-mono">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Live Feed #{lastFeed.entry_id} &bull; Received: {new Date(lastFeed.created_at).toLocaleString()}</span>
+              <span className="text-emerald-400 font-bold">Synced {secondsSinceSync}s ago</span>
+              <span>&bull;</span>
+              <span>Latest Cloud Entry #{lastFeed.entry_id}</span>
+              <span>&bull;</span>
+              <span>Timestamp: {new Date(lastFeed.created_at).toLocaleTimeString()}</span>
             </p>
           )}
         </div>
@@ -249,7 +269,7 @@ export const ThingSpeakBench: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowConfig(!showConfig)}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
             title="Configure Channel ID and API Keys"
           >
             <Settings className="w-3.5 h-3.5 text-cyan-400" />
@@ -257,9 +277,9 @@ export const ThingSpeakBench: React.FC = () => {
           </button>
 
           <button
-            onClick={fetchData}
+            onClick={() => fetchData(true)}
             disabled={isLoading}
-            className="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50"
+            className="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
             title="Fetch Latest Feed from ThingSpeak"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />

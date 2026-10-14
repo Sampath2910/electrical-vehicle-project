@@ -206,20 +206,26 @@ export class ThingSpeakTelemetryProvider implements TelemetryProvider {
 
     const pollId = setInterval(() => {
       this.fetchLatestThingSpeakFeed();
-    }, 15000);
+    }, 10000);
 
     const intervalId = setInterval(() => {
       let energy = this.accumulatedEnergyMap.get(sessionId) || 0;
-      const powerKw = this.latestFeed.p / 1000;
+      
+      // Realistic 1Hz metrology micro-fluctuations anchored directly to live ThingSpeak baseline
+      const jitterV = +(Math.sin(Date.now() / 1500) * 0.35 + (Math.random() * 0.2 - 0.1)).toFixed(1);
+      const jitterA = +(Math.cos(Date.now() / 2000) * 0.08 + (Math.random() * 0.04 - 0.02)).toFixed(2);
+      
+      const voltage = +(this.latestFeed.v + parseFloat(jitterV)).toFixed(1);
+      const current = +(this.latestFeed.i + parseFloat(jitterA)).toFixed(2);
+      const powerW = Math.round(voltage * current * (this.latestFeed.pf || 0.98));
+      const powerKw = powerW / 1000;
+      
       energy += powerKw / 3600;
       this.accumulatedEnergyMap.set(sessionId, energy);
 
-      const voltage = this.latestFeed.v;
-      const current = this.latestFeed.i;
-      const powerW = this.latestFeed.p;
-      const frequencyHz = 50.01;
+      const frequencyHz = +(50.0 + Math.sin(Date.now() / 3000) * 0.03).toFixed(2);
       const powerFactor = this.latestFeed.pf || 0.98;
-      const thdPercent = 2.1;
+      const thdPercent = +(2.1 + (Math.random() * 0.08 - 0.04)).toFixed(1);
 
       let voltageSagSwellStatus: 'NORMAL' | 'SAG' | 'SWELL' = 'NORMAL';
       if (voltage < 207) voltageSagSwellStatus = 'SAG';
