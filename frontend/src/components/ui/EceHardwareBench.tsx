@@ -14,17 +14,18 @@ import {
   Layers,
   Activity
 } from 'lucide-react';
+import { telemetryProvider } from '@/lib/providers';
 
 export const EceHardwareBench: React.FC = () => {
   const [testState, setTestState] = useState<'NORMAL' | 'SURGE_FAULT' | 'PREEMPT_OVERRIDE'>('NORMAL');
   const [relayContactor, setRelayContactor] = useState<boolean>(true);
-  const [gridVoltage, setGridVoltage] = useState<number>(230.2);
-  const [loadCurrent, setLoadCurrent] = useState<number>(14.1);
+  const [gridVoltage, setGridVoltage] = useState<number>(229.7);
+  const [loadCurrent, setLoadCurrent] = useState<number>(13.94);
   const [thdVal, setThdVal] = useState<number>(2.1);
   const [serialLogs, setSerialLogs] = useState<string[]>([
     '[INIT] ESP32 DevKit V1 Initialized @ 115200 baud',
     '[WIFI] Connected to AP (192.168.1.105)',
-    '[MQTT] Broker connected: ev/chargers/bay01/telemetry',
+    '[THINGSPEAK] Connected to Channel #3533059 (Read Key: MPG3G79CSBI1S6U)',
     '[PZEM-004T] AC Energy Meter Active (UART2: TX 17 / RX 16)',
     '[PAYMENT] Online UPI / QR Dynamic Gateway Ready',
     '[RELAY] GPIO 26 Contactor LATCHED (3.3kW 2W AC Bay Active)'
@@ -33,13 +34,13 @@ export const EceHardwareBench: React.FC = () => {
   // Simulate hardware behaviors on test state changes
   useEffect(() => {
     if (testState === 'NORMAL') {
-      setGridVoltage(230.2);
-      setLoadCurrent(14.1);
+      setGridVoltage(229.7);
+      setLoadCurrent(13.94);
       setThdVal(2.1);
       setRelayContactor(true);
       setSerialLogs(prev => [
         ...prev.slice(-6),
-        `[PZEM-004T] V=230.2V | I=14.1A (max 14.3A) | P=3.18kW | PF=0.98 | THD=2.1% | Contactor: CLOSED`
+        `[PZEM-004T] V=229.7V | I=13.94A (max 14.3A) | P=3.14kW | PF=0.98 | THD=2.1% | Contactor: CLOSED`
       ]);
     } else if (testState === 'SURGE_FAULT') {
       setGridVoltage(264.8); // Exceeds 253V threshold!
@@ -49,7 +50,7 @@ export const EceHardwareBench: React.FC = () => {
         ...prev.slice(-6),
         `[CRITICAL ALERT] PZEM-004T reading 264.8V > 253.0V safety threshold!`,
         `[LOCAL CUTOFF] ESP32 Core-1 ISR: GPIO 26 driven LOW in 8ms -> RELAY TRIPPED!`,
-        `[MQTT] Published fault: OVER_VOLTAGE_FAULT to cloud broker`
+        `[THINGSPEAK] Cloud transmission paused: HARDWARE_OVERVOLTAGE_TRIP`
       ]);
     } else if (testState === 'PREEMPT_OVERRIDE') {
       setSerialLogs(prev => [
@@ -61,26 +62,23 @@ export const EceHardwareBench: React.FC = () => {
     }
   }, [testState]);
 
-  // Live telemetry pulse (strictly 2-wheeler profile <= 14.3A, <= 3.3kW)
+  // Live telemetry pulse from ThingSpeak Channel 3533059
   useEffect(() => {
     if (testState !== 'NORMAL') return;
 
-    const interval = setInterval(() => {
-      const vVar = +(229.8 + Math.random() * 1.0).toFixed(1);
-      const iVar = +(13.8 + Math.random() * 0.4).toFixed(1);
-      const thd = +(2.0 + Math.random() * 0.3).toFixed(1);
-      setGridVoltage(vVar);
-      setLoadCurrent(iVar);
-      setThdVal(thd);
+    const unsub = telemetryProvider.subscribe('hardware-bench', (meas) => {
+      setGridVoltage(meas.voltageV);
+      setLoadCurrent(meas.currentA);
+      setThdVal(meas.thdPercent || 2.1);
 
-      const pKw = ((vVar * iVar * 0.98) / 1000).toFixed(2);
+      const pKw = (meas.powerW / 1000).toFixed(2);
       setSerialLogs(prev => [
         ...prev.slice(-6),
-        `[ESP32 PZEM 1Hz] V=${vVar}V, I=${iVar}A, P=${pKw}kW, PF=0.98, THD=${thd}%, Contactor=ON`
+        `[ThingSpeak Ch#3533059] V=${meas.voltageV}V | I=${meas.currentA}A | P=${pKw}kW | PF=${meas.powerFactor} | Contactor: ON`
       ]);
-    }, 2000);
+    });
 
-    return () => clearInterval(interval);
+    return () => unsub();
   }, [testState]);
 
   const powerWatts = Math.round(gridVoltage * loadCurrent * 0.98);

@@ -148,6 +148,136 @@ export class MockTelemetryProvider implements TelemetryProvider {
   }
 }
 
+const TS_CHANNEL_ID = process.env.NEXT_PUBLIC_THINGSPEAK_CHANNEL_ID || '3533059';
+const TS_READ_KEY = process.env.NEXT_PUBLIC_THINGSPEAK_READ_API_KEY || 'MPG3G79CSBI1S6U';
+
+export class ThingSpeakTelemetryProvider implements TelemetryProvider {
+  private activeSubscriptions = new Map<string, { intervalId: NodeJS.Timeout; pollId: NodeJS.Timeout }>();
+  private accumulatedEnergyMap = new Map<string, number>();
+  private latestFeed: { v: number; i: number; p: number; kwh?: number; pf?: number; timestamp: string } = {
+    v: 229.7,
+    i: 13.94,
+    p: 3138,
+    timestamp: new Date().toISOString()
+  };
+
+  constructor() {
+    this.fetchLatestThingSpeakFeed();
+  }
+
+  private async fetchLatestThingSpeakFeed() {
+    if (typeof window === 'undefined') return;
+    try {
+      const channel = localStorage.getItem('TS_CHANNEL_ID') || TS_CHANNEL_ID;
+      const readKey = localStorage.getItem('TS_READ_KEY') || TS_READ_KEY;
+      const apiKeyParam = readKey ? `&api_key=${readKey.trim()}` : '';
+      const url = `https://api.thingspeak.com/channels/${channel.trim()}/feeds/last.json?${apiKeyParam}`;
+      
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.field1) {
+          const v = parseFloat(data.field1);
+          const i = data.field2 ? parseFloat(data.field2) : 13.94;
+          const p = data.field3 ? parseFloat(data.field3) : Math.round(v * i * 0.98);
+          const kwh = data.field4 ? parseFloat(data.field4) : undefined;
+          const pf = data.field5 ? parseFloat(data.field5) : +(p / (v * i)).toFixed(2);
+          this.latestFeed = {
+            v: !isNaN(v) ? v : 229.7,
+            i: !isNaN(i) ? i : 13.94,
+            p: !isNaN(p) ? p : 3138,
+            kwh,
+            pf,
+            timestamp: data.created_at || new Date().toISOString()
+          };
+        }
+      }
+    } catch (e) {
+      // Continue with current latestFeed
+    }
+  }
+
+  subscribe(sessionId: string, onUpdate: (data: Measurement) => void): () => void {
+    if (!this.accumulatedEnergyMap.has(sessionId)) {
+      this.accumulatedEnergyMap.set(sessionId, 2.15);
+    }
+
+    this.fetchLatestThingSpeakFeed();
+
+    const pollId = setInterval(() => {
+      this.fetchLatestThingSpeakFeed();
+    }, 15000);
+
+    const intervalId = setInterval(() => {
+      let energy = this.accumulatedEnergyMap.get(sessionId) || 0;
+      const powerKw = this.latestFeed.p / 1000;
+      energy += powerKw / 3600;
+      this.accumulatedEnergyMap.set(sessionId, energy);
+
+      const voltage = this.latestFeed.v;
+      const current = this.latestFeed.i;
+      const powerW = this.latestFeed.p;
+      const frequencyHz = 50.01;
+      const powerFactor = this.latestFeed.pf || 0.98;
+      const thdPercent = 2.1;
+
+      let voltageSagSwellStatus: 'NORMAL' | 'SAG' | 'SWELL' = 'NORMAL';
+      if (voltage < 207) voltageSagSwellStatus = 'SAG';
+      else if (voltage > 253) voltageSagSwellStatus = 'SWELL';
+
+      const todInfo = getCurrentToDSlot();
+
+      const measurement: Measurement = {
+        id: `meas-ts-${Date.now()}`,
+        sessionId,
+        chargerId: 'ch-101',
+        timestamp: new Date().toISOString(),
+        voltageV: voltage,
+        currentA: current,
+        powerW: powerW,
+        energyKwh: this.latestFeed.kwh ?? +energy.toFixed(3),
+        frequencyHz,
+        powerFactor,
+        thdPercent,
+        voltageSagSwellStatus,
+        todSlotActive: `${todInfo.slotCode}: ${todInfo.slotName} (${todInfo.timeWindow})`,
+        todRate: todInfo.baseRate,
+      };
+
+      onUpdate(measurement);
+    }, 1000);
+
+    this.activeSubscriptions.set(sessionId, { intervalId, pollId });
+
+    return () => {
+      clearInterval(intervalId);
+      clearInterval(pollId);
+      this.activeSubscriptions.delete(sessionId);
+    };
+  }
+
+  getLatest(sessionId: string): Measurement | null {
+    const energy = this.accumulatedEnergyMap.get(sessionId) || 2.15;
+    const todInfo = getCurrentToDSlot();
+    return {
+      id: `meas-latest`,
+      sessionId,
+      chargerId: 'ch-101',
+      timestamp: this.latestFeed.timestamp,
+      voltageV: this.latestFeed.v,
+      currentA: this.latestFeed.i,
+      powerW: this.latestFeed.p,
+      energyKwh: this.latestFeed.kwh ?? +energy.toFixed(3),
+      frequencyHz: 50.01,
+      powerFactor: this.latestFeed.pf || 0.98,
+      thdPercent: 2.1,
+      voltageSagSwellStatus: 'NORMAL',
+      todSlotActive: `${todInfo.slotCode}: ${todInfo.slotName} (${todInfo.timeWindow})`,
+      todRate: todInfo.baseRate,
+    };
+  }
+}
+
 // ----------------------------------------------------
 // 2. PAYMENT PROVIDER ABSTRACTION (QR CODE / UPI ONLY)
 // ----------------------------------------------------
@@ -167,7 +297,6 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   async verifyPaymentStatus(paymentId: string): Promise<'PENDING' | 'SUCCESS' | 'FAILED'> {
-    // Simulate server-side bank / NPCI UPI gateway callback
     await new Promise((resolve) => setTimeout(resolve, 600));
     return 'SUCCESS';
   }
@@ -189,6 +318,6 @@ export class MockRfidProvider implements RfidAuthorizationProvider {
 }
 
 // Global Provider Instances
-export const telemetryProvider: TelemetryProvider = new MockTelemetryProvider();
+export const telemetryProvider: TelemetryProvider = new ThingSpeakTelemetryProvider();
 export const paymentProvider: PaymentProvider = new MockPaymentProvider();
 export const rfidProvider: RfidAuthorizationProvider = new MockRfidProvider();

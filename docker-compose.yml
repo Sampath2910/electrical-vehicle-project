@@ -57,7 +57,10 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8080
       NEXT_PUBLIC_WS_URL: ws://localhost:8080/ws-ev
-      NEXT_PUBLIC_DATA_MODE: mock
+      NEXT_PUBLIC_DATA_MODE: thingspeak
+      NEXT_PUBLIC_THINGSPEAK_CHANNEL_ID: "3533059"
+      NEXT_PUBLIC_THINGSPEAK_READ_API_KEY: "MPG3G79CSBI1S6U"
+      NEXT_PUBLIC_THINGSPEAK_WRITE_API_KEY: "7DMQVJF8118QV1QM"
     ports:
       - "3000:3000"
     depends_on:

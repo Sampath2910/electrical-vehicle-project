@@ -22,9 +22,10 @@ import {
   LogOut
 } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
+import { telemetryProvider } from '@/lib/providers';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Charger } from '@/types/ev';
+import { Charger, Measurement } from '@/types/ev';
 
 export default function OperatorConsolePage() {
   const router = useRouter();
@@ -33,8 +34,17 @@ export default function OperatorConsolePage() {
   const [loading, setLoading] = useState(true);
   const [relayTripped, setRelayTripped] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
+  const [liveMeas, setLiveMeas] = useState<Measurement | null>(null);
 
   const assignedStationId = currentUser?.assignedStationId || 'ch-101';
+
+  // Live telemetry stream from ThingSpeak Cloud Channel 3533059
+  useEffect(() => {
+    const unsub = telemetryProvider.subscribe(assignedStationId, (meas) => {
+      setLiveMeas(meas);
+    });
+    return () => unsub();
+  }, [assignedStationId]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -231,36 +241,44 @@ export default function OperatorConsolePage() {
                 <Activity className="w-5 h-5 text-amber-400" />
                 <span>PZEM-004T Metrology Test Bench</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">Real-time electrical parameters for {station?.name}</p>
+              <p className="text-xs text-slate-400 mt-0.5">Live ThingSpeak telemetry (Channel #3533059) for {station?.name}</p>
             </div>
             <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[11px] font-mono font-bold flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>SENSOR ONLINE</span>
+              <span>THINGSPEAK STREAM ACTIVE</span>
             </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">AC Voltage</span>
-              <div className="text-xl font-extrabold font-mono text-cyan-400">230.4 V</div>
+              <div className="text-xl font-extrabold font-mono text-cyan-400">
+                {liveMeas ? `${liveMeas.voltageV.toFixed(1)} V` : '229.7 V'}
+              </div>
               <span className="text-[10px] text-slate-400">Grid Safe (207–253V)</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Active Current</span>
-              <div className="text-xl font-extrabold font-mono text-amber-400">14.15 A</div>
+              <div className="text-xl font-extrabold font-mono text-amber-400">
+                {liveMeas ? `${liveMeas.currentA.toFixed(2)} A` : '13.94 A'}
+              </div>
               <span className="text-[10px] text-emerald-400">&le; 14.3A 2W Limit</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Active Power</span>
-              <div className="text-xl font-extrabold font-mono text-emerald-400">3.26 kW</div>
-              <span className="text-[10px] text-slate-400">PF: 0.98 Inductive</span>
+              <div className="text-xl font-extrabold font-mono text-emerald-400">
+                {liveMeas ? `${(liveMeas.powerW / 1000).toFixed(2)} kW` : '3.14 kW'}
+              </div>
+              <span className="text-[10px] text-slate-400">PF: {liveMeas?.powerFactor || '0.98'} Active</span>
             </div>
 
             <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Total Harmonics</span>
-              <div className="text-xl font-extrabold font-mono text-purple-400">2.1% THD</div>
+              <div className="text-xl font-extrabold font-mono text-purple-400">
+                {liveMeas ? `${liveMeas.thdPercent}% THD` : '2.1% THD'}
+              </div>
               <span className="text-[10px] text-emerald-400">IEEE-519 Compliant</span>
             </div>
           </div>

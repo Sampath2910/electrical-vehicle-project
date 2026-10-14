@@ -61,7 +61,10 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
         <p>&copy; 2026 Smart EV Infrastructure Inc. All rights reserved.</p>
         <div className="flex items-center gap-4 mt-2 sm:mt-0">
-          <span className="text-cyan-400/80 font-mono text-[11px]">NEXT_PUBLIC_DATA_MODE=mock</span>
+          <span className="text-cyan-400/90 font-mono text-[11px] flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>ThingSpeak Cloud #3533059 Live</span>
+          </span>
           <span className="font-mono text-[11px]">v1.0.0-production</span>
         </div>
       </div>

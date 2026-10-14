@@ -50,22 +50,25 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
 
   const todInfo = getCurrentToDSlot();
 
-  // Strict 2-wheeler electrical profile (restricted to max 14.3A at 230V, ~3.18 kW)
-  const [liveMeasurement, setLiveMeasurement] = useState<Measurement>({
-    id: 'meas-initial',
-    sessionId: resolvedParams.sessionId,
-    chargerId: currentSession?.chargerId || 'ch-101',
-    timestamp: new Date().toISOString(),
-    voltageV: 230.2,
-    currentA: 14.1, // Restricted to <= 14.3A
-    powerW: 3180, // <= 3.3 kW
-    energyKwh: currentSession?.energyKwh || 2.15,
-    frequencyHz: 50.01,
-    powerFactor: 0.98,
-    thdPercent: 2.1, // Power Quality: Total Harmonic Distortion < 5% IEEE-519
-    voltageSagSwellStatus: 'NORMAL',
-    todSlotActive: `${todInfo.slotCode}: ${todInfo.slotName}`,
-    todRate: currentSession?.tariffRate || todInfo.baseRate,
+  // Real-world 2-wheeler electrical profile from ThingSpeak Channel 3533059
+  const [liveMeasurement, setLiveMeasurement] = useState<Measurement>(() => {
+    const latest = telemetryProvider.getLatest(resolvedParams.sessionId);
+    return latest || {
+      id: 'meas-initial',
+      sessionId: resolvedParams.sessionId,
+      chargerId: currentSession?.chargerId || 'ch-101',
+      timestamp: new Date().toISOString(),
+      voltageV: 229.7,
+      currentA: 13.94,
+      powerW: 3138,
+      energyKwh: currentSession?.energyKwh || 2.15,
+      frequencyHz: 50.01,
+      powerFactor: 0.98,
+      thdPercent: 2.1,
+      voltageSagSwellStatus: 'NORMAL',
+      todSlotActive: `${todInfo.slotCode}: ${todInfo.slotName}`,
+      todRate: currentSession?.tariffRate || todInfo.baseRate,
+    };
   });
 
   const [isStopping, setIsStopping] = useState(false);

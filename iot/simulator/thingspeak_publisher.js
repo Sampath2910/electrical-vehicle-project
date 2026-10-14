@@ -15,19 +15,18 @@
 
 const https = require('https');
 
-const WRITE_API_KEY = process.env.THINGSPEAK_WRITE_API_KEY || process.argv[2] || '';
+const CHANNEL_ID = process.env.THINGSPEAK_CHANNEL_ID || '3533059';
+const WRITE_API_KEY = process.env.THINGSPEAK_WRITE_API_KEY || process.argv[2] || '7DMQVJF8118QV1QM';
+const READ_API_KEY = process.env.THINGSPEAK_READ_API_KEY || 'MPG3G79CSBI1S6U';
 const UPDATE_INTERVAL_MS = 16000; // ThingSpeak free tier requires >= 15 seconds
 
-if (!WRITE_API_KEY) {
-  console.log('\n======================================================');
-  console.log('⚡ Smart EV Station - ThingSpeak Telemetry Publisher ⚡');
-  console.log('======================================================');
-  console.log('⚠️  WARNING: No Write API Key provided!');
-  console.log('Usage:');
-  console.log('  node thingspeak_publisher.js <YOUR_WRITE_API_KEY>');
-  console.log('  OR setting environment variable:');
-  console.log('  THINGSPEAK_WRITE_API_KEY="YOUR_WRITE_KEY" node thingspeak_publisher.js\n');
-}
+console.log('\n======================================================');
+console.log('⚡ Smart EV Station - ThingSpeak Telemetry Publisher ⚡');
+console.log('======================================================');
+console.log(`📡 Connected Channel ID : ${CHANNEL_ID}`);
+console.log(`🔑 Using Write API Key  : ${WRITE_API_KEY.slice(0, 4)}****`);
+console.log(`⏱️  Update Interval     : ${UPDATE_INTERVAL_MS / 1000}s`);
+console.log('======================================================\n');
 
 let energyKwh = 3.250;
 let updateCounter = 0;

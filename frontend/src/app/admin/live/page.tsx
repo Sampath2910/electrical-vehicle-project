@@ -100,7 +100,7 @@ export default function AdminLiveTelemetryPage() {
     return () => unsub();
   }, [selectedChargerId]);
 
-  const latestPoint = telemetryHistory[telemetryHistory.length - 1] || { powerKw: 3.18, voltage: 230.2, current: 13.8, thd: 2.1 };
+  const latestPoint = telemetryHistory[telemetryHistory.length - 1] || { powerKw: 3.14, voltage: 229.7, current: 13.94, thd: 2.1 };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">

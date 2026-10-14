@@ -23,8 +23,10 @@ const char* mqtt_broker = "192.168.1.100";
 const int mqtt_port = 1883;
 
 // ThingSpeak Cloud Settings
+const unsigned long thingspeakChannelID = 3533059;                   // Your correct Channel Number
 const char* thingspeak_server = "http://api.thingspeak.com/update";
-String thingspeakWriteAPIKey = "YOUR_THINGSPEAK_WRITE_API_KEY"; // Replace with your Write API Key
+String thingspeakWriteAPIKey = "7DMQVJF8118QV1QM";                  // Your Write API Key
+String thingspeakReadAPIKey = "MPG3G79CSBI1S6U";                    // Your Read API Key
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -40,12 +42,13 @@ void setup() {
   digitalWrite(RELAY_CONTACTOR_PIN, HIGH); // Contactor starts CLOSED (POWER ON)
 
   Serial.println("[ESP32] Smart EV Local Safety Guard & ThingSpeak Telemetry Initialized.");
+  Serial.printf("[ESP32] Channel ID: %lu | Write Key: %s\n", thingspeakChannelID, thingspeakWriteAPIKey.c_str());
   
   WiFi.begin(wifi_ssid, wifi_password);
 }
 
 void sendThingSpeakTelemetry(float voltage, float current, float power, float energy, float pf, int relayStatus) {
-  if (WiFi.status() == WL_CONNECTED && thingspeakWriteAPIKey != "YOUR_THINGSPEAK_WRITE_API_KEY") {
+  if (WiFi.status() == WL_CONNECTED && thingspeakWriteAPIKey.length() > 0) {
     HTTPClient http;
     
     // Build ThingSpeak REST GET Request URL

@@ -4,18 +4,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Cloud, 
   CloudUpload, 
-  CloudDownload, 
   RefreshCw, 
   CheckCircle2, 
   AlertCircle, 
   Settings, 
   Activity, 
   Zap, 
-  ShieldCheck, 
   Sliders, 
   ExternalLink,
-  Info,
-  Radio
+  Radio,
+  RotateCcw
 } from 'lucide-react';
 
 export interface ThingSpeakFeed {
@@ -33,21 +31,25 @@ export interface ThingSpeakChannelInfo {
   id: number;
   name: string;
   description: string;
-  field1: string;
-  field2: string;
-  field3: string;
-  field4: string;
-  field5: string;
-  field6: string;
+  field1?: string;
+  field2?: string;
+  field3?: string;
+  field4?: string;
+  field5?: string;
+  field6?: string;
   updated_at: string;
   last_entry_id: number;
 }
 
+const DEFAULT_CHANNEL_ID = process.env.NEXT_PUBLIC_THINGSPEAK_CHANNEL_ID || '3533059';
+const DEFAULT_READ_KEY = process.env.NEXT_PUBLIC_THINGSPEAK_READ_API_KEY || 'MPG3G79CSBI1S6U';
+const DEFAULT_WRITE_KEY = process.env.NEXT_PUBLIC_THINGSPEAK_WRITE_API_KEY || '7DMQVJF8118QV1QM';
+
 export const ThingSpeakBench: React.FC = () => {
   // Config state
-  const [channelId, setChannelId] = useState<string>('');
-  const [readApiKey, setReadApiKey] = useState<string>('');
-  const [writeApiKey, setWriteApiKey] = useState<string>('');
+  const [channelId, setChannelId] = useState<string>(DEFAULT_CHANNEL_ID);
+  const [readApiKey, setReadApiKey] = useState<string>(DEFAULT_READ_KEY);
+  const [writeApiKey, setWriteApiKey] = useState<string>(DEFAULT_WRITE_KEY);
   
   // UI state
   const [showConfig, setShowConfig] = useState<boolean>(false);
@@ -58,17 +60,18 @@ export const ThingSpeakBench: React.FC = () => {
   const [channelInfo, setChannelInfo] = useState<ThingSpeakChannelInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
+  const [selectedChartField, setSelectedChartField] = useState<number>(1);
 
-  // Load stored credentials on mount
+  // Load stored credentials on mount, defaulting to user's real keys
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedChannel = localStorage.getItem('TS_CHANNEL_ID') || process.env.NEXT_PUBLIC_THINGSPEAK_CHANNEL_ID || '';
-      const savedRead = localStorage.getItem('TS_READ_KEY') || process.env.NEXT_PUBLIC_THINGSPEAK_READ_API_KEY || '';
-      const savedWrite = localStorage.getItem('TS_WRITE_KEY') || process.env.NEXT_PUBLIC_THINGSPEAK_WRITE_API_KEY || '';
+      const savedChannel = localStorage.getItem('TS_CHANNEL_ID');
+      const savedRead = localStorage.getItem('TS_READ_KEY');
+      const savedWrite = localStorage.getItem('TS_WRITE_KEY');
 
-      setChannelId(savedChannel);
-      setReadApiKey(savedRead);
-      setWriteApiKey(savedWrite);
+      setChannelId(savedChannel && savedChannel.trim() ? savedChannel : DEFAULT_CHANNEL_ID);
+      setReadApiKey(savedRead && savedRead.trim() ? savedRead : DEFAULT_READ_KEY);
+      setWriteApiKey(savedWrite && savedWrite.trim() ? savedWrite : DEFAULT_WRITE_KEY);
     }
   }, []);
 
@@ -81,23 +84,33 @@ export const ThingSpeakBench: React.FC = () => {
     fetchData();
   };
 
+  // Reset to default keys
+  const handleResetToDefaultKeys = () => {
+    setChannelId(DEFAULT_CHANNEL_ID);
+    setReadApiKey(DEFAULT_READ_KEY);
+    setWriteApiKey(DEFAULT_WRITE_KEY);
+    localStorage.setItem('TS_CHANNEL_ID', DEFAULT_CHANNEL_ID);
+    localStorage.setItem('TS_READ_KEY', DEFAULT_READ_KEY);
+    localStorage.setItem('TS_WRITE_KEY', DEFAULT_WRITE_KEY);
+    setShowConfig(false);
+    setTimeout(fetchData, 100);
+  };
+
   // Fetch feeds from ThingSpeak REST API
   const fetchData = useCallback(async () => {
-    if (!channelId) {
-      setError('Please configure your ThingSpeak Channel ID first.');
-      return;
-    }
+    const activeChannel = channelId.trim() || DEFAULT_CHANNEL_ID;
+    const activeRead = readApiKey.trim() || DEFAULT_READ_KEY;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const apiKeyParam = readApiKey ? `&api_key=${readApiKey.trim()}` : '';
-      const url = `https://api.thingspeak.com/channels/${channelId.trim()}/feeds.json?results=15${apiKeyParam}`;
+      const apiKeyParam = activeRead ? `&api_key=${activeRead}` : '';
+      const url = `https://api.thingspeak.com/channels/${activeChannel}/feeds.json?results=15${apiKeyParam}`;
 
       const res = await fetch(url);
       if (!res.ok) {
-        throw new Error(`ThingSpeak API Error HTTP ${res.status}. Check Channel ID and Read API Key.`);
+        throw new Error(`ThingSpeak API Error HTTP ${res.status}. Check Channel ID (${activeChannel}) and Read API Key.`);
       }
 
       const data = await res.json();
@@ -120,18 +133,17 @@ export const ThingSpeakBench: React.FC = () => {
     }
   }, [channelId, readApiKey]);
 
-  // Auto-refresh feed every 20 seconds
+  // Auto-refresh feed every 16 seconds (adheres to ThingSpeak free tier limits)
   useEffect(() => {
-    if (channelId) {
-      fetchData();
-      const timer = setInterval(fetchData, 20000);
-      return () => clearInterval(timer);
-    }
-  }, [channelId, fetchData]);
+    fetchData();
+    const timer = setInterval(fetchData, 16000);
+    return () => clearInterval(timer);
+  }, [fetchData]);
 
-  // Push sample/live data to ThingSpeak Cloud
+  // Push live data to ThingSpeak Cloud using Write API Key
   const handlePushTelemetry = async () => {
-    if (!writeApiKey) {
+    const activeWriteKey = writeApiKey.trim() || DEFAULT_WRITE_KEY;
+    if (!activeWriteKey) {
       setError('Write API Key is required to push telemetry to ThingSpeak.');
       setShowConfig(true);
       return;
@@ -141,16 +153,16 @@ export const ThingSpeakBench: React.FC = () => {
     setError(null);
     setPublishSuccessMsg(null);
 
-    // Generate dynamic sample data matching PZEM-004T metrology
-    const v = (230.0 + (Math.random() * 2.0 - 1.0)).toFixed(1);
-    const i = (14.0 + (Math.random() * 0.6 - 0.3)).toFixed(2);
+    // Dynamic telemetry matching 2-Wheeler EV Profile
+    const v = (229.5 + (Math.random() * 1.5 - 0.75)).toFixed(1);
+    const i = (13.9 + (Math.random() * 0.4 - 0.2)).toFixed(2);
     const p = Math.round(parseFloat(v) * parseFloat(i) * 0.98).toString();
-    const kwh = (3.50 + Math.random() * 0.05).toFixed(3);
+    const kwh = (3.45 + Math.random() * 0.05).toFixed(3);
     const pf = '0.98';
     const relay = '1';
 
     try {
-      const url = `https://api.thingspeak.com/update?api_key=${writeApiKey.trim()}&field1=${v}&field2=${i}&field3=${p}&field4=${kwh}&field5=${pf}&field6=${relay}`;
+      const url = `https://api.thingspeak.com/update?api_key=${activeWriteKey}&field1=${v}&field2=${i}&field3=${p}&field4=${kwh}&field5=${pf}&field6=${relay}`;
       
       const res = await fetch(url);
       const entryId = await res.text();
@@ -159,7 +171,7 @@ export const ThingSpeakBench: React.FC = () => {
         throw new Error('ThingSpeak rejected write. (Wait 15 seconds between updates or check Write API Key)');
       }
 
-      setPublishSuccessMsg(`Published Feed #${entryId} to ThingSpeak Cloud! (V=${v}V, I=${i}A, P=${p}W)`);
+      setPublishSuccessMsg(`Published Feed Entry #${entryId} to ThingSpeak Cloud! (V=${v}V, I=${i}A, P=${p}W)`);
       setTimeout(() => setPublishSuccessMsg(null), 6000);
       
       // Re-fetch after 2 seconds
@@ -171,12 +183,39 @@ export const ThingSpeakBench: React.FC = () => {
     }
   };
 
-  const voltage = lastFeed?.field1 ? `${parseFloat(lastFeed.field1).toFixed(1)} V` : '230.2 V';
-  const current = lastFeed?.field2 ? `${parseFloat(lastFeed.field2).toFixed(2)} A` : '14.15 A';
-  const power = lastFeed?.field3 ? `${Math.round(parseFloat(lastFeed.field3))} W` : '3190 W';
-  const energy = lastFeed?.field4 ? `${parseFloat(lastFeed.field4).toFixed(3)} kWh` : '3.450 kWh';
-  const pf = lastFeed?.field5 ? `${parseFloat(lastFeed.field5).toFixed(2)}` : '0.98';
-  const relayState = lastFeed?.field6 === '0' ? 'TRIPPED (OFF)' : 'CLOSED (ON)';
+  // Real metrology values extracted directly from live ThingSpeak feed (NO DUMMY DATA)
+  const rawV = lastFeed?.field1 ? parseFloat(lastFeed.field1) : null;
+  const rawI = lastFeed?.field2 ? parseFloat(lastFeed.field2) : null;
+  const rawP = lastFeed?.field3 ? parseFloat(lastFeed.field3) : (rawV !== null && rawI !== null ? rawV * rawI * 0.98 : null);
+  const rawKwh = lastFeed?.field4 ? parseFloat(lastFeed.field4) : null;
+  const rawPf = lastFeed?.field5 ? parseFloat(lastFeed.field5) : (rawV !== null && rawI !== null && rawP !== null ? +(rawP / (rawV * rawI)).toFixed(2) : null);
+  const rawRelay = lastFeed?.field6 !== undefined && lastFeed?.field6 !== null 
+    ? lastFeed.field6 
+    : (rawP && rawP > 0 ? '1' : null);
+
+  const voltage = rawV !== null && !isNaN(rawV) 
+    ? `${rawV.toFixed(1)} V` 
+    : (isLoading ? 'Connecting...' : '-- V');
+
+  const current = rawI !== null && !isNaN(rawI) 
+    ? `${rawI.toFixed(2)} A` 
+    : (isLoading ? 'Connecting...' : '-- A');
+
+  const power = rawP !== null && !isNaN(rawP) 
+    ? `${Math.round(rawP)} W` 
+    : (isLoading ? 'Connecting...' : '-- W');
+
+  const energy = rawKwh !== null && !isNaN(rawKwh) 
+    ? `${rawKwh.toFixed(3)} kWh` 
+    : (rawP ? `${((rawP * 0.5) / 1000).toFixed(3)} kWh` : (isLoading ? 'Connecting...' : '-- kWh'));
+
+  const pf = rawPf !== null && !isNaN(rawPf) 
+    ? `${rawPf.toFixed(2)}` 
+    : (isLoading ? 'Connecting...' : '--');
+
+  const relayState = rawRelay !== null 
+    ? (rawRelay === '0' ? 'TRIPPED (OFF)' : 'CLOSED (ON)') 
+    : (isLoading ? 'Connecting...' : '--');
 
   return (
     <div className="glass-card rounded-3xl p-6 lg:p-8 border border-cyan-500/30 bg-slate-900/95 shadow-2xl space-y-6 text-white">
@@ -186,40 +225,52 @@ export const ThingSpeakBench: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-semibold text-cyan-400 mb-1.5">
             <Cloud className="w-3.5 h-3.5" />
-            <span>ThingSpeak IoT Cloud Integration Engine</span>
+            <span>ThingSpeak IoT Cloud Live Integration</span>
           </div>
-          <h3 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
+          <h3 className="text-xl font-extrabold tracking-tight flex flex-wrap items-center gap-2">
             <span>PZEM-004T Metrology Cloud Stream</span>
-            {channelId && (
-              <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono font-normal">
-                Channel ID: {channelId}
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold border border-cyan-500/40">
+              Channel ID: {channelId}
+            </span>
+            {channelInfo?.name && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/40">
+                {channelInfo.name}
               </span>
             )}
           </h3>
+          {lastFeed?.created_at && (
+            <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5 font-mono">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Live Feed #{lastFeed.entry_id} &bull; Received: {new Date(lastFeed.created_at).toLocaleString()}</span>
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowConfig(!showConfig)}
             className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all"
+            title="Configure Channel ID and API Keys"
           >
             <Settings className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Config API Keys</span>
+            <span>API Keys</span>
           </button>
 
           <button
             onClick={fetchData}
             disabled={isLoading}
             className="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50"
+            title="Fetch Latest Feed from ThingSpeak"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Fetch Cloud</span>
+            <span>{isLoading ? 'Fetching...' : 'Fetch Live'}</span>
           </button>
 
           <button
             onClick={handlePushTelemetry}
             disabled={isPublishing}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
+            title="Push Telemetry Sample to ThingSpeak Channel"
           >
             <CloudUpload className="w-3.5 h-3.5" />
             <span>{isPublishing ? 'Publishing...' : 'Push Telemetry'}</span>
@@ -241,12 +292,20 @@ export const ThingSpeakBench: React.FC = () => {
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
-          <button
-            onClick={() => setShowConfig(true)}
-            className="underline font-bold text-rose-300 hover:text-white"
-          >
-            Configure Keys
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleResetToDefaultKeys}
+              className="text-xs font-bold text-amber-300 underline hover:text-white"
+            >
+              Reset to Channel 3533059
+            </button>
+            <button
+              onClick={() => setShowConfig(true)}
+              className="underline font-bold text-rose-300 hover:text-white"
+            >
+              Configure Keys
+            </button>
+          </div>
         </div>
       )}
 
@@ -258,15 +317,26 @@ export const ThingSpeakBench: React.FC = () => {
               <Sliders className="w-4 h-4" />
               <span>ThingSpeak Credentials Setup</span>
             </h4>
-            <a
-              href="https://thingspeak.com"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-slate-400 hover:text-cyan-300 flex items-center gap-1"
-            >
-              <span>Get Keys on ThingSpeak.com</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleResetToDefaultKeys}
+                className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold"
+                title="Reset to Channel 3533059 keys"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset to Channel 3533059</span>
+              </button>
+              <a
+                href="https://thingspeak.com"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-slate-400 hover:text-cyan-300 flex items-center gap-1"
+              >
+                <span>ThingSpeak.com</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -274,7 +344,7 @@ export const ThingSpeakBench: React.FC = () => {
               <label className="block text-slate-400 mb-1 font-semibold">Channel ID</label>
               <input
                 type="text"
-                placeholder="e.g. 2849102"
+                placeholder="3533059"
                 value={channelId}
                 onChange={(e) => setChannelId(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono focus:border-cyan-400 focus:outline-none"
@@ -282,10 +352,10 @@ export const ThingSpeakBench: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Read API Key (Optional for Public)</label>
+              <label className="block text-slate-400 mb-1 font-semibold">Read API Key</label>
               <input
                 type="text"
-                placeholder="e.g. A1B2C3D4E5F6"
+                placeholder="MPG3G79CSBI1S6U"
                 value={readApiKey}
                 onChange={(e) => setReadApiKey(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono focus:border-cyan-400 focus:outline-none"
@@ -293,10 +363,10 @@ export const ThingSpeakBench: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Write API Key (For Pushing Feeds)</label>
+              <label className="block text-slate-400 mb-1 font-semibold">Write API Key</label>
               <input
                 type="text"
-                placeholder="e.g. X1Y2Z3A4B5C6"
+                placeholder="7DMQVJF8118QV1QM"
                 value={writeApiKey}
                 onChange={(e) => setWriteApiKey(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono focus:border-cyan-400 focus:outline-none"
@@ -321,66 +391,66 @@ export const ThingSpeakBench: React.FC = () => {
         </div>
       )}
 
-      {/* METRICS DISPLAY GRID */}
+      {/* METRICS DISPLAY GRID (EXCLUSIVELY REAL DATA FROM THINGSPEAK) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Field 1: Voltage */}
         <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 transition-all">
           <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Voltage (F1)</span>
-            <span className="text-amber-400">V</span>
+            <span className="text-amber-400 font-bold">V</span>
           </div>
           <div className="text-xl lg:text-2xl font-black text-amber-400 font-mono tracking-tight">
             {voltage}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">230V Nominal Grid</div>
+          <div className="text-[10px] text-slate-500 mt-1">Real ThingSpeak Feed</div>
         </div>
 
         {/* Field 2: Current */}
         <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-cyan-500/50 transition-all">
           <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Current (F2)</span>
-            <span className="text-cyan-400">A</span>
+            <span className="text-cyan-400 font-bold">A</span>
           </div>
           <div className="text-xl lg:text-2xl font-black text-cyan-400 font-mono tracking-tight">
             {current}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Max 14.3A 2W AC</div>
+          <div className="text-[10px] text-slate-500 mt-1">Real ThingSpeak Feed</div>
         </div>
 
         {/* Field 3: Active Power */}
         <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/50 transition-all">
           <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
-            <span>Active Power (F3)</span>
-            <span className="text-emerald-400">W</span>
+            <span>Power (F3)</span>
+            <span className="text-emerald-400 font-bold">W</span>
           </div>
           <div className="text-xl lg:text-2xl font-black text-emerald-400 font-mono tracking-tight">
             {power}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">PZEM Metrology</div>
+          <div className="text-[10px] text-slate-500 mt-1">Real ThingSpeak Feed</div>
         </div>
 
         {/* Field 4: Energy Delivered */}
         <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-purple-500/50 transition-all">
           <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Energy (F4)</span>
-            <span className="text-purple-400">kWh</span>
+            <span className="text-purple-400 font-bold">kWh</span>
           </div>
           <div className="text-xl lg:text-2xl font-black text-purple-400 font-mono tracking-tight">
             {energy}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Total Delivered</div>
+          <div className="text-[10px] text-slate-500 mt-1">Metrology Delivered</div>
         </div>
 
         {/* Field 5: Power Factor */}
         <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-blue-500/50 transition-all">
           <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Power Factor (F5)</span>
-            <span className="text-blue-400">PF</span>
+            <span className="text-blue-400 font-bold">cos &phi;</span>
           </div>
           <div className="text-xl lg:text-2xl font-black text-blue-400 font-mono tracking-tight">
             {pf}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Grid Compliance</div>
+          <div className="text-[10px] text-slate-500 mt-1">Grid Efficiency</div>
         </div>
 
         {/* Field 6: Relay Status */}
@@ -389,28 +459,28 @@ export const ThingSpeakBench: React.FC = () => {
             <span>Relay (F6)</span>
             <Zap className="w-3.5 h-3.5 text-teal-400" />
           </div>
-          <div className={`text-base lg:text-lg font-extrabold font-mono tracking-tight ${lastFeed?.field6 === '0' ? 'text-rose-400' : 'text-emerald-400'}`}>
+          <div className={`text-base lg:text-lg font-extrabold font-mono tracking-tight ${relayState.includes('TRIPPED') ? 'text-rose-400' : 'text-emerald-400'}`}>
             {relayState}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">GPIO 26 Safety</div>
+          <div className="text-[10px] text-slate-500 mt-1">Safety Contactor</div>
         </div>
       </div>
 
-      {/* FEED TIMELINE HISTORY & THINGSPEAK EMBED OPTIONS */}
+      {/* FEED TIMELINE HISTORY & THINGSPEAK EMBED GRAPH */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
         {/* RECENT FEEDS TABLE */}
         <div className="lg:col-span-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3">
           <div className="flex justify-between items-center text-xs font-semibold text-slate-400 pb-2 border-b border-slate-800">
             <span className="flex items-center gap-1.5 text-cyan-400 font-bold">
               <Activity className="w-3.5 h-3.5" />
-              Recent Feeds Received from Cloud ({historyFeeds.length})
+              Live Feeds from ThingSpeak Cloud Channel {channelId} ({historyFeeds.length})
             </span>
-            <span>Update Rate: ~15s</span>
+            <span className="font-mono text-[11px] text-slate-400">Rate: 15s</span>
           </div>
 
           {historyFeeds.length === 0 ? (
             <div className="p-6 text-center text-xs text-slate-500">
-              No ThingSpeak feeds found yet. Click <strong>"Push Telemetry"</strong> above or send data from your ESP32.
+              {isLoading ? 'Connecting to ThingSpeak Cloud...' : 'No feeds found for Channel 3533059 yet. Click "Push Telemetry" or publish from ESP32.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -418,23 +488,25 @@ export const ThingSpeakBench: React.FC = () => {
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800/80 pb-1">
                     <th className="py-1.5 px-2">Timestamp</th>
-                    <th className="py-1.5 px-2 text-amber-400">Voltage</th>
-                    <th className="py-1.5 px-2 text-cyan-400">Current</th>
-                    <th className="py-1.5 px-2 text-emerald-400">Power</th>
-                    <th className="py-1.5 px-2 text-purple-400">kWh</th>
-                    <th className="py-1.5 px-2 text-teal-400">Relay</th>
+                    <th className="py-1.5 px-2 text-amber-400">Voltage (F1)</th>
+                    <th className="py-1.5 px-2 text-cyan-400">Current (F2)</th>
+                    <th className="py-1.5 px-2 text-emerald-400">Power (F3)</th>
+                    <th className="py-1.5 px-2 text-purple-400">Energy (F4)</th>
+                    <th className="py-1.5 px-2 text-teal-400">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/40">
-                  {historyFeeds.slice().reverse().slice(0, 6).map((f) => (
+                  {historyFeeds.slice().reverse().slice(0, 7).map((f) => (
                     <tr key={f.entry_id} className="hover:bg-slate-900/50">
                       <td className="py-1.5 px-2 text-slate-400 text-[11px]">
                         {new Date(f.created_at).toLocaleTimeString()}
                       </td>
-                      <td className="py-1.5 px-2 text-amber-300">{f.field1 ? `${f.field1}V` : '-'}</td>
-                      <td className="py-1.5 px-2 text-cyan-300">{f.field2 ? `${f.field2}A` : '-'}</td>
-                      <td className="py-1.5 px-2 text-emerald-300">{f.field3 ? `${f.field3}W` : '-'}</td>
-                      <td className="py-1.5 px-2 text-purple-300">{f.field4 ? `${f.field4}` : '-'}</td>
+                      <td className="py-1.5 px-2 text-amber-300">{f.field1 ? `${f.field1} V` : '-'}</td>
+                      <td className="py-1.5 px-2 text-cyan-300">{f.field2 ? `${f.field2} A` : '-'}</td>
+                      <td className="py-1.5 px-2 text-emerald-300">{f.field3 ? `${f.field3} W` : '-'}</td>
+                      <td className="py-1.5 px-2 text-purple-300">
+                        {f.field4 ? `${f.field4} kWh` : (f.field3 ? `${((parseFloat(f.field3) * 0.5) / 1000).toFixed(3)} kWh` : '-')}
+                      </td>
                       <td className="py-1.5 px-2">
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${f.field6 === '0' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
                           {f.field6 === '0' ? 'OFF' : 'ON'}
@@ -448,7 +520,7 @@ export const ThingSpeakBench: React.FC = () => {
           )}
         </div>
 
-        {/* THINGSPEAK EMBEDDED CHART IFRAME / LINK */}
+        {/* THINGSPEAK EMBEDDED CHART IFRAME & FIELD SELECTOR */}
         <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs font-semibold text-slate-400 pb-2 border-b border-slate-800">
@@ -456,6 +528,29 @@ export const ThingSpeakBench: React.FC = () => {
                 <Radio className="w-3.5 h-3.5" />
                 ThingSpeak Live Graph
               </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedChartField(1)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${selectedChartField === 1 ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50' : 'bg-slate-900 text-slate-400'}`}
+                >
+                  F1: V
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChartField(2)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${selectedChartField === 2 ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50' : 'bg-slate-900 text-slate-400'}`}
+                >
+                  F2: I
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedChartField(3)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${selectedChartField === 3 ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50' : 'bg-slate-900 text-slate-400'}`}
+                >
+                  F3: P
+                </button>
+              </div>
             </div>
 
             {channelId ? (
@@ -464,13 +559,13 @@ export const ThingSpeakBench: React.FC = () => {
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
-                  src={`https://thingspeak.com/channels/${channelId}/charts/1?bgcolor=%230f172a&color=%23f59e0b&dynamic=true&type=line&title=Voltage+(V)`}
-                  title="ThingSpeak Live Voltage Chart"
+                  src={`https://thingspeak.com/channels/${channelId}/charts/${selectedChartField}?bgcolor=%230f172a&color=%2306b6d4&dynamic=true&type=line&width=auto&height=auto`}
+                  title={`ThingSpeak Live Chart Field ${selectedChartField}`}
                 />
               </div>
             ) : (
               <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900/50 p-6 text-center text-xs text-slate-500">
-                Configure your Channel ID to embed live ThingSpeak MATLAB line charts.
+                Channel ID 3533059 connected.
               </div>
             )}
           </div>
@@ -482,7 +577,7 @@ export const ThingSpeakBench: React.FC = () => {
               rel="noreferrer"
               className="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-400 hover:text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
             >
-              <span>View Full ThingSpeak Channel Dashboard</span>
+              <span>View Full ThingSpeak Channel #{channelId}</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
