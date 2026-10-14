@@ -47,10 +47,7 @@ function sendThingSpeakUpdate() {
     api_key: WRITE_API_KEY,
     field1: voltage,
     field2: current,
-    field3: power.toString(),
-    field4: energyKwh.toFixed(3),
-    field5: pf,
-    field6: relay
+    field3: power.toString()
   });
 
   const url = `https://api.thingspeak.com/update?${queryParams.toString()}`;

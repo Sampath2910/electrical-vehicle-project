@@ -3,16 +3,16 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  Zap, 
-  Wallet, 
-  CreditCard, 
-  Bike, 
-  History, 
-  Plus, 
-  ArrowRight, 
-  Activity, 
-  CheckCircle2, 
+import {
+  Zap,
+  Wallet,
+  CreditCard,
+  Bike,
+  History,
+  Plus,
+  ArrowRight,
+  Activity,
+  CheckCircle2,
   ShieldCheck,
   Receipt,
   Leaf,
@@ -59,7 +59,7 @@ export default function DriverDashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      
+
       {/* Welcome & Wallet Header */}
       <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/20 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xl">
         <div className="space-y-1">
@@ -255,7 +255,7 @@ export default function DriverDashboardPage() {
 
       {/* CARDS GRID: BIKES & TOD SCHEDULE */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
+
         {/* Vehicles summary */}
         <div className="glass-card rounded-3xl p-6 border border-slate-800 bg-slate-900/60 space-y-4 shadow-xl">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">

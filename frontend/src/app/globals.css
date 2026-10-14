@@ -104,7 +104,8 @@
    ULTRA-PREMIUM LIGHT MODE SYSTEM OVERRIDES (.light)
    ========================================================================== */
 
-html.light, html.light body {
+html.light,
+html.light body {
   background-color: #f1f5f9 !important;
   color: #0f172a !important;
 }
@@ -249,3 +250,11 @@ html.light .studio-canvas {
 }
 
 
+/* Light mode inputs */
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}

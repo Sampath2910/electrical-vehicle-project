@@ -4,16 +4,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Zap, 
-  Wallet, 
-  Bell, 
-  User as UserIcon, 
-  ShieldCheck, 
-  Menu, 
-  X, 
-  ChevronDown, 
-  Activity, 
+import {
+  Zap,
+  Wallet,
+  Bell,
+  User as UserIcon,
+  ShieldCheck,
+  Menu,
+  X,
+  ChevronDown,
+  Activity,
   CreditCard,
   Bike,
   History,
@@ -35,18 +35,18 @@ import { useStore } from '@/lib/storeContext';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { 
-    currentUser, 
-    logout, 
-    wallet, 
-    activeSession, 
-    notifications, 
-    theme, 
-    toggleTheme, 
-    soundEnabled, 
-    toggleSound 
+  const {
+    currentUser,
+    logout,
+    wallet,
+    activeSession,
+    notifications,
+    theme,
+    toggleTheme,
+    soundEnabled,
+    toggleSound
   } = useStore();
-  
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -93,16 +93,16 @@ export const Navbar: React.FC = () => {
     { href: '/admin/tariffs', label: 'Tariffs', icon: CreditCard },
   ];
 
-  const currentNavLinks = 
+  const currentNavLinks =
     !mounted || !currentUser
       ? [
-          { href: '/chargers', label: 'Stations & Hubs', icon: Zap },
-          { href: '/auth/login', label: 'Sign In', icon: LogIn },
-        ]
-      : currentUser.role === 'OPERATOR' 
-        ? operatorLinks 
-        : currentUser.role === 'ADMIN' 
-          ? adminLinks 
+        { href: '/chargers', label: 'Stations & Hubs', icon: Zap },
+        { href: '/auth/login', label: 'Sign In', icon: LogIn },
+      ]
+      : currentUser.role === 'OPERATOR'
+        ? operatorLinks
+        : currentUser.role === 'ADMIN'
+          ? adminLinks
           : userLinks;
 
   // Role Accent Colors
@@ -134,11 +134,11 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full transition-colors duration-200">
-      
+
       {/* 1. SLIM HIGH-TECH ACTIVE SESSION TICKER */}
       <AnimatePresence>
         {activeSession && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -157,7 +157,7 @@ export const Navbar: React.FC = () => {
                   <strong className="text-white font-mono">{activeSession.sessionCode}</strong> &bull; {activeSession.energyKwh} kWh Delivered
                 </span>
               </div>
-              <Link 
+              <Link
                 href={`/charging/${activeSession.id}`}
                 className="shrink-0 px-2.5 py-0.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-300 hover:text-white font-semibold text-[11px] transition-all flex items-center gap-1 shadow-sm"
               >
@@ -173,7 +173,7 @@ export const Navbar: React.FC = () => {
       <div className="bg-slate-950/90 dark:bg-slate-950/90 backdrop-blur-2xl border-b border-slate-800/80 shadow-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-3">
-            
+
             {/* BRAND LOGO */}
             <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-cyan-500/20 group-hover:scale-105 transition-transform">
@@ -198,11 +198,10 @@ export const Navbar: React.FC = () => {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                      isActive 
-                        ? 'bg-cyan-500/15 text-cyan-400 ring-1 ring-cyan-500/40 font-bold shadow-sm' 
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${isActive
+                        ? 'bg-cyan-500/15 text-cyan-400 ring-1 ring-cyan-500/40 font-bold shadow-sm'
                         : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-                    }`}
+                      }`}
                   >
                     <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
                     <span>{link.label}</span>
@@ -213,10 +212,10 @@ export const Navbar: React.FC = () => {
 
             {/* RIGHT UTILITY & ACTIONS BAR */}
             <div className="flex items-center gap-2 shrink-0">
-              
+
               {/* WALLET CHIP */}
-              <Link 
-                href="/wallet" 
+              <Link
+                href="/wallet"
                 title="Open EV Wallet & Top-up"
                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/40 transition-all text-xs font-mono font-bold shadow-sm text-slate-200 group"
               >
@@ -225,8 +224,8 @@ export const Navbar: React.FC = () => {
               </Link>
 
               {/* NOTIFICATION BELL */}
-              <Link 
-                href="/notifications" 
+              <Link
+                href="/notifications"
                 title="System Notifications"
                 className="w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-white flex items-center justify-center relative transition-all shadow-sm"
               >
@@ -288,7 +287,7 @@ export const Navbar: React.FC = () => {
                   {/* DROPDOWN MENU */}
                   {roleDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-800 bg-slate-900/95 shadow-2xl p-2.5 z-50 backdrop-blur-2xl animate-fadeIn space-y-2">
-                      
+
                       {/* User Info Header */}
                       <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
                         <div className="flex items-center justify-between">
@@ -359,7 +358,7 @@ export const Navbar: React.FC = () => {
       {/* 3. MOBILE SLIDE-OUT MENU DRAWER */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-b border-slate-800 bg-slate-950/95 backdrop-blur-2xl px-4 py-4 space-y-4 shadow-2xl animate-fadeIn">
-          
+
           {/* Quick Wallet Bar on Mobile */}
           <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -382,11 +381,10 @@ export const Navbar: React.FC = () => {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
-                    isActive 
-                      ? 'bg-cyan-500/15 text-cyan-400 font-bold ring-1 ring-cyan-500/30' 
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors ${isActive
+                      ? 'bg-cyan-500/15 text-cyan-400 font-bold ring-1 ring-cyan-500/30'
                       : 'text-slate-200 hover:bg-slate-900'
-                  }`}
+                    }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
                   <span>{link.label}</span>

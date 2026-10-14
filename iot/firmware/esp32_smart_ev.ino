@@ -51,14 +51,11 @@ void sendThingSpeakTelemetry(float voltage, float current, float power, float en
   if (WiFi.status() == WL_CONNECTED && thingspeakWriteAPIKey.length() > 0) {
     HTTPClient http;
     
-    // Build ThingSpeak REST GET Request URL
+    // Build ThingSpeak REST GET Request URL (Channel 3533059: Field1=Voltage, Field2=Current, Field3=Power)
     String url = String(thingspeak_server) + "?api_key=" + thingspeakWriteAPIKey +
                  "&field1=" + String(voltage, 1) +
                  "&field2=" + String(current, 2) +
-                 "&field3=" + String(power, 0) +
-                 "&field4=" + String(energy, 3) +
-                 "&field5=" + String(pf, 2) +
-                 "&field6=" + String(relayStatus);
+                 "&field3=" + String(power, 0);
 
     http.begin(url);
     int httpResponseCode = http.GET();

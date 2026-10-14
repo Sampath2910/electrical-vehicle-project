@@ -4,20 +4,20 @@ import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Zap, 
-  Clock, 
-  Activity, 
-  ShieldAlert, 
-  ShieldCheck, 
-  AlertTriangle, 
-  CheckCircle2, 
-  StopCircle, 
-  FileText, 
-  MapPin, 
-  Leaf, 
-  Navigation, 
-  QrCode, 
+import {
+  Zap,
+  Clock,
+  Activity,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
+  CheckCircle2,
+  StopCircle,
+  FileText,
+  MapPin,
+  Leaf,
+  Navigation,
+  QrCode,
   AlertCircle,
   TrendingUp,
   Siren,
@@ -32,10 +32,10 @@ import { Measurement } from '@/types/ev';
 export default function LiveChargingPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { 
-    activeSession, 
-    historySessions, 
-    stopChargingSession, 
+  const {
+    activeSession,
+    historySessions,
+    stopChargingSession,
     playSound,
     isEvictionWarningActive,
     evictionCountdown,
@@ -44,8 +44,8 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
     yieldEmergencyBay
   } = useStore();
 
-  const currentSession = activeSession?.id === resolvedParams.sessionId 
-    ? activeSession 
+  const currentSession = activeSession?.id === resolvedParams.sessionId
+    ? activeSession
     : historySessions.find(s => s.id === resolvedParams.sessionId) || activeSession;
 
   const todInfo = getCurrentToDSlot();
@@ -141,7 +141,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
   const co2SavedKg = +(liveMeasurement.energyKwh * 0.85).toFixed(2);
   // EV Bike efficiency: ~38 km per kWh
   const rangeAddedKm = Math.round(liveMeasurement.energyKwh * 38);
-  
+
   // Dynamic SoC for Indian 2-wheeler pack (~3.7 kWh pack size)
   const initialSoc = 22;
   const packCapacityKwh = 3.7;
@@ -154,16 +154,16 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6"
     >
-      
+
       {/* PDF SECTION 2: 120-SECOND EMERGENCY PREEMPTION EVICTION BANNER */}
       <AnimatePresence>
         {isEvictionWarningActive && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -274,11 +274,10 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           {/* Off-Peak Slot */}
-          <div className={`p-3 rounded-2xl border transition-all ${
-            todInfo.slotCode === 'S_1' 
-              ? 'bg-cyan-500/20 border-cyan-400 glow-cyan text-white' 
+          <div className={`p-3 rounded-2xl border transition-all ${todInfo.slotCode === 'S_1'
+              ? 'bg-cyan-500/20 border-cyan-400 glow-cyan text-white'
               : 'bg-slate-950/60 border-slate-800 text-slate-400'
-          }`}>
+            }`}>
             <div className="flex items-center justify-between mb-1">
               <span className="font-bold text-[11px]">S_1: Normal / Off-Peak</span>
               <span className="font-mono font-extrabold text-cyan-300">₹8.00 / kWh</span>
@@ -288,11 +287,10 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
           </div>
 
           {/* Standard Slot */}
-          <div className={`p-3 rounded-2xl border transition-all ${
-            todInfo.slotCode === 'S_2' 
-              ? 'bg-cyan-500/20 border-cyan-400 glow-cyan text-white' 
+          <div className={`p-3 rounded-2xl border transition-all ${todInfo.slotCode === 'S_2'
+              ? 'bg-cyan-500/20 border-cyan-400 glow-cyan text-white'
               : 'bg-slate-950/60 border-slate-800 text-slate-400'
-          }`}>
+            }`}>
             <div className="flex items-center justify-between mb-1">
               <span className="font-bold text-[11px]">S_2: Mid / Standard</span>
               <span className="font-mono font-extrabold text-cyan-300">₹10.50 / kWh</span>
@@ -302,11 +300,10 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
           </div>
 
           {/* Peak Slot */}
-          <div className={`p-3 rounded-2xl border transition-all ${
-            todInfo.slotCode === 'S_3' 
-              ? 'bg-cyan-500/20 border-cyan-400 glow-cyan text-white' 
+          <div className={`p-3 rounded-2xl border transition-all ${todInfo.slotCode === 'S_3'
+              ? 'bg-cyan-500/20 border-cyan-400 glow-cyan text-white'
               : 'bg-slate-950/60 border-slate-800 text-slate-400'
-          }`}>
+            }`}>
             <div className="flex items-center justify-between mb-1">
               <span className="font-bold text-[11px]">S_3: Evening Peak</span>
               <span className="font-mono font-extrabold text-cyan-300">₹14.00 / kWh</span>
@@ -346,7 +343,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
 
         {/* Animated Progress Bar */}
         <div className="w-full bg-slate-950 h-5 rounded-full p-1 border border-slate-800 relative overflow-hidden">
-          <div 
+          <div
             className="h-full rounded-full bg-gradient-to-r from-blue-600 via-cyan-400 to-emerald-400 transition-all duration-700 relative"
             style={{ width: `${currentSoc}%` }}
           >
@@ -373,7 +370,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
 
       {/* PDF SECTION 3: POWER QUALITY METRICS ROW */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        
+
         {/* Power Factor */}
         <div className="glass-card rounded-2xl p-4 border border-slate-800 bg-slate-900/60">
           <div className="flex items-center justify-between mb-1">
@@ -410,7 +407,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
 
       {/* PRIMARY SESSION COUNTERS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        
+
         {/* ENERGY CONSUMED */}
         <div className="glass-card rounded-2xl p-5 border border-slate-800 bg-slate-900/60">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">Total Energy Delivered</span>
@@ -445,7 +442,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
 
       {/* ECO FOOTPRINT & TWO-WHEELER DRIVING RANGE ADDED */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
+
         {/* CO2 Saved */}
         <div className="glass-card rounded-2xl p-5 border border-emerald-500/30 bg-emerald-950/20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -492,7 +489,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
             </h3>
             <p className="text-[10px] text-slate-500 mt-0.5">Continuous firmware protection loop polling at 1000 Hz</p>
           </div>
-          
+
           <button
             onClick={handleSimulateSurge}
             className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 transition-all"

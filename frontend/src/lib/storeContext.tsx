@@ -1,31 +1,31 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  User, 
-  Charger, 
-  ChargingSession, 
-  Wallet, 
-  WalletTransaction, 
-  RfidCard, 
-  Vehicle, 
-  Fault, 
-  NotificationItem, 
+import {
+  User,
+  Charger,
+  ChargingSession,
+  Wallet,
+  WalletTransaction,
+  RfidCard,
+  Vehicle,
+  Fault,
+  NotificationItem,
   Tariff,
   Bill
 } from '@/types/ev';
-import { 
-  mockUsers, 
-  mockChargers, 
-  mockSessions, 
-  mockWallet, 
-  mockWalletTransactions, 
-  mockRfidCards, 
-  mockVehicles, 
-  mockFaults, 
-  mockNotifications, 
-  mockTariffs, 
-  mockBills 
+import {
+  mockUsers,
+  mockChargers,
+  mockSessions,
+  mockWallet,
+  mockWalletTransactions,
+  mockRfidCards,
+  mockVehicles,
+  mockFaults,
+  mockNotifications,
+  mockTariffs,
+  mockBills
 } from './mockData';
 import { getCurrentToDSlot } from './providers';
 
@@ -34,28 +34,28 @@ interface StoreContextType {
   setCurrentUser: (user: User | null) => void;
   logout: () => void;
   switchRole: (role: 'USER' | 'OPERATOR' | 'ADMIN') => void;
-  
+
   theme: 'dark' | 'light';
   toggleTheme: () => void;
-  
+
   soundEnabled: boolean;
   toggleSound: () => void;
   playSound: (type: 'beep' | 'success' | 'alert' | 'start' | 'alarm') => void;
-  
+
   chargers: Charger[];
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
   updateChargerRating: (chargerId: string, rating: number) => void;
-  
+
   activeSession: ChargingSession | null;
   historySessions: ChargingSession[];
   startChargingSession: (
-    chargerId: string, 
-    paymentMethod?: 'QR_UPI' | 'RFID_WALLET', 
+    chargerId: string,
+    paymentMethod?: 'QR_UPI' | 'RFID_WALLET',
     vehicleId?: string,
     isPriorityBayConsentGiven?: boolean
   ) => Promise<ChargingSession>;
   stopChargingSession: (sessionId: string, penaltyApplies?: boolean) => Promise<ChargingSession>;
-  
+
   // PDF Section 2: Priority Preemption Protocol (120-second eviction)
   isEvictionWarningActive: boolean;
   evictionCountdown: number;
@@ -67,24 +67,24 @@ interface StoreContextType {
   wallet: Wallet;
   walletTransactions: WalletTransaction[];
   topUpWallet: (amount: number) => Promise<void>;
-  
+
   rfidCards: RfidCard[];
   toggleRfidBlock: (cardId: string) => Promise<void>;
   addRfidCard: (identifier: string) => void;
-  
+
   vehicles: Vehicle[];
   addVehicle: (vehicle: Omit<Vehicle, 'id' | 'userId' | 'createdAt'>) => void;
-  
+
   tariffs: Tariff[];
   updateTariff: (tariffId: string, price: number) => void;
-  
+
   bills: Bill[];
   faults: Fault[];
   resolveFault: (faultId: string) => void;
-  
+
   notifications: NotificationItem[];
   markNotificationRead: (id: string) => void;
-  
+
   dataMode: 'mock' | 'real';
 }
 
@@ -303,8 +303,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const startChargingSession = async (
-    chargerId: string, 
-    _paymentMethod?: 'QR_UPI' | 'RFID_WALLET', 
+    chargerId: string,
+    _paymentMethod?: 'QR_UPI' | 'RFID_WALLET',
     vehicleId?: string,
     isPriorityBayConsentGiven?: boolean
   ): Promise<ChargingSession> => {
@@ -320,7 +320,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Rate: Current ToD rate (+ ₹8.00/kWh Premium if Priority Bay)
     const effectiveRate = isPriority ? +(todInfo.baseRate + 8.00).toFixed(2) : todInfo.baseRate;
-    const todSlotDesc = isPriority 
+    const todSlotDesc = isPriority
       ? `S_VIP: Priority Bay (${todInfo.slotName} ₹${todInfo.baseRate.toFixed(2)} + ₹8.00 Premium)`
       : `${todInfo.slotCode}: ${todInfo.slotName} (${todInfo.timeWindow})`;
 
@@ -373,7 +373,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const endTime = new Date().toISOString();
     const finalEnergy = +(targetSession.energyKwh + 0.4).toFixed(2);
-    
+
     // PDF Section 6 Official Billing Formula:
     // Total Billed Amount = (Energy kWh Delivered × ToD Rate) + Service Fee + 18% GST (+ Penalty)
     const energySubtotal = +(finalEnergy * targetSession.tariffRate).toFixed(2);

@@ -162,7 +162,7 @@ export const ThingSpeakBench: React.FC = () => {
     const relay = '1';
 
     try {
-      const url = `https://api.thingspeak.com/update?api_key=${activeWriteKey}&field1=${v}&field2=${i}&field3=${p}&field4=${kwh}&field5=${pf}&field6=${relay}`;
+      const url = `https://api.thingspeak.com/update?api_key=${activeWriteKey}&field1=${v}&field2=${i}&field3=${p}`;
       
       const res = await fetch(url);
       const entryId = await res.text();

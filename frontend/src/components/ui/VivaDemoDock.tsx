@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  Zap, 
-  RefreshCw, 
-  CreditCard, 
-  Cpu, 
-  ChevronUp, 
-  ChevronDown, 
-  Sparkles, 
+import {
+  Zap,
+  RefreshCw,
+  CreditCard,
+  Cpu,
+  ChevronUp,
+  ChevronDown,
+  Sparkles,
   CheckCircle2,
   X
 } from 'lucide-react';
@@ -45,7 +45,7 @@ export const VivaDemoDock: React.FC = () => {
     <>
       {/* FLOATING ACTION DOCK AT BOTTOM */}
       <aside aria-label="Viva Quick Demo Bar" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-2xl">
-        
+
         {/* FLASH ALERT NOTIFICATION */}
         {alertNotice && (
           <div className="mb-2 p-3 rounded-2xl bg-rose-500/90 border border-rose-400 text-white text-xs font-semibold shadow-2xl flex items-center justify-between backdrop-blur-md animate-bounce">
@@ -57,9 +57,9 @@ export const VivaDemoDock: React.FC = () => {
         )}
 
         <div className="glass-card rounded-2xl border border-cyan-500/40 bg-slate-950/90 shadow-2xl backdrop-blur-2xl p-2.5 transition-all">
-          
+
           <div className="flex items-center justify-between gap-2">
-            
+
             {/* Title / Expand Pill */}
             <div className="flex items-center gap-2 pl-2">
               <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-400/40 flex items-center justify-center shrink-0">
@@ -73,7 +73,7 @@ export const VivaDemoDock: React.FC = () => {
 
             {/* Quick Demo Buttons */}
             <div className="flex items-center gap-1.5">
-              
+
               <button
                 type="button"
                 onClick={handleQuickCharge}
