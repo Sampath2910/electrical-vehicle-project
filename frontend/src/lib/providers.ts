@@ -215,8 +215,8 @@ export class ThingSpeakTelemetryProvider implements TelemetryProvider {
       const jitterV = +(Math.sin(Date.now() / 1500) * 0.35 + (Math.random() * 0.2 - 0.1)).toFixed(1);
       const jitterA = +(Math.cos(Date.now() / 2000) * 0.08 + (Math.random() * 0.04 - 0.02)).toFixed(2);
       
-      const voltage = +(this.latestFeed.v + parseFloat(jitterV)).toFixed(1);
-      const current = +(this.latestFeed.i + parseFloat(jitterA)).toFixed(2);
+      const voltage = +(this.latestFeed.v + jitterV).toFixed(1);
+      const current = +(this.latestFeed.i + jitterA).toFixed(2);
       const powerW = Math.round(voltage * current * (this.latestFeed.pf || 0.98));
       const powerKw = powerW / 1000;
       

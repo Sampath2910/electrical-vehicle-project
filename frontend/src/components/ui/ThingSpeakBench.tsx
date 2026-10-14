@@ -135,8 +135,8 @@ export const ThingSpeakBench: React.FC = () => {
         setSecondsSinceSync(0);
         
         if (isManual) {
-          setPublishSuccessMsg(`Synced with ThingSpeak Channel #${activeChannel}! Showing latest Entry #${latest.entry_id} (V=${latest.field1}V, I=${latest.field2}A, P=${latest.field3}W).`);
-          setTimeout(() => setPublishSuccessMsg(null), 5000);
+          setPublishSuccessMsg(`Synced with ThingSpeak Channel #${activeChannel}! Showing latest Entry #${latest.entry_id} (V=${latest.field1}V, I=${latest.field2}A, P=${latest.field3}W). Note: To see changing numbers, run your MATLAB streaming loop or publisher.`);
+          setTimeout(() => setPublishSuccessMsg(null), 7000);
         }
       } else {
         setLastFeed(null);
@@ -604,6 +604,41 @@ export const ThingSpeakBench: React.FC = () => {
         </div>
       </div>
 
+      {/* CONTINUOUS STREAMING GUIDANCE BANNER */}
+      <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-slate-950 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mt-0.5">
+            <Activity className="w-4 h-4 animate-pulse" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-100 flex items-center gap-2">
+              <span>Continuous Live Telemetry Status</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono">
+                ThingSpeak Rate Limit: 15s
+              </span>
+            </h4>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              ThingSpeak cloud updates when your MATLAB script or ESP32 publishes new data. To stream continuous entries:
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <code className="text-[11px] font-mono bg-slate-950 border border-slate-800 text-amber-300 px-2 py-1 rounded-md">
+                MATLAB: run('iot/simulator/thingspeak_continuous_stream.m')
+              </code>
+              <code className="text-[11px] font-mono bg-slate-950 border border-slate-800 text-cyan-300 px-2 py-1 rounded-md">
+                Terminal: node iot/simulator/thingspeak_publisher.js
+              </code>
+            </div>
+          </div>
+        </div>
+
+        <a
+          href="/charging/ses-active-01"
+          className="shrink-0 px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-cyan-500/20"
+        >
+          <Zap className="w-3.5 h-3.5" />
+          <span>View 1Hz Live Cockpit</span>
+        </a>
+      </div>
     </div>
   );
 };
