@@ -34,9 +34,10 @@ export default function ChargersPage() {
   const assignedStationId = currentUser?.assignedStationId;
 
   const filteredChargers = chargers.filter(charger => {
-    const matchesSearch = charger.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          charger.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          charger.chargerCode.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = (charger.name || '').toLowerCase().includes(q) || 
+                          (charger.location || '').toLowerCase().includes(q) ||
+                          (charger.chargerCode || '').toLowerCase().includes(q);
     
     const matchesStatus = statusFilter === 'ALL' || charger.status === statusFilter;
     

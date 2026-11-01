@@ -116,17 +116,30 @@ export interface ChargingSession {
   paymentStatus?: 'PENDING' | 'AUTHORIZED' | 'SUCCESS' | 'FAILED';
 }
 
+export interface TariffCondition {
+  id: string;
+  name: string;
+  type: 'HOLIDAY' | 'FESTIVAL' | 'CELEBRATION' | 'WEEKEND' | 'CUSTOM';
+  dateRange: string;
+  timeWindowOverride: string;
+  adjustedPricePerKwh: number;
+  discountPercent?: number;
+  isActive: boolean;
+  notes?: string;
+}
+
 export interface Tariff {
   id: string;
   name: string;
-  slotCode: 'S_1' | 'S_2' | 'S_3' | 'S_VIP';
+  slotCode: 'S_1' | 'S_2' | 'S_3' | 'S_VIP' | string;
   slotName: string; // e.g. "Normal / Off-Peak", "Mid / Standard", "Peak"
   timeWindow: string; // e.g. "10:00 PM to 06:00 AM"
-  pricePerKwh: number; // ₹8.00, ₹10.50, ₹14.00, or Current ToD + ₹8.00
+  pricePerKwh: number; // ₹7.50, ₹10.50, ₹14.00, or Current ToD + ₹8.00
   effectiveFrom: string;
   effectiveTo?: string;
   logic: string;
   status: 'ACTIVE' | 'INACTIVE';
+  conditions?: TariffCondition[];
 }
 
 export interface Bill {

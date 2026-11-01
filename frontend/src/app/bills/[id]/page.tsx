@@ -11,6 +11,18 @@ export default function DetailedBillPage({ params }: { params: Promise<{ id: str
 
   const bill = bills.find(b => b.id === resolvedParams.id || b.billNumber === resolvedParams.id) || bills[0];
 
+  if (!bill) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-4">
+        <h2 className="text-xl font-bold text-white">Invoice Not Found</h2>
+        <p className="text-xs text-slate-400">The requested invoice ID could not be retrieved.</p>
+        <Link href="/bills" className="px-4 py-2 bg-cyan-500 text-navy-950 text-xs font-bold rounded-xl inline-block">
+          Return to Invoices
+        </Link>
+      </div>
+    );
+  }
+
   const energyCost = bill.energyCost ?? (bill.energyKwh * bill.tariffRate);
   const serviceFee = bill.serviceFee ?? 5.00;
   const gstAmount = bill.gstAmount ?? ((energyCost + serviceFee) * 0.18);

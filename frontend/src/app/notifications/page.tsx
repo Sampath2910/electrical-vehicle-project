@@ -16,10 +16,10 @@ export default function NotificationsPage() {
       </div>
 
       <div className="space-y-3">
-        {notifications.length === 0 ? (
+        {(notifications || []).length === 0 ? (
           <p className="text-xs text-slate-500">No notifications yet.</p>
         ) : (
-          notifications.map((n) => (
+          (notifications || []).map((n) => (
             <div 
               key={n.id} 
               onClick={() => markNotificationRead(n.id)}

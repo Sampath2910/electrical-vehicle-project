@@ -1,4 +1,13 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-navy-700: #1e293b;
+  --color-navy-800: #0f172a;
+  --color-navy-850: #0c1322;
+  --color-navy-900: #080e1a;
+  --color-navy-950: #040711;
+}
 
 @layer base {
   :root {
@@ -98,6 +107,98 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.45);
+}
+
+/* ==========================================================================
+   ULTRA-PREMIUM DARK MODE SYSTEM OVERRIDES (.dark)
+   ========================================================================== */
+
+html.dark,
+html.dark body {
+  background-color: #060b14 !important;
+  color: #f8fafc !important;
+}
+
+/* Base Surface & Glass Card Styling in Dark Mode */
+html.dark .glass-card {
+  background-color: #0c1322 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Remap any cards with bg-white to sleek dark obsidian cards in Dark Mode */
+html.dark .bg-white {
+  background-color: #0c1322 !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+/* Secondary nested containers & pills in Dark Mode */
+html.dark .bg-slate-50,
+html.dark .bg-slate-100 {
+  background-color: #070c18 !important;
+  border-color: #1e293b !important;
+}
+
+/* Text Hierarchy in Dark Mode */
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700 {
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* Border Overrides in Dark Mode */
+html.dark .border-slate-200,
+html.dark .border-slate-300 {
+  border-color: #1e293b !important;
+}
+
+/* Form Inputs, Selects & Modals in Dark Mode */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #060a14 !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+html.dark option {
+  background-color: #0c1322 !important;
+  color: #f8fafc !important;
+}
+
+/* Contrast Preservation for Buttons with Dark Text on Light/Accent Colors */
+html.dark .text-navy-950,
+.text-navy-950 {
+  color: #040711 !important;
+}
+
+/* Table Enhancements in Dark Mode */
+html.dark table th {
+  color: #94a3b8 !important;
+  background-color: #080d18 !important;
+  border-color: #1e293b !important;
+}
+
+html.dark table td {
+  border-color: #1e293b !important;
+}
+
+html.dark table tbody tr:hover {
+  background-color: #0f182c !important;
 }
 
 /* ==========================================================================

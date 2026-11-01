@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { DollarSign, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 

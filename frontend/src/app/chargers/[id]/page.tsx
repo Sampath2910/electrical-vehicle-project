@@ -25,6 +25,18 @@ export default function ChargerDetailsPage({ params }: { params: Promise<{ id: s
 
   const charger = chargers.find(c => c.id === resolvedParams.id || c.chargerCode === resolvedParams.id) || chargers[0];
 
+  if (!charger) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-4">
+        <h2 className="text-xl font-bold text-white">Charger Station Not Found</h2>
+        <p className="text-xs text-slate-400">The requested station could not be found or is loading.</p>
+        <Link href="/chargers" className="inline-block px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-bold">
+          Return to Stations List
+        </Link>
+      </div>
+    );
+  }
+
   const isOperator = currentUser?.role === 'OPERATOR';
   const assignedStationId = currentUser?.assignedStationId;
   const isOwnStation = isOperator && (charger.id === assignedStationId || charger.chargerCode === assignedStationId);

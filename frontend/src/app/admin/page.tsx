@@ -7,7 +7,7 @@ import {
   Zap, 
   Activity, 
   ShieldAlert, 
-  DollarSign, 
+  IndianRupee, 
   BarChart3, 
   Users, 
   Sliders, 
@@ -130,7 +130,7 @@ export default function AdminOperationsDashboard() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Fleet Revenue</span>
             <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <DollarSign className="w-5 h-5" />
+              <IndianRupee className="w-5 h-5" />
             </div>
           </div>
           <div className="text-3xl font-extrabold text-white mt-3 font-mono">
@@ -222,11 +222,11 @@ export default function AdminOperationsDashboard() {
                   </td>
 
                   <td className="py-4 px-3 text-right font-mono font-bold text-cyan-400">
-                    {st.stationEnergyKwh.toFixed(2)} kWh
+                    {(st.stationEnergyKwh ?? 0).toFixed(2)} kWh
                   </td>
 
                   <td className="py-4 px-3 text-right font-mono font-extrabold text-emerald-400 text-sm">
-                    ₹{st.stationRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    ₹{(st.stationRevenue ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </td>
 
                   <td className="py-4 px-3 text-center">

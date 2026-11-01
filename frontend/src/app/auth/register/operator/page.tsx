@@ -9,7 +9,7 @@ import { Charger } from '@/types/ev';
 
 export default function OperatorRegisterPage() {
   const router = useRouter();
-  const { setCurrentUser } = useStore();
+  const { currentUser, setCurrentUser } = useStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -59,8 +59,12 @@ export default function OperatorRegisterPage() {
         throw new Error(data.error || 'Failed to register operator.');
       }
 
-      setCurrentUser(data.user);
-      router.push('/operator');
+      if (currentUser?.role === 'ADMIN') {
+        router.push('/admin/operators');
+      } else {
+        setCurrentUser(data.user);
+        router.push('/operator');
+      }
     } catch (err: any) {
       setError(err.message || 'Operator registration failed.');
     } finally {
@@ -195,9 +199,9 @@ export default function OperatorRegisterPage() {
             disabled={loading}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-orange-400 text-navy-950 font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {loading ? 'Binding Station & Registering...' : (
+            {loading ? 'Saving Operator & Binding...' : (
               <>
-                <span>Bind Station & Activate Operator</span>
+                <span>Save Operator & Activate Account</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

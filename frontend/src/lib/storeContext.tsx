@@ -12,6 +12,7 @@ import {
   Fault,
   NotificationItem,
   Tariff,
+  TariffCondition,
   Bill
 } from '@/types/ev';
 import {
@@ -76,7 +77,14 @@ interface StoreContextType {
   addVehicle: (vehicle: Omit<Vehicle, 'id' | 'userId' | 'createdAt'>) => void;
 
   tariffs: Tariff[];
-  updateTariff: (tariffId: string, price: number) => void;
+  updateTariff: (tariffId: string, updates: Partial<Tariff> | number) => void;
+  addTariffCondition: (tariffId: string, condition: TariffCondition) => void;
+  updateTariffCondition: (tariffId: string, conditionId: string, updates: Partial<TariffCondition>) => void;
+  deleteTariffCondition: (tariffId: string, conditionId: string) => void;
+  toggleTariffCondition: (tariffId: string, conditionId: string) => void;
+  addTariff: (tariff: Tariff) => void;
+  deleteTariff: (tariffId: string) => void;
+  resetTariffsToDefault: () => void;
 
   bills: Bill[];
   faults: Fault[];
@@ -104,6 +112,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
   const [chargers, setChargers] = useState<Charger[]>(mockChargers);
+
+  useEffect(() => {
+    fetch('/api/stations')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.success && Array.isArray(data.stations) && data.stations.length > 0) {
+          setChargers(data.stations);
+        }
+      })
+      .catch(err => {
+        console.warn('Live station sync notice: fallback to local dataset', err);
+      });
+  }, []);
   const [sessions, setSessions] = useState<ChargingSession[]>(mockSessions);
   const [wallet, setWallet] = useState<Wallet>(mockWallet);
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>(mockWalletTransactions);
@@ -318,11 +339,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const todInfo = getCurrentToDSlot();
     const isPriority = charger.isPriorityBay || false;
 
+    // Check tariffs state for dynamically adjusted base rate
+    const activeTariff = tariffs.find(t => t.slotCode === todInfo.slotCode);
+    let effectiveBaseRate = activeTariff ? activeTariff.pricePerKwh : todInfo.baseRate;
+    let slotDisplayName = activeTariff ? activeTariff.slotName : todInfo.slotName;
+
+    // Check if Slot 1 has active occasion conditional parameter
+    if (todInfo.slotCode === 'S_1' && activeTariff?.conditions) {
+      const activeCondition = activeTariff.conditions.find(c => c.isActive);
+      if (activeCondition) {
+        effectiveBaseRate = activeCondition.adjustedPricePerKwh;
+        slotDisplayName = `${activeTariff.slotName} (${activeCondition.name})`;
+      }
+    }
+
     // Rate: Current ToD rate (+ ₹8.00/kWh Premium if Priority Bay)
-    const effectiveRate = isPriority ? +(todInfo.baseRate + 8.00).toFixed(2) : todInfo.baseRate;
+    const effectiveRate = isPriority ? +(effectiveBaseRate + 8.00).toFixed(2) : effectiveBaseRate;
     const todSlotDesc = isPriority
-      ? `S_VIP: Priority Bay (${todInfo.slotName} ₹${todInfo.baseRate.toFixed(2)} + ₹8.00 Premium)`
-      : `${todInfo.slotCode}: ${todInfo.slotName} (${todInfo.timeWindow})`;
+      ? `S_VIP: Priority Bay (${slotDisplayName} ₹${effectiveBaseRate.toFixed(2)} + ₹8.00 Premium)`
+      : `${todInfo.slotCode}: ${slotDisplayName} (${activeTariff?.timeWindow || todInfo.timeWindow})`;
 
     const newSession: ChargingSession = {
       id: `ses-${Date.now()}`,
@@ -491,9 +526,68 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     playSound('success');
   };
 
-  const updateTariff = (tariffId: string, price: number) => {
-    setTariffs(prev => prev.map(t => t.id === tariffId ? { ...t, pricePerKwh: price } : t));
+  const updateTariff = (tariffId: string, updateOrPrice: number | Partial<Tariff>) => {
+    setTariffs(prev => prev.map(t => {
+      if (t.id !== tariffId) return t;
+      if (typeof updateOrPrice === 'number') {
+        return { ...t, pricePerKwh: updateOrPrice };
+      }
+      return { ...t, ...updateOrPrice };
+    }));
     playSound('beep');
+  };
+
+  const addTariffCondition = (tariffId: string, condition: TariffCondition) => {
+    setTariffs(prev => prev.map(t => {
+      if (t.id !== tariffId) return t;
+      const conditions = t.conditions ? [...t.conditions, condition] : [condition];
+      return { ...t, conditions };
+    }));
+    playSound('success');
+  };
+
+  const updateTariffCondition = (tariffId: string, conditionId: string, updates: Partial<TariffCondition>) => {
+    setTariffs(prev => prev.map(t => {
+      if (t.id !== tariffId) return t;
+      const conditions = (t.conditions || []).map(c => c.id === conditionId ? { ...c, ...updates } : c);
+      return { ...t, conditions };
+    }));
+    playSound('beep');
+  };
+
+  const deleteTariffCondition = (tariffId: string, conditionId: string) => {
+    setTariffs(prev => prev.map(t => {
+      if (t.id !== tariffId) return t;
+      const conditions = (t.conditions || []).filter(c => c.id !== conditionId);
+      return { ...t, conditions };
+    }));
+    playSound('beep');
+  };
+
+  const toggleTariffCondition = (tariffId: string, conditionId: string) => {
+    setTariffs(prev => prev.map(t => {
+      if (t.id !== tariffId) return t;
+      const conditions = (t.conditions || []).map(c => 
+        c.id === conditionId ? { ...c, isActive: !c.isActive } : c
+      );
+      return { ...t, conditions };
+    }));
+    playSound('beep');
+  };
+
+  const addTariff = (newTariff: Tariff) => {
+    setTariffs(prev => [...prev, newTariff]);
+    playSound('success');
+  };
+
+  const deleteTariff = (tariffId: string) => {
+    setTariffs(prev => prev.filter(t => t.id !== tariffId));
+    playSound('beep');
+  };
+
+  const resetTariffsToDefault = () => {
+    setTariffs(mockTariffs);
+    playSound('success');
   };
 
   const resolveFault = (faultId: string) => {
@@ -543,6 +637,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addVehicle,
       tariffs,
       updateTariff,
+      addTariffCondition,
+      updateTariffCondition,
+      deleteTariffCondition,
+      toggleTariffCondition,
+      addTariff,
+      deleteTariff,
+      resetTariffsToDefault,
       bills,
       faults,
       resolveFault,

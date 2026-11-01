@@ -38,7 +38,7 @@ export default function ProfilePage() {
       <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-800 bg-navy-900/80 space-y-6">
         <div className="flex items-center gap-4 pb-6 border-b border-slate-800">
           <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-300 font-extrabold text-2xl">
-            {currentUser.name[0]}
+            {currentUser.name ? currentUser.name.charAt(0) : 'U'}
           </div>
           <div>
             <h2 className="text-xl font-bold text-white">{currentUser.name}</h2>

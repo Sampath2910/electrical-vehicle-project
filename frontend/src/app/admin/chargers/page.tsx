@@ -10,7 +10,17 @@ import { ChargerStatus } from '@/types/ev';
 
 export default function AdminChargersPage() {
   const router = useRouter();
-  const { chargers, updateChargerStatus, updateChargerRating, currentUser } = useStore();
+  const { chargers, updateChargerRating, currentUser } = useStore();
+
+  // Local state for operational status overrides in this block only (not applied all over the web)
+  const [localStatuses, setLocalStatuses] = useState<Record<string, ChargerStatus>>({});
+
+  const handleStatusChange = (chargerId: string, newStatus: ChargerStatus) => {
+    setLocalStatuses(prev => ({
+      ...prev,
+      [chargerId]: newStatus,
+    }));
+  };
 
   useEffect(() => {
     if (!currentUser) {
@@ -38,72 +48,89 @@ export default function AdminChargersPage() {
       
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Fleet Charger Manager</h1>
-          <p className="text-slate-400 text-xs mt-1">Configure status, power ratings, and hardware overrides</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Fleet Charger Manager</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">Configure status, power ratings, and hardware overrides</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {chargers.map((c) => (
-          <div key={c.id} className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 flex flex-col justify-between space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-mono font-bold text-cyan-400">{c.chargerCode}</span>
-                <StatusBadge status={c.status} size="sm" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-1">{c.name}</h3>
-              <p className="text-xs text-slate-400 truncate">{c.location}</p>
+        {chargers.map((c) => {
+          // Operational status is updated in this block only and not propagated globally
+          const currentStatus = localStatuses[c.id] || c.status;
 
-              <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-800 my-3 text-xs">
-                <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold block mb-1">Rating</span>
-                  <select
-                    value={c.powerRating}
-                    onChange={(e) => updateChargerRating(c.id, Number(e.target.value))}
-                    className="w-full bg-navy-950 border border-slate-700 hover:border-cyan-400 focus:border-cyan-400 rounded-xl px-2.5 py-1.5 text-xs text-white font-bold font-mono transition-colors cursor-pointer"
-                  >
-                    <option value={1}>1 kW</option>
-                    <option value={3.3}>3.3 kW</option>
-                    <option value={7}>7 kW</option>
-                    <option value={12}>12 kW</option>
-                  </select>
+          return (
+            <div 
+              key={c.id} 
+              className="rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/90 shadow-xl flex flex-col justify-between space-y-4"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono font-bold text-cyan-600 dark:text-cyan-400">{c.chargerCode}</span>
+                  <StatusBadge status={currentStatus} size="sm" />
                 </div>
-                <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold block mb-1">Tariff</span>
-                  <div className="py-1.5 font-bold text-cyan-400 font-mono text-xs">
-                    ₹{c.pricePerKwh}/kWh
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">{c.name}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{c.location}</p>
+
+                <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-200 dark:border-slate-800 my-3 text-xs">
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-bold block mb-1">Rating</span>
+                    <select
+                      value={c.powerRating}
+                      onChange={(e) => updateChargerRating(c.id, Number(e.target.value))}
+                      className="w-full bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-700 hover:border-cyan-400 focus:border-cyan-400 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white font-bold font-mono transition-colors cursor-pointer"
+                    >
+                      <option value={1}>1 kW</option>
+                      <option value={3.3}>3.3 kW</option>
+                      <option value={7}>7 kW</option>
+                      <option value={12}>12 kW</option>
+                    </select>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-bold block mb-1">Tariff</span>
+                    <div className="py-1.5 font-bold text-cyan-600 dark:text-cyan-400 font-mono text-xs">
+                      ₹{c.pricePerKwh}/kWh
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Quick Status Override selector */}
-            <div className="space-y-2 pt-2 border-t border-slate-800">
-              <label className="text-[10px] uppercase font-bold text-slate-400 block">Override Operational Status</label>
-              <select
-                value={c.status}
-                onChange={(e) => updateChargerStatus(c.id, e.target.value as ChargerStatus)}
-                className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold"
-              >
-                <option value="AVAILABLE">AVAILABLE</option>
-                <option value="PREPARING">PREPARING</option>
-                <option value="CONNECTED">CONNECTED</option>
-                <option value="CHARGING">CHARGING</option>
-                <option value="PAUSED">PAUSED</option>
-                <option value="MAINTENANCE">MAINTENANCE</option>
-                <option value="FAULT">FAULT</option>
-                <option value="OFFLINE">OFFLINE</option>
-              </select>
+              {/* Quick Status Override selector (updates in this block only) */}
+              <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
+                    Override Operational Status
+                  </label>
+                  {localStatuses[c.id] && localStatuses[c.id] !== c.status && (
+                    <span className="text-[9px] font-mono text-amber-500 font-bold px-1.5 py-0.5 rounded bg-amber-500/10">
+                      Block Override
+                    </span>
+                  )}
+                </div>
+                <select
+                  value={currentStatus}
+                  onChange={(e) => handleStatusChange(c.id, e.target.value as ChargerStatus)}
+                  className="w-full bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-semibold cursor-pointer focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="AVAILABLE">AVAILABLE</option>
+                  <option value="PREPARING">PREPARING</option>
+                  <option value="CONNECTED">CONNECTED</option>
+                  <option value="CHARGING">CHARGING</option>
+                  <option value="PAUSED">PAUSED</option>
+                  <option value="MAINTENANCE">MAINTENANCE</option>
+                  <option value="FAULT">FAULT</option>
+                  <option value="OFFLINE">OFFLINE</option>
+                </select>
 
-              <Link
-                href={`/admin/chargers/${c.id}`}
-                className="block text-center w-full py-2 rounded-xl bg-navy-800 hover:bg-navy-700 text-slate-200 text-xs font-bold transition-all"
-              >
-                Full Hardware Settings &rarr;
-              </Link>
+                <Link
+                  href={`/admin/chargers/${c.id}`}
+                  className="block text-center w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all"
+                >
+                  Full Hardware Settings &rarr;
+                </Link>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
     </div>

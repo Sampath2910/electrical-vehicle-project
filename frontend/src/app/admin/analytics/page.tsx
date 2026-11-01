@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BarChart3, TrendingUp, Zap, DollarSign, Activity } from 'lucide-react';
+import { BarChart3, TrendingUp, Zap, IndianRupee, Activity } from 'lucide-react';
 import { MetricCard } from '@/components/ui/MetricCard';
 
 export default function AdminAnalyticsPage() {
@@ -14,7 +14,7 @@ export default function AdminAnalyticsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Total Monthly Energy" value="1,482 kWh" subtitle="+18.4% vs last month" icon={Zap} variant="cyan" />
-        <MetricCard title="Gross Revenue" value="₹22,971.00" subtitle="Settled transactions" icon={DollarSign} variant="emerald" />
+        <MetricCard title="Gross Revenue" value="₹22,971.00" subtitle="Settled transactions" icon={IndianRupee} variant="emerald" />
         <MetricCard title="Charger Utilization" value="68.2%" subtitle="Peak occupancy rate" icon={Activity} variant="amber" />
         <MetricCard title="Fault Cutoff Rate" value="0.02%" subtitle="Zero hardware failures" icon={TrendingUp} variant="default" />
       </div>

@@ -11,10 +11,11 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredSessions = historySessions.filter(s => {
-    const matchesSearch = s.sessionCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          s.chargerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (s.vehicleModel && s.vehicleModel.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch;
+    const code = s.sessionCode || '';
+    const name = s.chargerName || '';
+    const vehicle = s.vehicleModel || '';
+    const query = searchQuery.toLowerCase();
+    return code.toLowerCase().includes(query) || name.toLowerCase().includes(query) || vehicle.toLowerCase().includes(query);
   });
 
   return (

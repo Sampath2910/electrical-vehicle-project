@@ -56,7 +56,7 @@ export default function WalletPage() {
 
           <div>
             <span className="text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-              ₹{wallet.balance.toFixed(2)}
+              ₹{(wallet?.balance ?? 0).toFixed(2)}
             </span>
             <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
