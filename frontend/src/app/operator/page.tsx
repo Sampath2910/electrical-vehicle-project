@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { 
   Radio, 
   Zap, 
@@ -19,7 +20,8 @@ import {
   Sliders,
   ShieldCheck,
   UserCheck,
-  LogOut
+  LogOut,
+  ArrowLeft
 } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 import { telemetryProvider } from '@/lib/providers';
@@ -27,7 +29,7 @@ import { MetricCard } from '@/components/ui/MetricCard';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Charger, Measurement } from '@/types/ev';
 
-export default function OperatorConsolePage() {
+function OperatorConsoleContent() {
   const router = useRouter();
   const { currentUser, playSound, logout, updateChargerRating, updateChargerStatus } = useStore();
   const [stationStats, setStationStats] = useState<any>(null);
@@ -36,7 +38,32 @@ export default function OperatorConsolePage() {
   const [actionMessage, setActionMessage] = useState('');
   const [liveMeas, setLiveMeas] = useState<Measurement | null>(null);
 
-  const assignedStationId = currentUser?.assignedStationId || 'ch-101';
+  const searchParams = useSearchParams();
+  const queryStationId = searchParams.get('stationId');
+  const [selectedStationId, setSelectedStationId] = useState<string>(queryStationId || currentUser?.assignedStationId || 'ch-101');
+  const [allStations, setAllStations] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (queryStationId) {
+      setSelectedStationId(queryStationId);
+    } else if (currentUser?.assignedStationId) {
+      setSelectedStationId(currentUser.assignedStationId);
+    }
+  }, [queryStationId, currentUser?.assignedStationId]);
+
+  // If admin, load all stations for dropdown switching
+  useEffect(() => {
+    if (currentUser?.role === 'ADMIN') {
+      fetch('/api/admin/stats', { cache: 'no-store' })
+        .then(res => res.json())
+        .then(data => {
+          if (data?.stations) setAllStations(data.stations);
+        })
+        .catch(() => {});
+    }
+  }, [currentUser?.role]);
+
+  const assignedStationId = selectedStationId;
 
   // Live telemetry stream from ThingSpeak Cloud Channel 3533059
   useEffect(() => {
@@ -138,38 +165,68 @@ export default function OperatorConsolePage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* STATION OPERATOR BANNER */}
-      <div className="glass-card rounded-3xl p-6 lg:p-8 border border-amber-500/40 bg-gradient-to-r from-navy-900 via-amber-950/20 to-navy-950 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
+      <div className="glass-card rounded-3xl p-6 lg:p-8 border border-amber-300 dark:border-amber-500/40 bg-white dark:bg-gradient-to-r dark:from-navy-900 dark:via-amber-950/20 dark:to-navy-950 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl relative overflow-hidden">
         
         {/* Glow Element */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 text-amber-300 text-xs font-bold border border-amber-500/30">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-bold border border-amber-200 dark:border-amber-500/30">
             <Radio className="w-3.5 h-3.5 animate-pulse" />
-            <span>Dedicated Station Operator Console &bull; {currentUser?.name}</span>
+            <span>{currentUser?.role === 'ADMIN' ? 'Fleet Administrator Inspection Console' : 'Dedicated Station Operator Console'} &bull; {currentUser?.name}</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             {station ? station.name : 'Loading Assigned Station...'}
           </h1>
-          <p className="text-xs text-slate-300 flex items-center gap-2">
+          <p className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
             <Building2 className="w-3.5 h-3.5 text-amber-400" />
-            <span>Station ID: <strong className="text-white font-mono">{assignedStationId}</strong></span>
+            <span>Station ID: <strong className="text-slate-900 dark:text-white font-mono">{assignedStationId}</strong></span>
             <span>&bull;</span>
-            <span>Badge ID: <strong className="text-amber-300 font-mono">{currentUser?.operatorBadgeId || 'KLE-OP-DUTY'}</strong></span>
+            <span>Badge ID: <strong className="text-amber-700 dark:text-amber-300 font-mono">{currentUser?.operatorBadgeId || 'KLE-OP-DUTY'}</strong></span>
           </p>
         </div>
 
         {/* Live Status and Refresh */}
         <div className="flex flex-wrap items-center gap-3">
+          {currentUser?.role === 'ADMIN' && (
+            <Link
+              href="/admin"
+              className="px-3.5 py-2.5 rounded-2xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Fleet Admin</span>
+            </Link>
+          )}
+
+          {currentUser?.role === 'ADMIN' && allStations.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-amber-300 dark:border-amber-500/30">
+              <span className="text-[11px] text-slate-400 font-semibold">Switch Station:</span>
+              <select
+                value={assignedStationId}
+                onChange={(e) => {
+                  setSelectedStationId(e.target.value);
+                  router.push(`/operator?stationId=${e.target.value}`);
+                }}
+                className="bg-transparent text-xs text-amber-800 dark:text-amber-300 font-bold focus:outline-none cursor-pointer"
+              >
+                {allStations.map(st => (
+                  <option key={st.id} value={st.id} className="bg-navy-900 text-white">
+                    {st.name} ({st.code || st.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {station && (
-            <div className="px-4 py-2 rounded-2xl bg-navy-950 border border-slate-800 flex items-center gap-2.5">
+            <div className="px-4 py-2 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
               <span className="text-xs text-slate-400">Current Bay Status:</span>
               <StatusBadge status={station.status} />
             </div>
           )}
           <button
             onClick={fetchStats}
-            className="p-2.5 rounded-2xl bg-navy-950 border border-slate-800 text-slate-300 hover:text-white transition-all hover:border-amber-500/40"
+            className="p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all hover:border-amber-500/40 shadow-xs"
             title="Refresh Live Metrics"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-amber-400' : ''}`} />
@@ -234,10 +291,10 @@ export default function OperatorConsolePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Metrology Card */}
-        <div className="lg:col-span-2 glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 space-y-6">
+        <div className="lg:col-span-2 glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 space-y-6 shadow-xl">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Activity className="w-5 h-5 text-amber-400" />
                 <span>PZEM-004T Metrology Test Bench</span>
               </h2>
@@ -250,7 +307,7 @@ export default function OperatorConsolePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800/80 space-y-1">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">AC Voltage</span>
               <div className="text-xl font-extrabold font-mono text-cyan-400">
                 {liveMeas ? `${liveMeas.voltageV.toFixed(1)} V` : '229.7 V'}
@@ -258,7 +315,7 @@ export default function OperatorConsolePage() {
               <span className="text-[10px] text-slate-400">Grid Safe (207–253V)</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800/80 space-y-1">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Active Current</span>
               <div className="text-xl font-extrabold font-mono text-amber-400">
                 {liveMeas ? `${liveMeas.currentA.toFixed(2)} A` : '13.94 A'}
@@ -266,7 +323,7 @@ export default function OperatorConsolePage() {
               <span className="text-[10px] text-emerald-400">&le; 14.3A 2W Limit</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800/80 space-y-1">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Active Power</span>
               <div className="text-xl font-extrabold font-mono text-emerald-400">
                 {liveMeas ? `${(liveMeas.powerW / 1000).toFixed(2)} kW` : '3.14 kW'}
@@ -274,7 +331,7 @@ export default function OperatorConsolePage() {
               <span className="text-[10px] text-slate-400">PF: {liveMeas?.powerFactor || '0.98'} Active</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800/80 space-y-1">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Total Harmonics</span>
               <div className="text-xl font-extrabold font-mono text-purple-400">
                 {liveMeas ? `${liveMeas.thdPercent}% THD` : '2.1% THD'}
@@ -284,10 +341,10 @@ export default function OperatorConsolePage() {
           </div>
 
           {/* Station Technical Scope Details */}
-          <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800/80 text-xs space-y-2">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800/80 text-xs space-y-2">
             <div className="flex items-center justify-between text-slate-400">
               <span>Connector Standard:</span>
-              <span className="font-semibold text-white">{station?.connectorType || 'IEC 60309 (Industrial 3-pin)'}</span>
+              <span className="font-semibold text-slate-800 dark:text-white">{station?.connectorType || 'IEC 60309 (Industrial 3-pin)'}</span>
             </div>
             <div className="flex items-center justify-between text-slate-400">
               <span>Location Coordinate:</span>
@@ -301,10 +358,10 @@ export default function OperatorConsolePage() {
         </div>
 
         {/* Local Station Controls */}
-        <div className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 space-y-5 flex flex-col justify-between">
+        <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 space-y-5 flex flex-col justify-between shadow-xl">
           <div className="space-y-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Sliders className="w-5 h-5 text-amber-400" />
                 <span>Station Hardware Controls</span>
               </h2>
@@ -321,7 +378,7 @@ export default function OperatorConsolePage() {
                 <select
                   value={station?.powerRating || 3.3}
                   onChange={(e) => handleUpdateRating(Number(e.target.value))}
-                  className="w-full bg-navy-950 border border-slate-700 hover:border-amber-400 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-amber-300 font-bold font-mono transition-colors cursor-pointer"
+                  className="w-full bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-700 hover:border-amber-400 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-amber-800 dark:text-amber-300 font-bold font-mono transition-colors cursor-pointer"
                 >
                   <option value={1}>1 kW (Standard Slow 2W AC)</option>
                   <option value={3.3}>3.3 kW (2-Wheeler Rated Standard)</option>
@@ -339,7 +396,7 @@ export default function OperatorConsolePage() {
                 <select
                   value={station?.status || 'AVAILABLE'}
                   onChange={(e) => handleToggleStatus(e.target.value as Charger['status'])}
-                  className="w-full bg-navy-950 border border-slate-700 hover:border-amber-400 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-semibold transition-colors cursor-pointer"
+                  className="w-full bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-700 hover:border-amber-400 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-semibold transition-colors cursor-pointer"
                 >
                   <option value="AVAILABLE">AVAILABLE (Bay Online & Ready)</option>
                   <option value="PREPARING">PREPARING (Vehicle Authenticating)</option>
@@ -396,7 +453,7 @@ export default function OperatorConsolePage() {
       </div>
 
       {/* STATION ISOLATION CONFIRMATION CARD */}
-      <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 shadow-sm">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>
@@ -415,5 +472,21 @@ export default function OperatorConsolePage() {
       </div>
 
     </div>
+  );
+}
+
+
+export default function OperatorConsolePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-400 font-semibold">Loading Station Console...</p>
+        </div>
+      </div>
+    }>
+      <OperatorConsoleContent />
+    </Suspense>
   );
 }

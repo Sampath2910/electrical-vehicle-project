@@ -191,7 +191,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
               <div className="flex items-center gap-4 shrink-0 bg-slate-950/70 p-3.5 rounded-2xl border border-rose-400">
                 <div className="text-center">
                   <span className="text-3xl font-black font-mono text-rose-400 block">{evictionCountdown}s</span>
-                  <span className="text-[9px] uppercase tracking-wider text-slate-300">Time to Yield</span>
+                  <span className="text-[9px] uppercase tracking-wider text-rose-100 font-semibold">Time to Yield</span>
                 </div>
 
                 <button
@@ -209,10 +209,10 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
       </AnimatePresence>
 
       {/* Session Header Banner */}
-      <div className="glass-card rounded-3xl p-6 border border-cyan-500/30 bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-slate-900 dark:to-cyan-950/40 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 text-cyan-400">
+            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-cyan-700 dark:text-cyan-400">
               {currentSession.sessionCode}
             </span>
             <StatusBadge status={currentSession.status} size="lg" />
@@ -222,7 +222,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
               </span>
             )}
           </div>
-          <h1 className="text-2xl font-extrabold text-white">{currentSession.chargerName}</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">{currentSession.chargerName}</h1>
           <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
             <MapPin className="w-3.5 h-3.5 text-slate-500" />
             <span>{currentSession.chargerLocation} &bull; <strong>PZEM-004T Metering</strong></span>
@@ -259,11 +259,11 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
       </div>
 
       {/* PDF SECTION 3: TIME-OF-DAY (ToD) VISUALIZER */}
-      <div className="glass-card rounded-3xl p-5 border border-cyan-500/30 bg-gradient-to-r from-cyan-950/30 via-slate-900 to-blue-950/30 space-y-3 shadow-xl">
+      <div className="glass-card rounded-3xl p-5 border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-gradient-to-r dark:from-cyan-950/30 dark:via-slate-900 dark:to-blue-950/30 space-y-3 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs font-bold text-white uppercase tracking-wider">
+            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
               Time-of-Day (ToD) Tariff Visualizer (Commercial EV LT-6 Structure)
             </span>
           </div>
@@ -322,14 +322,14 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
       </div>
 
       {/* DYNAMIC BIKE BATTERY SOC VISUALIZER */}
-      <div className="glass-card rounded-3xl p-6 border border-cyan-500/30 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 space-y-4 shadow-xl">
+      <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-gradient-to-r dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 space-y-4 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
               <Zap className="w-4 h-4 animate-bounce" />
             </div>
             <div>
-              <span className="text-xs font-bold text-white block">Indian 2-Wheeler Battery State of Charge (SoC)</span>
+              <span className="text-xs font-bold text-slate-900 dark:text-white block">Indian 2-Wheeler Battery State of Charge (SoC)</span>
               <span className="text-[11px] text-slate-400">
                 Calibrated for {currentSession.vehicleName || 'Ather 450X (3.7 kWh) / Ola S1 Pro (4 kWh) / TVS iQube (3.4 kWh)'}
               </span>

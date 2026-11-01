@@ -170,18 +170,18 @@ export const Navbar: React.FC = () => {
       </AnimatePresence>
 
       {/* 2. MAIN NAVIGATION BAR */}
-      <div className="bg-slate-950/90 dark:bg-slate-950/90 backdrop-blur-2xl border-b border-slate-800/80 shadow-xl">
+      <div className="bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl border-b border-slate-200/80 dark:border-slate-800/80 shadow-sm dark:shadow-xl transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-3">
 
             {/* BRAND LOGO */}
             <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-                <Bike className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+                <Bike className="w-5 h-5 text-white stroke-[2.5]" />
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-base sm:text-lg font-black tracking-tight text-white">
-                  SMART<span className="text-cyan-400">MOTO</span><span className="text-emerald-400">EV</span>
+                <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white">
+                  SMART<span className="text-cyan-600 dark:text-cyan-400">MOTO</span><span className="text-emerald-600 dark:text-emerald-400">EV</span>
                 </span>
                 <span className="px-1.5 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-[9px] font-mono text-cyan-300 font-bold hidden sm:inline-block">
                   CPO
@@ -190,7 +190,7 @@ export const Navbar: React.FC = () => {
             </Link>
 
             {/* DESKTOP NAV LINKS (CENTER PILL BAR) */}
-            <nav className="hidden lg:flex items-center p-1 rounded-2xl bg-slate-900/60 border border-slate-800/80 gap-1">
+            <nav className="hidden lg:flex items-center p-1 rounded-2xl bg-slate-100/90 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 gap-1">
               {currentNavLinks.map(link => {
                 const isActive = pathname === link.href;
                 const Icon = link.icon;
@@ -199,11 +199,11 @@ export const Navbar: React.FC = () => {
                     key={link.href}
                     href={link.href}
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${isActive
-                        ? 'bg-cyan-500/15 text-cyan-400 ring-1 ring-cyan-500/40 font-bold shadow-sm'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                        ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 ring-1 ring-cyan-500/40 font-bold shadow-sm'
+                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/50'
                       }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-500 dark:text-slate-400'}`} />
                     <span>{link.label}</span>
                   </Link>
                 );
@@ -217,21 +217,21 @@ export const Navbar: React.FC = () => {
               <Link
                 href="/wallet"
                 title="Open EV Wallet & Top-up"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/40 transition-all text-xs font-mono font-bold shadow-sm text-slate-200 group"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/80 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 transition-all text-xs font-mono font-bold shadow-sm text-slate-700 dark:text-slate-200 group"
               >
-                <Wallet className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
-                <span className="text-white">₹{wallet.balance.toFixed(2)}</span>
+                <Wallet className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform" />
+                <span className="text-slate-900 dark:text-white">₹{wallet.balance.toFixed(2)}</span>
               </Link>
 
               {/* NOTIFICATION BELL */}
               <Link
                 href="/notifications"
                 title="System Notifications"
-                className="w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-white flex items-center justify-center relative transition-all shadow-sm"
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/80 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center relative transition-all shadow-sm"
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan-400 text-slate-950 font-black text-[9px] flex items-center justify-center shadow-md">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan-500 text-white font-black text-[9px] flex items-center justify-center shadow-md">
                     {unreadCount}
                   </span>
                 )}
@@ -241,10 +241,10 @@ export const Navbar: React.FC = () => {
               <button
                 onClick={toggleSound}
                 title={soundEnabled ? 'Mute System Sounds' : 'Enable Audio Haptics'}
-                className="hidden sm:flex w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-white items-center justify-center transition-all shadow-sm cursor-pointer"
+                className="hidden sm:flex w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/80 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white items-center justify-center transition-all shadow-sm cursor-pointer"
               >
                 {soundEnabled ? (
-                  <Volume2 className="w-4 h-4 text-cyan-400" />
+                  <Volume2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
                 ) : (
                   <VolumeX className="w-4 h-4 text-slate-500" />
                 )}
@@ -254,12 +254,12 @@ export const Navbar: React.FC = () => {
               <button
                 onClick={toggleTheme}
                 title={`Switch Theme (Current: ${theme})`}
-                className="hidden sm:flex w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-white items-center justify-center transition-all shadow-sm cursor-pointer"
+                className="hidden sm:flex w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/80 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white items-center justify-center transition-all shadow-sm cursor-pointer"
               >
                 {theme === 'dark' ? (
                   <Sun className="w-4 h-4 text-amber-400" />
                 ) : (
-                  <Moon className="w-4 h-4 text-cyan-400" />
+                  <Moon className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
                 )}
               </button>
 
@@ -268,16 +268,16 @@ export const Navbar: React.FC = () => {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                    className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/40 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                    className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/80 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 text-slate-800 dark:text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
                   >
                     <div className={`w-7 h-7 rounded-lg border ${roleStyles.avatarBorder} flex items-center justify-center font-bold text-xs`}>
                       {currentUser.name.charAt(0)}
                     </div>
                     <div className="hidden md:flex flex-col text-left">
-                      <span className="text-xs font-bold text-white max-w-[100px] truncate leading-tight">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white max-w-[100px] truncate leading-tight">
                         {currentUser.name}
                       </span>
-                      <span className="text-[10px] text-slate-400 leading-tight">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                         {roleStyles.label}
                       </span>
                     </div>
@@ -286,12 +286,12 @@ export const Navbar: React.FC = () => {
 
                   {/* DROPDOWN MENU */}
                   {roleDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-800 bg-slate-900/95 shadow-2xl p-2.5 z-50 backdrop-blur-2xl animate-fadeIn space-y-2">
+                    <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-2xl p-2.5 z-50 backdrop-blur-2xl animate-fadeIn space-y-2">
 
                       {/* User Info Header */}
-                      <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-white">{currentUser.name}</span>
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">{currentUser.name}</span>
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${roleStyles.badgeBg}`}>
                             {currentUser.role}
                           </span>
@@ -333,7 +333,7 @@ export const Navbar: React.FC = () => {
               ) : (
                 <Link
                   href="/auth/login"
-                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-navy-950 font-bold text-xs flex items-center gap-1.5 shadow-md transition-all hover:scale-105"
+                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all hover:scale-105"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Sign In</span>
@@ -357,7 +357,7 @@ export const Navbar: React.FC = () => {
 
       {/* 3. MOBILE SLIDE-OUT MENU DRAWER */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-b border-slate-800 bg-slate-950/95 backdrop-blur-2xl px-4 py-4 space-y-4 shadow-2xl animate-fadeIn">
+        <div className="lg:hidden border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl px-4 py-4 space-y-4 shadow-2xl animate-fadeIn">
 
           {/* Quick Wallet Bar on Mobile */}
           <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">

@@ -108,25 +108,25 @@ export default function AdminLiveTelemetryPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[11px] font-mono font-bold text-cyan-400 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/30 text-[11px] font-mono font-bold text-cyan-700 dark:text-cyan-400 mb-2">
             PZEM-004T AC Metrology Engine &bull; Grid Telemetry
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            <Activity className="w-8 h-8 text-cyan-400 animate-pulse" />
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+            <Activity className="w-8 h-8 text-cyan-600 dark:text-cyan-400 animate-pulse" />
             <span>Live Power Quality & Telemetry Stream</span>
           </h1>
-          <p className="text-slate-400 text-xs mt-1">
+          <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">
             2-Wheeler scope restricted to max 14.3 Amps at 230V single-phase (3.3 kW ceiling) per project specification
           </p>
         </div>
 
         {/* Charger Selector */}
         <div className="w-full md:w-80">
-          <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Select Hardware Bay</label>
+          <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Select Hardware Bay</label>
           <select
             value={selectedChargerId}
             onChange={(e) => setSelectedChargerId(e.target.value)}
-            className="w-full bg-navy-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold"
+            className="w-full bg-white dark:bg-navy-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-bold shadow-sm outline-none focus:border-cyan-500"
           >
             {chargers.map(c => (
               <option key={c.id} value={c.id}>
@@ -138,19 +138,19 @@ export default function AdminLiveTelemetryPage() {
       </div>
 
       {/* SECTION 2: DIGITAL EMERGENCY OVERRIDE TRIGGER BANNER */}
-      <div className="glass-card rounded-3xl p-5 border border-amber-500/30 bg-amber-950/20 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+      <div className="glass-card rounded-3xl p-5 border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
             <Siren className="w-6 h-6 animate-pulse" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-white text-sm">Priority Preemption Emergency Dispatch</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
+              <span className="font-extrabold text-slate-900 dark:text-white text-sm">Priority Preemption Emergency Dispatch</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold">
                 Section 2 Protocol
               </span>
             </div>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
               Simulate an incoming ambulance/fire brigade arrival at Bay #02. Triggers active buzzer and initiates 120-second eviction countdown with auto-cutoff.
             </p>
           </div>
@@ -158,9 +158,9 @@ export default function AdminLiveTelemetryPage() {
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           {isEvictionWarningActive ? (
-            <div className="px-4 py-2.5 rounded-2xl bg-rose-600/30 border border-rose-500 text-rose-300 font-mono font-bold text-xs animate-pulse flex items-center gap-2">
+            <div className="px-4 py-2.5 rounded-2xl bg-rose-100 dark:bg-rose-600/30 border border-rose-300 dark:border-rose-500 text-rose-800 dark:text-rose-300 font-mono font-bold text-xs animate-pulse flex items-center gap-2">
               <span>EVICTION IN PROGRESS: {evictionCountdown}s</span>
-              {penaltyApplied && <span className="text-amber-400">(₹500 Cutoff Applied)</span>}
+              {penaltyApplied && <span className="text-amber-700 dark:text-amber-400 font-bold">(₹500 Cutoff Applied)</span>}
             </div>
           ) : (
             <button
@@ -178,104 +178,104 @@ export default function AdminLiveTelemetryPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         
         {/* Live Power */}
-        <div className="p-4 rounded-2xl glass-card border border-cyan-500/30 bg-navy-900/80">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Delivered Power</span>
-          <span className="text-2xl font-extrabold text-cyan-400 font-mono">{latestPoint.powerKw.toFixed(2)} <span className="text-xs text-slate-300 font-sans">kW</span></span>
-          <span className="text-[10px] text-cyan-300/80 block mt-1">Scope: Max 3.3 kW</span>
+        <div className="p-4 rounded-2xl glass-card border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-navy-900/80 shadow-sm">
+          <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Delivered Power</span>
+          <span className="text-2xl font-extrabold text-cyan-700 dark:text-cyan-400 font-mono">{latestPoint.powerKw.toFixed(2)} <span className="text-xs text-slate-500 font-sans">kW</span></span>
+          <span className="text-[10px] text-cyan-700 dark:text-cyan-300/80 block mt-1 font-semibold">Scope: Max 3.3 kW</span>
         </div>
 
         {/* Grid Voltage */}
-        <div className="p-4 rounded-2xl glass-card border border-slate-800 bg-navy-900/80">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Grid Voltage</span>
-          <span className="text-2xl font-extrabold text-white font-mono">{latestPoint.voltage.toFixed(1)} <span className="text-xs text-slate-400 font-sans">V</span></span>
-          <span className="text-[10px] text-emerald-400 block mt-1">Nominal: 230V ±6%</span>
+        <div className="p-4 rounded-2xl glass-card border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/80 shadow-sm">
+          <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Grid Voltage</span>
+          <span className="text-2xl font-extrabold text-slate-900 dark:text-white font-mono">{latestPoint.voltage.toFixed(1)} <span className="text-xs text-slate-500 font-sans">V</span></span>
+          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block mt-1 font-semibold">Nominal: 230V ±6%</span>
         </div>
 
         {/* Current Draw */}
-        <div className="p-4 rounded-2xl glass-card border border-slate-800 bg-navy-900/80">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Current Draw</span>
-          <span className="text-2xl font-extrabold text-amber-400 font-mono">{latestPoint.current.toFixed(1)} <span className="text-xs text-slate-400 font-sans">A</span></span>
-          <span className="text-[10px] text-amber-300/80 block mt-1">Strict Limit: ≤14.3 A</span>
+        <div className="p-4 rounded-2xl glass-card border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/80 shadow-sm">
+          <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Current Draw</span>
+          <span className="text-2xl font-extrabold text-amber-700 dark:text-amber-400 font-mono">{latestPoint.current.toFixed(1)} <span className="text-xs text-slate-500 font-sans">A</span></span>
+          <span className="text-[10px] text-amber-700 dark:text-amber-300/80 block mt-1 font-semibold">Strict Limit: ≤14.3 A</span>
         </div>
 
         {/* Power Factor & THD */}
-        <div className="p-4 rounded-2xl glass-card border border-emerald-500/30 bg-navy-900/80">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Power Quality (THD)</span>
-          <span className="text-2xl font-extrabold text-emerald-400 font-mono">{latestPoint.thd.toFixed(1)}%</span>
-          <span className="text-[10px] text-slate-400 block mt-1">PF: 0.98 | IEEE-519 &lt;5%</span>
+        <div className="p-4 rounded-2xl glass-card border border-slate-200 dark:border-emerald-500/30 bg-white dark:bg-navy-900/80 shadow-sm">
+          <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Power Quality (THD)</span>
+          <span className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">{latestPoint.thd.toFixed(1)}%</span>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">PF: 0.98 | IEEE-519 &lt;5%</span>
         </div>
 
         {/* Active ToD Slot */}
-        <div className="p-4 rounded-2xl glass-card border border-purple-500/30 bg-navy-900/80 col-span-2 md:col-span-1">
-          <span className="text-[10px] uppercase font-bold text-purple-300 block mb-1">Active ToD Slot</span>
-          <span className="text-xl font-extrabold text-purple-300 font-mono block truncate">{todInfo.rate}</span>
-          <span className="text-[10px] text-slate-400 block mt-1">{todInfo.slotName} ({todInfo.multiplier}x)</span>
+        <div className="p-4 rounded-2xl glass-card border border-slate-200 dark:border-purple-500/30 bg-white dark:bg-navy-900/80 col-span-2 md:col-span-1 shadow-sm">
+          <span className="text-[10px] uppercase font-bold text-purple-700 dark:text-purple-300 block mb-1">Active ToD Slot</span>
+          <span className="text-xl font-extrabold text-purple-700 dark:text-purple-300 font-mono block truncate">{todInfo.rate}</span>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">{todInfo.slotName} ({todInfo.multiplier}x)</span>
         </div>
 
       </div>
 
       {/* SECTION 1: DYNAMIC TIME-OF-DAY (TOD) VISUALIZER */}
-      <div className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/70 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 gap-2">
+      <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/70 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-cyan-400" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Clock className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
               <span>Time-of-Day (ToD) Tariff Visualizer & Rate Multiplier</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Commercial LT-6 retail markup schedule applied to active metering</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Commercial LT-6 retail markup schedule applied to active metering</p>
           </div>
-          <span className="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-xs font-bold">
+          <span className="px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/30 text-cyan-700 dark:text-cyan-400 font-mono text-xs font-bold">
             Live Slot: {todInfo.code}
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div className={`p-4 rounded-2xl border transition-all ${todInfo.code === 'S_1' ? 'bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/30' : 'bg-navy-950 border-slate-800'}`}>
+          <div className={`p-4 rounded-2xl border transition-all ${todInfo.code === 'S_1' ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/30' : 'bg-slate-50 dark:bg-navy-950 border-slate-200 dark:border-slate-800'}`}>
             <div className="flex items-center justify-between">
-              <span className="font-bold text-emerald-400">S_1: Off-Peak (Overnight)</span>
-              {todInfo.code === 'S_1' && <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">ACTIVE NOW</span>}
+              <span className="font-bold text-emerald-700 dark:text-emerald-400">S_1: Off-Peak (Overnight)</span>
+              {todInfo.code === 'S_1' && <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold">ACTIVE NOW</span>}
             </div>
-            <p className="text-slate-400 text-[11px] mt-1">10:00 PM – 06:00 AM</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-1">10:00 PM – 06:00 AM</p>
             <div className="mt-3 flex items-baseline justify-between font-mono">
-              <span className="text-xl font-bold text-emerald-400">₹8.00 / kWh</span>
-              <span className="text-xs text-slate-400">0.76x Multiplier</span>
+              <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">₹8.00 / kWh</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">0.76x Multiplier</span>
             </div>
           </div>
 
-          <div className={`p-4 rounded-2xl border transition-all ${todInfo.code === 'S_2' ? 'bg-cyan-950/40 border-cyan-500 ring-2 ring-cyan-500/30' : 'bg-navy-950 border-slate-800'}`}>
+          <div className={`p-4 rounded-2xl border transition-all ${todInfo.code === 'S_2' ? 'bg-cyan-50 dark:bg-cyan-950/40 border-cyan-500 ring-2 ring-cyan-500/30' : 'bg-slate-50 dark:bg-navy-950 border-slate-200 dark:border-slate-800'}`}>
             <div className="flex items-center justify-between">
-              <span className="font-bold text-cyan-400">S_2: Standard / Mid</span>
-              {todInfo.code === 'S_2' && <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold">ACTIVE NOW</span>}
+              <span className="font-bold text-cyan-700 dark:text-cyan-400">S_2: Standard / Mid</span>
+              {todInfo.code === 'S_2' && <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 font-bold">ACTIVE NOW</span>}
             </div>
-            <p className="text-slate-400 text-[11px] mt-1">06:00 AM – 06:00 PM (Solar Hours)</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-1">06:00 AM – 06:00 PM (Solar Hours)</p>
             <div className="mt-3 flex items-baseline justify-between font-mono">
-              <span className="text-xl font-bold text-cyan-400">₹10.50 / kWh</span>
-              <span className="text-xs text-slate-400">1.00x Base</span>
+              <span className="text-xl font-bold text-cyan-700 dark:text-cyan-400">₹10.50 / kWh</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">1.00x Base</span>
             </div>
           </div>
 
-          <div className={`p-4 rounded-2xl border transition-all ${todInfo.code === 'S_3' ? 'bg-rose-950/40 border-rose-500 ring-2 ring-rose-500/30' : 'bg-navy-950 border-slate-800'}`}>
+          <div className={`p-4 rounded-2xl border transition-all ${todInfo.code === 'S_3' ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-500 ring-2 ring-rose-500/30' : 'bg-slate-50 dark:bg-navy-950 border-slate-200 dark:border-slate-800'}`}>
             <div className="flex items-center justify-between">
-              <span className="font-bold text-rose-400">S_3: Evening Peak</span>
-              {todInfo.code === 'S_3' && <span className="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">ACTIVE NOW</span>}
+              <span className="font-bold text-rose-700 dark:text-rose-400">S_3: Evening Peak</span>
+              {todInfo.code === 'S_3' && <span className="text-[10px] px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 font-bold">ACTIVE NOW</span>}
             </div>
-            <p className="text-slate-400 text-[11px] mt-1">06:00 PM – 10:00 PM (Domestic Peak)</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-1">06:00 PM – 10:00 PM (Domestic Peak)</p>
             <div className="mt-3 flex items-baseline justify-between font-mono">
-              <span className="text-xl font-bold text-rose-400">₹14.00 / kWh</span>
-              <span className="text-xs text-slate-400">1.33x Surcharge</span>
+              <span className="text-xl font-bold text-rose-700 dark:text-rose-400">₹14.00 / kWh</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">1.33x Surcharge</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* RECHARTS POWER GRAPH (0 to 4 kW Range) */}
-      <div className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-cyan-400" />
+      <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Zap className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
             <span>2-Wheeler Active Power Output (kW) &bull; Max 3.3 kW</span>
           </h3>
-          <span className="text-xs text-slate-400 font-mono">1Hz Update Rate &bull; PZEM-004T Meter</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">1Hz Update Rate &bull; PZEM-004T Meter</span>
         </div>
 
         <div className="h-72 w-full">
@@ -283,17 +283,17 @@ export default function AdminLiveTelemetryPage() {
             <AreaChart data={telemetryHistory}>
               <defs>
                 <linearGradient id="powerGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#00F0FF" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#00F0FF" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
               <XAxis dataKey="time" stroke="#64748b" fontSize={10} />
               <YAxis domain={[0, 4]} stroke="#64748b" fontSize={10} unit=" kW" />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#0d1527', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px' }}
+                contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', fontSize: '12px', color: '#0f172a' }}
               />
-              <Area type="monotone" dataKey="powerKw" stroke="#00F0FF" strokeWidth={3} fillOpacity={1} fill="url(#powerGrad)" />
+              <Area type="monotone" dataKey="powerKw" stroke="#0284c7" strokeWidth={3} fillOpacity={1} fill="url(#powerGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -302,37 +302,37 @@ export default function AdminLiveTelemetryPage() {
       {/* VOLTAGE & CURRENT GRAPHS (0 to 16A Range) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        <div className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 space-y-4">
+        <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 space-y-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white">Grid Voltage Stability (V) &bull; 230V Nominal</h3>
-            <span className="text-[10px] text-emerald-400 font-mono">Trip: &lt;207V | &gt;253V</span>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Grid Voltage Stability (V) &bull; 230V Nominal</h3>
+            <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono font-semibold">Trip: &lt;207V | &gt;253V</span>
           </div>
           <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={telemetryHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                 <XAxis dataKey="time" stroke="#64748b" fontSize={10} />
                 <YAxis domain={[215, 245]} stroke="#64748b" fontSize={10} unit="V" />
-                <Tooltip contentStyle={{ backgroundColor: '#0d1527', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px' }} />
-                <Line type="monotone" dataKey="voltage" stroke="#38BDF8" strokeWidth={2} dot={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', fontSize: '12px', color: '#0f172a' }} />
+                <Line type="monotone" dataKey="voltage" stroke="#0284c7" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 space-y-4">
+        <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 space-y-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white">2W Contactor Current Draw (A) &bull; Max 14.3A</h3>
-            <span className="text-[10px] text-amber-400 font-mono">Limit: 14.3A 230V</span>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">2W Contactor Current Draw (A) &bull; Max 14.3A</h3>
+            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono font-semibold">Limit: 14.3A 230V</span>
           </div>
           <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={telemetryHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                 <XAxis dataKey="time" stroke="#64748b" fontSize={10} />
                 <YAxis domain={[0, 16]} stroke="#64748b" fontSize={10} unit="A" />
-                <Tooltip contentStyle={{ backgroundColor: '#0d1527', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px' }} />
-                <Line type="monotone" dataKey="current" stroke="#10B981" strokeWidth={2} dot={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', fontSize: '12px', color: '#0f172a' }} />
+                <Line type="monotone" dataKey="current" stroke="#059669" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -341,36 +341,36 @@ export default function AdminLiveTelemetryPage() {
       </div>
 
       {/* POWER QUALITY AUDIT & SAG/SWELL LOG */}
-      <div className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 space-y-4">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+      <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 space-y-4 shadow-sm">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span>Power Quality Monitoring Log (Sag / Swell / THD Compliance)</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800 space-y-2">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Harmonic Distortion</span>
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-2">
+            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Total Harmonic Distortion</span>
             <div className="flex items-center justify-between">
-              <span className="text-xl font-extrabold text-emerald-400 font-mono">2.1% THD</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">PASS (&lt;5%)</span>
+              <span className="text-xl font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">2.1% THD</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 font-bold">PASS (&lt;5%)</span>
             </div>
-            <p className="text-[11px] text-slate-400">Compliant with IEEE-519 standards for residential/commercial EV grid interconnect.</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Compliant with IEEE-519 standards for residential/commercial EV grid interconnect.</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800 space-y-2">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Operating Power Factor</span>
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-2">
+            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Operating Power Factor</span>
             <div className="flex items-center justify-between">
-              <span className="text-xl font-extrabold text-cyan-400 font-mono">0.98 PF</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold">NEAR UNITY</span>
+              <span className="text-xl font-extrabold text-cyan-700 dark:text-cyan-400 font-mono">0.98 PF</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400 font-bold">NEAR UNITY</span>
             </div>
-            <p className="text-[11px] text-slate-400">High efficiency active power factor correction validated by PZEM-004T metrology.</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">High efficiency active power factor correction validated by PZEM-004T metrology.</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800 space-y-2">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Voltage Stability Alerts</span>
-            <div className="space-y-1 font-mono text-[10px] text-slate-300 max-h-24 overflow-y-auto">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-2">
+            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Voltage Stability Alerts</span>
+            <div className="space-y-1 font-mono text-[10px] text-slate-600 dark:text-slate-300 max-h-24 overflow-y-auto">
               {sagSwellAlerts.map((alert, idx) => (
-                <div key={idx} className="truncate text-slate-400 hover:text-white">
+                <div key={idx} className="truncate text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                   &bull; {alert}
                 </div>
               ))}

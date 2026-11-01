@@ -43,6 +43,28 @@ export async function POST(request: Request) {
       vehicleModel,
     });
 
+    // Best-effort forward to Spring Boot backend if running
+    try {
+      const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      await fetch(`${BACKEND_URL}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email,
+          phone: phone || '+91 00000 00000',
+          password,
+          role: role || 'USER',
+          assignedStationId,
+          operatorBadgeId: newUser.operatorBadgeId,
+          vehicleModel,
+        }),
+        signal: AbortSignal.timeout(1500),
+      });
+    } catch {
+      // Backend offline or user exists in backend, local DB is authoritative
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Account successfully registered.',

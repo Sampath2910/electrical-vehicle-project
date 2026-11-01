@@ -5,21 +5,6 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export async function GET() {
   try {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/v1/chargers`, {
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-        signal: AbortSignal.timeout(1500),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        return NextResponse.json({ success: true, stations: data });
-      }
-    } catch {
-      // Backend not running, gracefully fallback to local JSON DB
-    }
-
     const stations = db.getChargers();
     return NextResponse.json({ success: true, stations });
   } catch (err: any) {
@@ -45,8 +30,12 @@ export async function PATCH(request: Request) {
       db.updateChargerRating(stationId, Number(powerRating));
     }
 
-    if (operatorId) {
-      db.assignOperatorToStation(stationId, operatorId);
+    if (operatorId !== undefined) {
+      if (operatorId === 'none' || operatorId === 'unassigned' || operatorId === '') {
+        db.unassignOperatorFromStation(stationId);
+      } else {
+        db.assignOperatorToStation(stationId, operatorId);
+      }
     }
 
     const updatedStation = db.getChargerById(stationId);
@@ -71,7 +60,7 @@ export async function PATCH(request: Request) {
         });
       }
 
-      if (operatorId) {
+      if (operatorId && operatorId !== 'none' && operatorId !== 'unassigned') {
         await fetch(`${BACKEND_URL}/api/v1/chargers/${stationId}/operator`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

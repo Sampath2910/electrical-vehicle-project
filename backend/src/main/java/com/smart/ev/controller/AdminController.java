@@ -92,6 +92,7 @@ public class AdminController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(StatsDto.AdminStatsResponse.builder()
+                .success(true)
                 .totalUsers(totalUsers)
                 .totalChargers(totalStations)
                 .totalStations(totalStations)

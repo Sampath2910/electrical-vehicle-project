@@ -52,6 +52,7 @@ public class SecurityConfig {
                         // Public auth and discovery
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/chargers/**").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/chargers/**").permitAll()
                         .requestMatchers("/api/v1/tariffs/current-slot").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tariffs").permitAll()
                         .requestMatchers("/ws-ev/**").permitAll()

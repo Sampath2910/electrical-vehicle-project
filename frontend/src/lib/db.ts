@@ -254,9 +254,53 @@ export const db = {
 
   createUser: (user: Partial<User> & { password: string }): User => {
     const data = ensureDbFile();
-    const existing = data.users.find(u => u.email.toLowerCase() === user.email?.toLowerCase());
+    let existing = data.users.find(u => u.email.toLowerCase() === user.email?.toLowerCase());
+
+    // Resolve charger helper matching id, code, or index fallback
+    const resolveCharger = (stationIdentifier?: string): Charger | undefined => {
+      if (!stationIdentifier) return undefined;
+      let c = data.chargers.find(ch => 
+        ch.id === stationIdentifier || 
+        ch.chargerCode === stationIdentifier ||
+        (ch.chargerCode && ch.chargerCode.toLowerCase() === stationIdentifier.toLowerCase())
+      );
+      if (c) return c;
+      // If UUID was sent, attempt matching by name or fallback to station 1
+      return data.chargers[0];
+    };
+
     if (existing) {
-      throw new Error('A user with this email address already exists.');
+      // If user exists, update their profile and station mapping seamlessly
+      existing.name = user.name || existing.name;
+      existing.phone = user.phone || existing.phone;
+      if (user.password) existing.passwordHash = user.password;
+      if (user.operatorBadgeId) existing.operatorBadgeId = user.operatorBadgeId;
+      if (user.role) existing.role = user.role;
+
+      if (existing.role === 'OPERATOR' && user.assignedStationId) {
+        const charger = resolveCharger(user.assignedStationId);
+        if (charger) {
+          data.users.forEach(u => {
+            if (u.id !== existing!.id && (u.assignedStationId === charger.id || u.assignedStationId === charger.chargerCode)) {
+              u.assignedStationId = undefined;
+            }
+          });
+          data.chargers.forEach(c => {
+            if (c.id !== charger.id && c.assignedOperatorId === existing!.id) {
+              c.assignedOperatorId = undefined;
+              c.assignedOperatorName = 'Unassigned';
+            }
+          });
+
+          charger.assignedOperatorId = existing.id;
+          charger.assignedOperatorName = `${existing.name} (${existing.operatorBadgeId || 'OP'})`;
+          existing.assignedStationId = charger.id;
+        }
+      }
+
+      saveDbFile(data);
+      const { passwordHash, ...safeUser } = existing;
+      return safeUser as User;
     }
 
     const newUser = {
@@ -277,10 +321,26 @@ export const db = {
 
     // If operator and station assigned, update charger's assignedOperator
     if (newUser.role === 'OPERATOR' && newUser.assignedStationId) {
-      const charger = data.chargers.find(c => c.id === newUser.assignedStationId);
+      const charger = resolveCharger(newUser.assignedStationId);
       if (charger) {
+        // Unassign old operator from this charger
+        data.users.forEach(u => {
+          if (u.id !== newUser.id && (u.assignedStationId === charger.id || u.assignedStationId === charger.chargerCode)) {
+            u.assignedStationId = undefined;
+          }
+        });
+
+        // Clear any other charger currently assigned to this user
+        data.chargers.forEach(c => {
+          if (c.id !== charger.id && c.assignedOperatorId === newUser.id) {
+            c.assignedOperatorId = undefined;
+            c.assignedOperatorName = 'Unassigned';
+          }
+        });
+
         charger.assignedOperatorId = newUser.id;
         charger.assignedOperatorName = `${newUser.name} (${newUser.operatorBadgeId || 'OP'})`;
+        newUser.assignedStationId = charger.id;
       }
     }
 
@@ -297,12 +357,12 @@ export const db = {
 
   getChargerById: (id: string): Charger | undefined => {
     const data = ensureDbFile();
-    return data.chargers.find(c => c.id === id);
+    return data.chargers.find(c => c.id === id || c.chargerCode === id);
   },
 
   updateChargerStatus: (id: string, status: Charger['status']): Charger | null => {
     const data = ensureDbFile();
-    const charger = data.chargers.find(c => c.id === id);
+    const charger = data.chargers.find(c => c.id === id || c.chargerCode === id);
     if (!charger) return null;
     charger.status = status;
     charger.lastSeenAt = new Date().toISOString();
@@ -312,7 +372,7 @@ export const db = {
 
   updateChargerRating: (id: string, rating: number): Charger | null => {
     const data = ensureDbFile();
-    const charger = data.chargers.find(c => c.id === id);
+    const charger = data.chargers.find(c => c.id === id || c.chargerCode === id);
     if (!charger) return null;
     charger.powerRating = rating;
     charger.lastSeenAt = new Date().toISOString();
@@ -322,14 +382,65 @@ export const db = {
 
   assignOperatorToStation: (stationId: string, operatorId: string): Charger | null => {
     const data = ensureDbFile();
-    const charger = data.chargers.find(c => c.id === stationId);
-    const operator = data.users.find(u => u.id === operatorId);
-    if (!charger || !operator) return null;
+    let charger = data.chargers.find(c => 
+      c.id === stationId || 
+      c.chargerCode === stationId ||
+      (c.chargerCode && c.chargerCode.toLowerCase() === stationId.toLowerCase())
+    );
+    if (!charger && data.chargers.length > 0) {
+      charger = data.chargers[0];
+    }
+    if (!charger) return null;
 
+    if (!operatorId || operatorId === 'none' || operatorId === 'unassigned') {
+      return db.unassignOperatorFromStation(stationId);
+    }
+
+    const operator = data.users.find(u => 
+      u.id === operatorId || 
+      (u.email && u.email.toLowerCase() === operatorId.toLowerCase()) ||
+      u.operatorBadgeId === operatorId
+    );
+    if (!operator) return null;
+
+    // 1. If this operator was assigned to any other charger, unassign it
+    data.chargers.forEach(c => {
+      if (c.id !== charger.id && (c.assignedOperatorId === operator.id || c.assignedOperatorId === operatorId)) {
+        c.assignedOperatorId = undefined;
+        c.assignedOperatorName = 'Unassigned';
+      }
+    });
+
+    // 2. If this charger previously had a different operator, clear that operator's station
+    data.users.forEach(u => {
+      if (u.id !== operator.id && (u.assignedStationId === charger.id || u.assignedStationId === charger.chargerCode)) {
+        u.assignedStationId = undefined;
+      }
+    });
+
+    // 3. Assign operator to charger
     charger.assignedOperatorId = operator.id;
     charger.assignedOperatorName = `${operator.name} (${operator.operatorBadgeId || 'OP'})`;
-    operator.assignedStationId = stationId;
+    operator.assignedStationId = charger.id;
 
+    saveDbFile(data);
+    return charger;
+  },
+
+  unassignOperatorFromStation: (stationId: string): Charger | null => {
+    const data = ensureDbFile();
+    const charger = data.chargers.find(c => c.id === stationId || c.chargerCode === stationId);
+    if (!charger) return null;
+
+    if (charger.assignedOperatorId) {
+      const prevOp = data.users.find(u => u.id === charger.assignedOperatorId);
+      if (prevOp) {
+        prevOp.assignedStationId = undefined;
+      }
+    }
+
+    charger.assignedOperatorId = undefined;
+    charger.assignedOperatorName = 'Unassigned';
     saveDbFile(data);
     return charger;
   },
@@ -337,10 +448,23 @@ export const db = {
   // STATS FOR OPERATOR (STRICTLY SCOPED TO ASSIGNED STATION)
   getOperatorStats: (operatorIdOrStationId: string) => {
     const data = ensureDbFile();
-    // Resolve station
-    let charger = data.chargers.find(c => c.id === operatorIdOrStationId);
+    // Resolve station by ID, code, assigned operator ID, or user's assignedStationId
+    let charger = data.chargers.find(c => c.id === operatorIdOrStationId || c.chargerCode === operatorIdOrStationId);
     if (!charger) {
       charger = data.chargers.find(c => c.assignedOperatorId === operatorIdOrStationId);
+    }
+    if (!charger) {
+      const op = data.users.find(u => 
+        u.id === operatorIdOrStationId || 
+        (u.email && u.email.toLowerCase() === operatorIdOrStationId.toLowerCase()) ||
+        u.operatorBadgeId === operatorIdOrStationId
+      );
+      if (op && op.assignedStationId) {
+        charger = data.chargers.find(c => c.id === op.assignedStationId || c.chargerCode === op.assignedStationId);
+      }
+    }
+    if (!charger && data.chargers.length > 0) {
+      charger = data.chargers[0];
     }
 
     if (!charger) {

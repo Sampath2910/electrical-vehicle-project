@@ -38,8 +38,8 @@ export async function GET(request: Request) {
       if (res.ok) {
         const data = await res.json();
         return NextResponse.json({
-          success: true,
           ...data,
+          success: true,
         });
       }
     } catch {
@@ -55,8 +55,8 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      success: true,
       ...data,
+      success: true,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

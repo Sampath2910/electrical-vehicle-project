@@ -10,9 +10,9 @@ import {
   AlertTriangle, 
   Radio, 
   Wifi, 
-  RefreshCw,
-  Layers,
-  Activity
+  RefreshCw, 
+  Layers, 
+  Activity 
 } from 'lucide-react';
 import { telemetryProvider } from '@/lib/providers';
 
@@ -84,32 +84,32 @@ export const EceHardwareBench: React.FC = () => {
   const powerWatts = Math.round(gridVoltage * loadCurrent * 0.98);
 
   return (
-    <div className="glass-card rounded-3xl p-6 lg:p-8 border border-cyan-500/30 bg-slate-900/90 shadow-2xl space-y-6">
+    <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-slate-900/90 shadow-xl space-y-6">
       
       {/* EEE PROJECT HEADER BAR */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-semibold text-cyan-400 mb-1.5">
-            <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-semibold text-cyan-700 dark:text-cyan-400 mb-1.5">
+            <Cpu className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
             <span>Hardware Test Bench & Power Quality Monitoring</span>
           </div>
-          <h3 className="text-xl font-extrabold text-white tracking-tight">
+          <h3 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             ESP32 Embedded Power Controller & PZEM-004T Metering Bench
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Real-time verification of 2-wheeler 3.3kW AC power telemetry (max 14.3A), THD harmonic distortion, autonomous relay cutoff, and priority preemption eviction.
           </p>
         </div>
 
         {/* Relay State Badge */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-300">GPIO 26 5V Relay:</span>
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">GPIO 26 5V Relay:</span>
           <span className={`px-3 py-1 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 border ${
             relayContactor 
-              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' 
-              : 'bg-rose-500/10 border-rose-500/40 text-rose-400 animate-pulse'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/40 dark:text-emerald-400' 
+              : 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-500/10 dark:border-rose-500/40 dark:text-rose-400 animate-pulse'
           }`}>
-            <span className={`w-2 h-2 rounded-full ${relayContactor ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+            <span className={`w-2 h-2 rounded-full ${relayContactor ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400'}`} />
             {relayContactor ? 'LATCHED (CLOSED)' : 'TRIPPED (OPEN)'}
           </span>
         </div>
@@ -118,40 +118,40 @@ export const EceHardwareBench: React.FC = () => {
       {/* HARDWARE BLOCK DIAGRAM & SENSOR PINS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
         
-        <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-slate-500 block">Microcontroller</span>
-          <span className="font-extrabold text-white text-sm block">ESP32-WROOM-32</span>
-          <span className="text-[10px] text-cyan-400 font-mono block">240MHz Dual-Core • Wi-Fi/MQTT</span>
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1">
+          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 block">Microcontroller</span>
+          <span className="font-extrabold text-slate-900 dark:text-white text-sm block">ESP32-WROOM-32</span>
+          <span className="text-[10px] text-cyan-700 dark:text-cyan-400 font-mono block">240MHz Dual-Core • Wi-Fi/MQTT</span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-slate-500 block">Multi-Function Sensor</span>
-          <span className="font-extrabold text-white text-sm block">PZEM-004T Sensor</span>
-          <span className="text-[10px] text-emerald-400 font-mono block">UART2 (TX: 17, RX: 16) • 100A CT</span>
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1">
+          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 block">Multi-Function Sensor</span>
+          <span className="font-extrabold text-slate-900 dark:text-white text-sm block">PZEM-004T Sensor</span>
+          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono block">UART2 (TX: 17, RX: 16) • 100A CT</span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-slate-500 block">Power Quality Monitoring</span>
-          <span className="font-extrabold text-white text-sm block">PF: 0.98 | THD: 2.1%</span>
-          <span className="text-[10px] text-blue-400 font-mono block">IEEE 519 Standard (&lt;5% THD)</span>
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1">
+          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 block">Power Quality Monitoring</span>
+          <span className="font-extrabold text-slate-900 dark:text-white text-sm block">PF: 0.98 | THD: 2.1%</span>
+          <span className="text-[10px] text-blue-700 dark:text-blue-400 font-mono block">IEEE 519 Standard (&lt;5% THD)</span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-          <span className="text-[10px] uppercase font-bold text-slate-500 block">Payment & Authorization</span>
-          <span className="font-extrabold text-white text-sm block">Dynamic UPI / QR Code</span>
-          <span className="text-[10px] text-amber-400 font-mono block">Zero-RFID • Instant Online UPI</span>
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1">
+          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 block">Payment & Authorization</span>
+          <span className="font-extrabold text-slate-900 dark:text-white text-sm block">Dynamic UPI / QR Code</span>
+          <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono block">Zero-RFID • Instant Online UPI</span>
         </div>
 
       </div>
 
       {/* INTERACTIVE EXAMINER DEMO TEST CONTROLS */}
-      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-            <Sliders className="w-4 h-4 text-cyan-400" />
+          <span className="text-xs font-bold text-slate-800 dark:text-slate-300 flex items-center gap-1.5">
+            <Sliders className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
             <span>Examiner Test & Simulation Bench:</span>
           </span>
-          <span className="text-[11px] text-slate-400">Click any mode below to verify hardware responses in real-time</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Click any mode below to verify hardware responses in real-time</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -160,12 +160,12 @@ export const EceHardwareBench: React.FC = () => {
             onClick={() => setTestState('NORMAL')}
             className={`p-3 rounded-xl border text-left transition-all ${
               testState === 'NORMAL'
-                ? 'border-cyan-400 bg-cyan-500/10 glow-cyan text-white'
-                : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
+                ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-500/10 glow-cyan text-slate-900 dark:text-white'
+                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <span className="text-xs font-bold block">1. Normal 2W Charging</span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">230V AC &bull; 14.1A (&le;14.3A max) &bull; Relay CLOSED</span>
+            <span className="text-xs font-bold block text-cyan-700 dark:text-cyan-400">1. Normal 2W Charging</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">230V AC &bull; 14.1A (&le;14.3A max) &bull; Relay CLOSED</span>
           </button>
 
           <button
@@ -173,15 +173,15 @@ export const EceHardwareBench: React.FC = () => {
             onClick={() => setTestState('SURGE_FAULT')}
             className={`p-3 rounded-xl border text-left transition-all ${
               testState === 'SURGE_FAULT'
-                ? 'border-rose-400 bg-rose-500/10 glow-rose text-white'
-                : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
+                ? 'border-rose-500 bg-rose-50 dark:bg-rose-500/10 glow-rose text-slate-900 dark:text-white'
+                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <span className="text-xs font-bold text-rose-400 block flex items-center gap-1">
+            <span className="text-xs font-bold text-rose-600 dark:text-rose-400 block flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>2. Test Overvoltage Cutoff</span>
             </span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">Simulate 265V surge (&gt;253V) &rarr; Relay TRIPS in 8ms</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">Simulate 265V surge (&gt;253V) &rarr; Relay TRIPS in 8ms</span>
           </button>
 
           <button
@@ -189,12 +189,12 @@ export const EceHardwareBench: React.FC = () => {
             onClick={() => setTestState('PREEMPT_OVERRIDE')}
             className={`p-3 rounded-xl border text-left transition-all ${
               testState === 'PREEMPT_OVERRIDE'
-                ? 'border-amber-400 bg-amber-500/10 text-white'
-                : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
+                ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-slate-900 dark:text-white'
+                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <span className="text-xs font-bold text-amber-400 block">3. Priority Preemption Override</span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">Ambulance Arrives &rarr; 120s Eviction or ₹500 Penalty</span>
+            <span className="text-xs font-bold text-amber-700 dark:text-amber-400 block">3. Priority Preemption Override</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">Ambulance Arrives &rarr; 120s Eviction or ₹500 Penalty</span>
           </button>
         </div>
       </div>
@@ -203,49 +203,49 @@ export const EceHardwareBench: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
         {/* Math & Formulas (EEE Power Systems & Sensor Theory) */}
-        <div className="lg:col-span-5 p-4 rounded-2xl bg-slate-950/90 border border-slate-800 flex flex-col justify-between space-y-3">
+        <div className="lg:col-span-5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3">
           <div>
-            <span className="text-xs font-bold text-slate-300 block mb-2">Power Systems & Metrology Equations:</span>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-300 block mb-2">Power Systems & Metrology Equations:</span>
             <div className="space-y-2 text-xs font-mono">
-              <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800/80">
-                <span className="text-slate-400 text-[10px] block">AC Voltage RMS (PZEM-004T):</span>
-                <span className="text-emerald-400">V_rms = <strong>{gridVoltage} V</strong> (Nominal 230V &plusmn; 10%)</span>
+              <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 shadow-xs">
+                <span className="text-slate-500 dark:text-slate-400 text-[10px] block">AC Voltage RMS (PZEM-004T):</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-bold">V_rms = <strong>{gridVoltage} V</strong> (Nominal 230V &plusmn; 10%)</span>
               </div>
 
-              <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800/80">
-                <span className="text-slate-400 text-[10px] block">2-Wheeler Max Current Draw:</span>
-                <span className="text-blue-400">I_rms = <strong>{loadCurrent} A</strong> (Limited to 14.3A @ 230V)</span>
+              <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 shadow-xs">
+                <span className="text-slate-500 dark:text-slate-400 text-[10px] block">2-Wheeler Max Current Draw:</span>
+                <span className="text-blue-700 dark:text-blue-400 font-bold">I_rms = <strong>{loadCurrent} A</strong> (Limited to 14.3A @ 230V)</span>
               </div>
 
-              <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800/80">
-                <span className="text-slate-400 text-[10px] block">Active Power (P = V &times; I &times; cos&phi;):</span>
-                <span className="text-cyan-400">P = {gridVoltage}V &times; {loadCurrent}A &times; 0.98 = <strong>{powerWatts} W (3.2 kW)</strong></span>
+              <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 shadow-xs">
+                <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Active Power (P = V &times; I &times; cos&phi;):</span>
+                <span className="text-cyan-700 dark:text-cyan-400 font-bold">P = {gridVoltage}V &times; {loadCurrent}A &times; 0.98 = <strong>{powerWatts} W (3.2 kW)</strong></span>
               </div>
 
-              <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800/80">
-                <span className="text-slate-400 text-[10px] block">Power Quality (THD & Power Factor):</span>
-                <span className="text-amber-400">PF = 0.98 | THD = {thdVal}% (&lt; 5% IEEE-519 Standard)</span>
+              <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 shadow-xs">
+                <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Power Quality (THD & Power Factor):</span>
+                <span className="text-amber-700 dark:text-amber-400 font-bold">PF = 0.98 | THD = {thdVal}% (&lt; 5% IEEE-519 Standard)</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
             <span>Scope: 1 kW to 3.3 kW 2-Wheeler</span>
-            <span className="text-emerald-400 font-semibold">Single Phase 230V</span>
+            <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Single Phase 230V</span>
           </div>
         </div>
 
         {/* Live ESP32 Serial Terminal */}
-        <div className="lg:col-span-7 p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-2">
+        <div className="lg:col-span-7 p-4 rounded-2xl bg-slate-900 dark:bg-slate-950 border border-slate-700 dark:border-slate-800 flex flex-col justify-between space-y-2 text-white">
           <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
               <Terminal className="w-3.5 h-3.5 text-cyan-400" />
               <span>ESP32 Virtual Serial Monitor (115200 Baud)</span>
             </span>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
           </div>
 
-          <div className="font-mono text-[11px] space-y-1 bg-black/60 p-3 rounded-xl border border-slate-900 h-44 overflow-y-auto text-slate-300">
+          <div className="terminal-window font-mono text-[11px] space-y-1 bg-black/80 p-3 rounded-xl border border-slate-800 h-44 overflow-y-auto text-slate-200">
             {serialLogs.map((log, i) => (
               <div 
                 key={i} 
@@ -264,7 +264,7 @@ export const EceHardwareBench: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-1">
+          <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
             <span>MQTT Topic: ev/chargers/bay01/telemetry</span>
             <span>Packet Rate: 1 Hz &bull; Modbus RTU / UART</span>
           </div>

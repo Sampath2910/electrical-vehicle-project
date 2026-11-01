@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className="bg-navy-950 text-slate-100 min-h-screen flex flex-col antialiased">
+      <body className="bg-slate-50 dark:bg-navy-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased">
         <StoreProvider>
           <Navbar />
           <main className="flex-1 pb-16">

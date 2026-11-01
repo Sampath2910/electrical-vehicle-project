@@ -62,16 +62,16 @@ export default function ChargersPage() {
             <Bike className="w-3.5 h-3.5" />
             <span>2-Wheeler Regional Energy Network</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Find EV Bike Chargers & Swap Stations</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Find EV Bike Chargers & Swap Stations</h1>
           <p className="text-slate-400 text-xs mt-1">Discover available 15A/16A points, LEV DC fast chargers, and 60-second automated Battery Swapping Hubs (BSS).</p>
         </div>
 
         {/* View mode toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 w-fit">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-fit">
           <button
             onClick={() => setViewMode('list')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === 'list' ? 'bg-cyan-500 text-slate-950 shadow-md font-bold' : 'text-slate-400 hover:text-white'
+              viewMode === 'list' ? 'bg-cyan-500 text-slate-950 shadow-md font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <List className="w-4 h-4" />
@@ -80,7 +80,7 @@ export default function ChargersPage() {
           <button
             onClick={() => setViewMode('map')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              viewMode === 'map' ? 'bg-cyan-500 text-slate-950 shadow-md font-bold' : 'text-slate-400 hover:text-white'
+              viewMode === 'map' ? 'bg-cyan-500 text-slate-950 shadow-md font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Map className="w-4 h-4" />
@@ -126,7 +126,7 @@ export default function ChargersPage() {
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
             stationTypeFilter === 'ALL'
               ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-              : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+              : 'bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Zap className="w-4 h-4" />
@@ -138,7 +138,7 @@ export default function ChargersPage() {
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
             stationTypeFilter === 'PLUG'
               ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20'
-              : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+              : 'bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Bike className="w-4 h-4" />
@@ -150,7 +150,7 @@ export default function ChargersPage() {
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
             stationTypeFilter === 'SWAP'
               ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20'
-              : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+              : 'bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <RefreshCw className="w-4 h-4" />
@@ -159,7 +159,7 @@ export default function ChargersPage() {
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="glass-card rounded-2xl p-4 border border-slate-800 bg-slate-900/80 space-y-4">
+      <div className="glass-card rounded-2xl p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 space-y-4 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
           
           {/* Search Bar */}
@@ -170,7 +170,7 @@ export default function ChargersPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by station code, bike park, or area..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 transition-colors"
             />
           </div>
 
@@ -179,7 +179,7 @@ export default function ChargersPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
               <option value="AVAILABLE">AVAILABLE ONLY</option>
@@ -195,7 +195,7 @@ export default function ChargersPage() {
             <select
               value={powerFilter}
               onChange={(e) => setPowerFilter(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer"
             >
               <option value="ALL">All Power Rates</option>
               <option value="AC">Slow/Standard (0.5 - 1.5 kW 2W)</option>
@@ -221,13 +221,13 @@ export default function ChargersPage() {
               const isOwnStation = isOperator && (charger.id === assignedStationId || charger.chargerCode === assignedStationId);
               const isOtherStationRestricted = isOperator && !isOwnStation;
 
-              let cardStyles = 'border-slate-800 bg-slate-900/70';
+              let cardStyles = 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 shadow-sm';
               if (isOwnStation) {
-                cardStyles = 'border-amber-500/60 bg-gradient-to-b from-navy-900/95 to-amber-950/20 shadow-xl shadow-amber-500/10 ring-1 ring-amber-500/40';
+                cardStyles = 'border-amber-300 dark:border-amber-500/60 bg-amber-50/40 dark:bg-gradient-to-b dark:from-navy-900/95 dark:to-amber-950/20 shadow-lg ring-1 ring-amber-400/40';
               } else if (isOtherStationRestricted) {
-                cardStyles = 'border-slate-800/80 bg-slate-950/40 opacity-75';
+                cardStyles = 'border-slate-200/80 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-950/40 opacity-75';
               } else if (isSwap) {
-                cardStyles = 'border-emerald-500/40 bg-slate-900/80 shadow-emerald-500/5';
+                cardStyles = 'border-emerald-300 dark:border-emerald-500/40 bg-white dark:bg-slate-900/80 shadow-emerald-500/5';
               }
 
               return (
@@ -239,7 +239,7 @@ export default function ChargersPage() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-mono font-bold ${
-                          isOwnStation ? 'text-amber-400' : isOtherStationRestricted ? 'text-slate-500' : 'text-cyan-400'
+                          isOwnStation ? 'text-amber-700 dark:text-amber-400' : isOtherStationRestricted ? 'text-slate-400 dark:text-slate-500' : 'text-cyan-700 dark:text-cyan-400'
                         }`}>
                           {charger.chargerCode}
                         </span>
@@ -262,8 +262,8 @@ export default function ChargersPage() {
                       <StatusBadge status={charger.status} size="sm" />
                     </div>
 
-                    <h3 className="text-base font-extrabold text-white mb-1">{charger.name}</h3>
-                    <p className="text-xs text-slate-400 flex items-start gap-1.5 mb-4">
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-1">{charger.name}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1.5 mb-4">
                       <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
                       <span className="line-clamp-1">{charger.location}</span>
                     </p>
@@ -278,18 +278,18 @@ export default function ChargersPage() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-800 my-4 text-xs">
+                    <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-200 dark:border-slate-800 my-4 text-xs">
                       <div>
                         <span className="text-[10px] text-slate-500 block font-semibold">Power</span>
-                        <span className="font-bold text-white font-mono">{charger.powerRating} kW</span>
+                        <span className="font-bold text-slate-900 dark:text-white font-mono">{charger.powerRating} kW</span>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-500 block font-semibold">Connector</span>
-                        <span className="font-bold text-cyan-300 truncate block">{charger.connectorType}</span>
+                        <span className="font-bold text-cyan-700 dark:text-cyan-300 truncate block">{charger.connectorType}</span>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-500 block font-semibold">Rate</span>
-                        <span className="font-bold text-emerald-400 font-mono">₹{charger.pricePerKwh.toFixed(2)}/kWh</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono">₹{charger.pricePerKwh.toFixed(2)}/kWh</span>
                       </div>
                     </div>
                   </div>
@@ -318,7 +318,7 @@ export default function ChargersPage() {
                         <>
                           <Link
                             href={`/chargers/${charger.id}`}
-                            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
+                            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-transparent text-xs font-semibold shadow-xs"
                           >
                             Details
                           </Link>

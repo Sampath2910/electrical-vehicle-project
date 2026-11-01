@@ -54,13 +54,44 @@ public class ChargerService {
     @Transactional
     public ChargerDto.ChargerResponse assignOperator(String stationId, String operatorId) {
         Charger charger = chargerRepository.findById(stationId)
+                .or(() -> chargerRepository.findByChargerCode(stationId))
                 .orElseThrow(() -> new IllegalArgumentException("Charger not found with id: " + stationId));
+
+        if (operatorId == null || "none".equalsIgnoreCase(operatorId) || "unassigned".equalsIgnoreCase(operatorId)) {
+            if (charger.getAssignedOperatorId() != null) {
+                userRepository.findById(charger.getAssignedOperatorId()).ifPresent(op -> {
+                    op.setAssignedStationId(null);
+                    userRepository.save(op);
+                });
+            }
+            charger.setAssignedOperatorId(null);
+            charger.setLastSeenAt(LocalDateTime.now());
+            return toResponse(chargerRepository.save(charger));
+        }
+
         User operator = userRepository.findById(operatorId)
+                .or(() -> userRepository.findByEmail(operatorId))
                 .orElseThrow(() -> new IllegalArgumentException("Operator not found with id: " + operatorId));
+
+        // Clear any other charger assigned to this operator
+        chargerRepository.findByAssignedOperatorId(operator.getId()).ifPresent(prev -> {
+            if (!prev.getId().equals(charger.getId())) {
+                prev.setAssignedOperatorId(null);
+                chargerRepository.save(prev);
+            }
+        });
+
+        // Clear previous operator's station
+        if (charger.getAssignedOperatorId() != null && !charger.getAssignedOperatorId().equals(operator.getId())) {
+            userRepository.findById(charger.getAssignedOperatorId()).ifPresent(prevOp -> {
+                prevOp.setAssignedStationId(null);
+                userRepository.save(prevOp);
+            });
+        }
 
         charger.setAssignedOperatorId(operator.getId());
         charger.setLastSeenAt(LocalDateTime.now());
-        operator.setAssignedStationId(stationId);
+        operator.setAssignedStationId(charger.getId());
         userRepository.save(operator);
 
         return toResponse(chargerRepository.save(charger));

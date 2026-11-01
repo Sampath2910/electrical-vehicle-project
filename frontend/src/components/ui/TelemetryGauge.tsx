@@ -24,22 +24,22 @@ export const TelemetryGauge: React.FC<TelemetryGaugeProps> = ({
   const percentage = Math.min(100, Math.max(0, (currentKw / maxPowerKw) * 100));
 
   return (
-    <div className="glass-card rounded-3xl p-6 lg:p-8 border border-cyan-500/20 relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-850 to-navy-950">
-      {/* Background radial glow */}
+    <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-200 dark:border-cyan-500/20 relative overflow-hidden bg-white dark:bg-gradient-to-br dark:from-navy-900 dark:via-navy-850 dark:to-navy-950 shadow-sm dark:shadow-none">
+      {/* Background radial glow in dark mode */}
       <div className="absolute -right-20 -top-20 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -left-20 -bottom-20 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+          <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400">
             <Zap className="w-5 h-5 animate-pulse" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-200">Live Power Delivery</h3>
-            <p className="text-xs text-slate-400">ESP32 IoT Telemetry Stream (1Hz)</p>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Live Power Delivery</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">ESP32 IoT Telemetry Stream (1Hz)</p>
           </div>
         </div>
-        <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+        <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>Contactor Engaged</span>
         </div>
@@ -54,9 +54,10 @@ export const TelemetryGauge: React.FC<TelemetryGaugeProps> = ({
               cx="50"
               cy="50"
               r="40"
-              stroke="#1e293b"
+              stroke="currentColor"
               strokeWidth="7"
               fill="transparent"
+              className="text-slate-200 dark:text-slate-800"
             />
             {/* Progress Arc */}
             <circle
@@ -81,13 +82,13 @@ export const TelemetryGauge: React.FC<TelemetryGaugeProps> = ({
 
           {/* Center Text */}
           <div className="absolute text-center flex flex-col items-center">
-            <span className="text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
+            <span className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white drop-shadow-sm font-mono">
               {currentKw}
             </span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mt-0.5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-400 mt-0.5">
               kW Power
             </span>
-            <span className="text-[10px] text-slate-400 mt-1">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
               Cap: {maxPowerKw} kW
             </span>
           </div>
@@ -95,37 +96,37 @@ export const TelemetryGauge: React.FC<TelemetryGaugeProps> = ({
       </div>
 
       {/* Grid of Electrical Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
-        <div className="p-3 rounded-xl bg-navy-950/60 border border-slate-800">
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
-            <Activity className="w-3.5 h-3.5 text-blue-400" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/80">
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-950/60 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
+            <Activity className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
             <span>Voltage</span>
           </div>
-          <span className="text-lg font-bold text-white">{voltageV} <span className="text-xs font-normal text-slate-400">V</span></span>
+          <span className="text-lg font-bold text-slate-900 dark:text-white font-mono">{voltageV} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">V</span></span>
         </div>
 
-        <div className="p-3 rounded-xl bg-navy-950/60 border border-slate-800">
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
-            <Gauge className="w-3.5 h-3.5 text-cyan-400" />
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-950/60 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
+            <Gauge className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
             <span>Current</span>
           </div>
-          <span className="text-lg font-bold text-white">{currentA} <span className="text-xs font-normal text-slate-400">A</span></span>
+          <span className="text-lg font-bold text-slate-900 dark:text-white font-mono">{currentA} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">A</span></span>
         </div>
 
-        <div className="p-3 rounded-xl bg-navy-950/60 border border-slate-800">
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
-            <Activity className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-950/60 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
+            <Activity className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>Frequency</span>
           </div>
-          <span className="text-lg font-bold text-white">{frequencyHz} <span className="text-xs font-normal text-slate-400">Hz</span></span>
+          <span className="text-lg font-bold text-slate-900 dark:text-white font-mono">{frequencyHz} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Hz</span></span>
         </div>
 
-        <div className="p-3 rounded-xl bg-navy-950/60 border border-slate-800">
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-950/60 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
+            <Zap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
             <span>Power Factor</span>
           </div>
-          <span className="text-lg font-bold text-white">{powerFactor}</span>
+          <span className="text-lg font-bold text-slate-900 dark:text-white font-mono">{powerFactor}</span>
         </div>
       </div>
     </div>

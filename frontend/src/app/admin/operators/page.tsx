@@ -32,6 +32,7 @@ export default function AdminOperatorsPage() {
   const [reassigning, setReassigning] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [modalError, setModalError] = useState('');
 
   // Register Operator Modal state
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
@@ -49,11 +50,11 @@ export default function AdminOperatorsPage() {
     try {
       setLoading(true);
       setErrorMessage('');
-      const res = await fetch('/api/admin/stats');
+      const res = await fetch('/api/admin/stats', { cache: 'no-store' });
       const data = await res.json();
-      if (data && data.success) {
-        const stationList = data.stations || data.chargers || [];
-        const operatorList = data.operators || [];
+      const stationList = data?.stations || data?.chargers || [];
+      const operatorList = data?.operators || [];
+      if (res.ok && (data?.success || stationList.length > 0 || operatorList.length > 0)) {
         setStations(stationList);
         setOperators(operatorList);
         if (stationList.length > 0 && !reassignStationId) {
@@ -79,36 +80,39 @@ export default function AdminOperatorsPage() {
 
   const openRegisterModal = () => {
     const nextBadgeNum = 101 + operators.length;
+    const defaultStation = stations.length > 0 ? (stations[0].code || stations[0].chargerCode || stations[0].id) : 'KLETECH-STATION-1';
     setOperatorForm({
       name: '',
       email: '',
       phone: '',
       badgeId: `KLE-OP-${nextBadgeNum}`,
-      assignedStationId: stations.length > 0 ? stations[0].id : 'ch-101',
+      assignedStationId: defaultStation,
       password: 'operator123',
     });
     setErrorMessage('');
+    setModalError('');
     setIsRegisterModalOpen(true);
   };
 
   const handleSaveNewOperator = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!operatorForm.name.trim() || !operatorForm.email.trim()) {
-      setErrorMessage('Please provide both a name and an email address.');
+      setModalError('Please provide both a name and an email address.');
       return;
     }
 
     try {
       setSavingOperator(true);
+      setModalError('');
       setErrorMessage('');
 
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: operatorForm.name,
-          email: operatorForm.email,
-          phone: operatorForm.phone || '+91 98765 00000',
+          name: operatorForm.name.trim(),
+          email: operatorForm.email.trim(),
+          phone: operatorForm.phone.trim() || '+91 98765 00000',
           password: operatorForm.password || 'operator123',
           role: 'OPERATOR',
           assignedStationId: operatorForm.assignedStationId,
@@ -121,14 +125,25 @@ export default function AdminOperatorsPage() {
         throw new Error(data.error || 'Failed to save operator.');
       }
 
-      setSuccessMessage(`Operator "${operatorForm.name}" successfully saved and bound to station.`);
+      // Explicitly ensure the station is patched with this new operator
+      if (operatorForm.assignedStationId && data.user) {
+        await fetch('/api/stations', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stationId: operatorForm.assignedStationId,
+            operatorId: data.user.id || data.user.email,
+          }),
+        });
+      }
+
+      setSuccessMessage(`Operator "${operatorForm.name}" successfully saved and assigned to station.`);
       setIsRegisterModalOpen(false);
       await loadData();
       setTimeout(() => setSuccessMessage(''), 4000);
     } catch (err: any) {
       console.error('Error saving operator:', err);
-      setErrorMessage(err.message || 'Operator registration and save failed.');
-      setTimeout(() => setErrorMessage(''), 5000);
+      setModalError(err.message || 'Operator registration and save failed.');
     } finally {
       setSavingOperator(false);
     }
@@ -177,8 +192,10 @@ export default function AdminOperatorsPage() {
 
   const handleQuickReassign = (operator: any) => {
     setReassignOperatorId(operator.id);
-    if (operator.assignedStationId) {
-      setReassignStationId(operator.assignedStationId);
+    const currentSt = stations.find(s => s.assignedOperatorId === operator.id) || 
+                      stations.find(s => s.id === operator.assignedStationId || s.code === operator.assignedStationId);
+    if (currentSt) {
+      setReassignStationId(currentSt.id);
     }
     // Smooth scroll down to assignment section
     const el = document.getElementById('reassign-section');
@@ -258,6 +275,7 @@ export default function AdminOperatorsPage() {
             {operators.length > 0 ? (
               operators.map((op) => {
                 const assignedStation = stations.find(s => 
+                  s.assignedOperatorId === op.id ||
                   s.id === op.assignedStationId || 
                   s.code === op.assignedStationId || 
                   s.chargerCode === op.assignedStationId
@@ -326,7 +344,7 @@ export default function AdminOperatorsPage() {
             >
               {stations.length > 0 ? (
                 stations.map((st) => (
-                  <option key={st.id} value={st.id}>
+                  <option key={st.id} value={st.code || st.chargerCode || st.id}>
                     {st.name} ({st.chargerCode || st.code || st.id})
                   </option>
                 ))
@@ -344,11 +362,14 @@ export default function AdminOperatorsPage() {
               className="w-full bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
             >
               {operators.length > 0 ? (
-                operators.map((op) => (
-                  <option key={op.id} value={op.id}>
-                    {op.name} ({op.operatorBadgeId || op.email})
-                  </option>
-                ))
+                <>
+                  <option value="none">-- Unassign / Set as Self-Serve Bay --</option>
+                  {operators.map((op) => (
+                    <option key={op.id} value={op.id}>
+                      {op.name} ({op.operatorBadgeId || op.email})
+                    </option>
+                  ))}
+                </>
               ) : (
                 <option value="">No operators registered</option>
               )}
@@ -406,6 +427,14 @@ export default function AdminOperatorsPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Modal Error Alert */}
+            {modalError && (
+              <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2 shadow-sm">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                <span>{modalError}</span>
+              </div>
+            )}
 
             {/* Modal Form */}
             <form onSubmit={handleSaveNewOperator} className="space-y-4">
@@ -495,7 +524,7 @@ export default function AdminOperatorsPage() {
                     className="w-full bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-amber-500 cursor-pointer"
                   >
                     {stations.map((st) => (
-                      <option key={st.id} value={st.id}>
+                      <option key={st.id} value={st.code || st.chargerCode || st.id}>
                         {st.name} ({st.chargerCode || st.code || st.id})
                       </option>
                     ))}

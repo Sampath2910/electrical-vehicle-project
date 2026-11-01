@@ -33,9 +33,9 @@ export default function AdminOperationsDashboard() {
   const fetchAdminStats = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/stats');
+      const res = await fetch('/api/admin/stats', { cache: 'no-store' });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && (data.success || data.stations || data.totalFleetRevenue !== undefined)) {
         setAdminStats(data);
       }
     } catch (err) {
@@ -80,19 +80,19 @@ export default function AdminOperationsDashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* HEADER WITH FLEET STATS */}
-      <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-800 bg-gradient-to-r from-navy-900 via-navy-850 to-navy-950 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
+      <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-200 dark:border-slate-800 bg-white dark:bg-gradient-to-r dark:from-navy-900 dark:via-navy-850 dark:to-navy-950 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl relative overflow-hidden">
         
         <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-semibold border border-rose-500/30">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs font-semibold border border-rose-200 dark:border-rose-500/30">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Master Fleet Control Tower &bull; {currentUser.role}</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Global EV Fleet Operations & Revenue Tower
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Comprehensive audit of all stations, dedicated station operators, combined energy consumption, and total revenue
           </p>
         </div>
@@ -100,21 +100,21 @@ export default function AdminOperationsDashboard() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={fetchAdminStats}
-            className="p-3 rounded-2xl bg-navy-950 border border-slate-800 text-slate-300 hover:text-white transition-all hover:border-cyan-500/40"
+            className="p-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all hover:border-cyan-500/40 shadow-xs"
             title="Refresh Fleet Data"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-cyan-600 dark:text-cyan-400' : ''}`} />
           </button>
           <Link
             href="/admin/operators"
-            className="px-4 py-3 rounded-2xl bg-navy-950 hover:bg-navy-900 border border-slate-800 text-slate-200 font-bold text-xs flex items-center gap-2 transition-all hover:border-amber-500/40"
+            className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-navy-950 dark:hover:bg-navy-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-2 transition-all hover:border-amber-500/40 shadow-xs"
           >
-            <Users className="w-4 h-4 text-amber-400" />
+            <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             <span>Manage Operators</span>
           </Link>
           <Link
             href="/admin/live"
-            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-navy-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all"
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all hover:scale-[1.02]"
           >
             <Activity className="w-4 h-4" />
             <span>Live Metrology Stream</span>
@@ -122,31 +122,32 @@ export default function AdminOperationsDashboard() {
         </div>
       </div>
 
-      {/* GLOBAL REVENUE & FLEET KPIS (USER EXPLICIT REQUIREMENT: TOTAL REVENUE DISPLAYED) */}
+      {/* GLOBAL REVENUE & FLEET KPIS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* TOTAL FLEET REVENUE */}
-        <div className="glass-card rounded-3xl p-6 border border-emerald-500/30 bg-gradient-to-br from-navy-900 via-navy-900 to-emerald-950/20 shadow-xl relative overflow-hidden">
+        <div className="glass-card rounded-3xl p-6 border border-emerald-200 dark:border-emerald-500/30 bg-white dark:bg-gradient-to-br dark:from-navy-900 dark:via-navy-900 dark:to-emerald-950/20 shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Fleet Revenue</span>
-            <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Fleet Revenue</span>
+            <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
               <IndianRupee className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold text-white mt-3 font-mono">
+          <div className="text-3xl font-extrabold text-slate-900 dark:text-white mt-3 font-mono">
             ₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </div>
-          <p className="text-[11px] text-emerald-400 mt-2 font-medium flex items-center gap-1">
+          <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-2 font-medium flex items-center gap-1">
             <span>Combined earnings across all active bays</span>
           </p>
         </div>
 
-        {/* TOTAL ENERGY CONSUMED */}
+        {/* TOTAL ENERGY DELIVERED */}
         <MetricCard
           title="Total Fleet Power Delivered"
           value={`${totalEnergy.toFixed(1)} kWh`}
           subtitle="Aggregate single-phase AC metrology"
           icon={Zap}
+          variant="cyan"
         />
 
         {/* TOTAL ACTIVE STATIONS */}
@@ -155,6 +156,7 @@ export default function AdminOperationsDashboard() {
           value={adminStats?.totalStations ?? 5}
           subtitle={`${adminStats?.availableStations ?? 4} Available • ${adminStats?.chargingStations ?? 1} In-Session`}
           icon={Building2}
+          variant="default"
         />
 
         {/* ASSIGNED STATION OPERATORS */}
@@ -163,27 +165,28 @@ export default function AdminOperationsDashboard() {
           value={adminStats?.totalOperators ?? 2}
           subtitle="Dedicated per-station personnel"
           icon={UserCheck}
+          variant="amber"
         />
       </div>
 
-      {/* ALL STATIONS COMPARISON MATRIX (INDIVIDUAL REVENUE & CONSUMPTION BREAKDOWN) */}
+      {/* ALL STATIONS COMPARISON MATRIX */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-cyan-400" />
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
               <span>Station-by-Station Operational & Financial Matrix</span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Breakdown of each station's assigned operator, individual earnings, and energy metered
             </p>
           </div>
         </div>
 
-        <div className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 overflow-x-auto shadow-xl">
+        <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 overflow-x-auto shadow-xl">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-slate-400 border-b border-slate-800 uppercase text-[10px] tracking-wider font-semibold">
+              <tr className="text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase text-[10px] tracking-wider font-semibold">
                 <th className="py-3 px-3">Station Name & Code</th>
                 <th className="py-3 px-3">Assigned Operator</th>
                 <th className="py-3 px-3">Current Status</th>
@@ -193,22 +196,22 @@ export default function AdminOperationsDashboard() {
                 <th className="py-3 px-3 text-center">Operator Console</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-200">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-800 dark:text-slate-200">
               {stationsList.map((st: any) => (
-                <tr key={st.id} className="hover:bg-navy-850/50 transition-colors">
+                <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-navy-850/50 transition-colors">
                   <td className="py-4 px-3">
-                    <div className="font-bold text-white text-sm">{st.name}</div>
-                    <div className="font-mono text-[10px] text-cyan-400 mt-0.5">{st.code} &bull; {st.location}</div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">{st.name}</div>
+                    <div className="font-mono text-[10px] text-cyan-700 dark:text-cyan-400 mt-0.5">{st.code} &bull; {st.location}</div>
                   </td>
 
                   <td className="py-4 px-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                      <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
                         <Radio className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <div className="font-semibold text-slate-200">{st.assignedOperatorName}</div>
-                        <div className="text-[10px] text-slate-400">{st.assignedOperatorId ? 'Dedicated Operator' : 'Self-Serve Bay'}</div>
+                        <div className="font-semibold text-slate-800 dark:text-slate-200">{st.assignedOperatorName}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">{st.assignedOperatorId ? 'Dedicated Operator' : 'Self-Serve Bay'}</div>
                       </div>
                     </div>
                   </td>
@@ -217,25 +220,25 @@ export default function AdminOperationsDashboard() {
                     <StatusBadge status={st.status} />
                   </td>
 
-                  <td className="py-4 px-3 font-mono text-slate-300">
+                  <td className="py-4 px-3 font-mono text-slate-600 dark:text-slate-300">
                     {st.powerRating} kW AC (14.3A)
                   </td>
 
-                  <td className="py-4 px-3 text-right font-mono font-bold text-cyan-400">
+                  <td className="py-4 px-3 text-right font-mono font-bold text-cyan-700 dark:text-cyan-400">
                     {(st.stationEnergyKwh ?? 0).toFixed(2)} kWh
                   </td>
 
-                  <td className="py-4 px-3 text-right font-mono font-extrabold text-emerald-400 text-sm">
+                  <td className="py-4 px-3 text-right font-mono font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">
                     ₹{(st.stationRevenue ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </td>
 
                   <td className="py-4 px-3 text-center">
                     <Link
-                      href={`/operator`}
-                      className="px-3 py-1.5 rounded-xl bg-navy-950 hover:bg-navy-800 border border-slate-700 text-[11px] font-semibold text-amber-300 hover:text-white transition-all inline-flex items-center gap-1"
+                      href={`/operator?stationId=${st.id}`}
+                      className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-navy-950 dark:hover:bg-navy-800 border border-amber-300 dark:border-amber-500/30 text-[11px] font-bold text-amber-800 dark:text-amber-300 transition-all inline-flex items-center gap-1 shadow-xs hover:scale-[1.02]"
                     >
                       <span>View Station</span>
-                      <ArrowRight className="w-3 h-3" />
+                      <ArrowRight className="w-3 h-3 text-amber-700 dark:text-amber-300" />
                     </Link>
                   </td>
                 </tr>
@@ -249,41 +252,41 @@ export default function AdminOperationsDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
           href="/admin/tariffs"
-          className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 hover:border-cyan-500/40 transition-all flex items-center justify-between group"
+          className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 hover:border-cyan-500/40 transition-all flex items-center justify-between group shadow-sm dark:shadow-none"
         >
           <div>
-            <div className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">
+            <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
               Time-of-Day Tariff Engine
             </div>
-            <p className="text-xs text-slate-400 mt-1">Configure S1 (₹8), S2 (₹10.50), S3 (₹14) and VIP rates</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Configure S1 (₹8), S2 (₹10.50), S3 (₹14) and VIP rates</p>
           </div>
-          <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-cyan-400 transition-all" />
+          <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-cyan-500 transition-all" />
         </Link>
 
         <Link
           href="/admin/operators"
-          className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 hover:border-amber-500/40 transition-all flex items-center justify-between group"
+          className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 hover:border-amber-500/40 transition-all flex items-center justify-between group shadow-sm dark:shadow-none"
         >
           <div>
-            <div className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">
+            <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
               Operator Assignments
             </div>
-            <p className="text-xs text-slate-400 mt-1">Assign, rebind or provision dedicated station operators</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Assign, rebind or provision dedicated station operators</p>
           </div>
-          <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-amber-400 transition-all" />
+          <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-amber-500 transition-all" />
         </Link>
 
         <Link
           href="/admin/live"
-          className="glass-card rounded-3xl p-6 border border-slate-800 bg-navy-900/60 hover:border-rose-500/40 transition-all flex items-center justify-between group"
+          className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 hover:border-rose-500/40 transition-all flex items-center justify-between group shadow-sm dark:shadow-none"
         >
           <div>
-            <div className="text-sm font-bold text-white group-hover:text-rose-400 transition-colors">
+            <div className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
               Emergency Preemption Trigger
             </div>
-            <p className="text-xs text-slate-400 mt-1">120-second eviction override & PZEM-004T metrology</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">120-second eviction override & PZEM-004T metrology</p>
           </div>
-          <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-rose-400 transition-all" />
+          <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-rose-500 transition-all" />
         </Link>
       </div>
 
