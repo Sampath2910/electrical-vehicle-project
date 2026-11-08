@@ -311,6 +311,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateChargerStatus = (chargerId: string, status: Charger['status']) => {
     setChargers(prev => prev.map(c => c.id === chargerId ? { ...c, status, lastSeenAt: new Date().toISOString() } : c));
+    fetch('/api/stations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stationId: chargerId, status }),
+    }).catch(err => {
+      console.error('Failed to sync charger status to backend:', err);
+    });
+    playSound('beep');
   };
 
   const updateChargerRating = (chargerId: string, rating: number) => {
