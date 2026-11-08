@@ -33,7 +33,7 @@ export default function NotificationsPage() {
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-white">{n.title}</h4>
-                  <span className="text-[10px] text-slate-500">{new Date(n.createdAt).toLocaleTimeString()}</span>
+                  <span className="text-[10px] text-slate-500" suppressHydrationWarning>{new Date(n.createdAt).toLocaleTimeString()}</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">{n.message}</p>
               </div>

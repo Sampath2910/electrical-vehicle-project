@@ -38,7 +38,7 @@ export default function AdminUsersPage() {
                     {u.role}
                   </span>
                 </td>
-                <td className="py-3.5 px-3 text-slate-500">{new Date(u.createdAt).toLocaleDateString()}</td>
+                <td className="py-3.5 px-3 text-slate-500" suppressHydrationWarning>{new Date(u.createdAt).toLocaleDateString()}</td>
               </tr>
             ))}
           </tbody>

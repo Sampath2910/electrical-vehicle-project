@@ -67,7 +67,7 @@ export default function HistoryPage() {
                 <td className="py-3.5 px-3 font-mono font-bold text-cyan-700 dark:text-cyan-400">{s.sessionCode}</td>
                 <td className="py-3.5 px-3 font-semibold text-slate-900 dark:text-white">{s.chargerName}</td>
                 <td className="py-3.5 px-3 text-slate-600 dark:text-slate-300">{s.vehicleModel || 'Ather 450X'}</td>
-                <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400">{new Date(s.startTime).toLocaleString()}</td>
+                <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400" suppressHydrationWarning>{new Date(s.startTime).toLocaleString()}</td>
                 <td className="py-3.5 px-3 font-bold text-cyan-700 dark:text-cyan-300 font-mono">{s.energyKwh.toFixed(3)} kWh</td>
                 <td className="py-3.5 px-3 font-mono text-purple-700 dark:text-purple-300 text-[11px]">{s.todSlotActive || `₹${s.tariffRate}/kWh`}</td>
                 <td className="py-3.5 px-3 font-extrabold text-slate-900 dark:text-white font-mono">₹{s.finalCost?.toFixed(2)}</td>

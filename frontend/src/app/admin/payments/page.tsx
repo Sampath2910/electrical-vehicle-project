@@ -32,7 +32,7 @@ export default function AdminPaymentsPage() {
                 <td className="py-3.5 px-3 font-mono font-bold text-cyan-400">{tx.reference}</td>
                 <td className="py-3.5 px-3 font-bold text-white">{tx.type}</td>
                 <td className="py-3.5 px-3 text-slate-300">{tx.description}</td>
-                <td className="py-3.5 px-3 text-slate-400">{new Date(tx.createdAt).toLocaleString()}</td>
+                <td className="py-3.5 px-3 text-slate-400" suppressHydrationWarning>{new Date(tx.createdAt).toLocaleString()}</td>
                 <td className="py-3.5 px-3 text-right font-extrabold text-white">₹{tx.amount.toFixed(2)}</td>
               </tr>
             ))}

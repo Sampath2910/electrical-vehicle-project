@@ -37,7 +37,7 @@ export default function AdminFaultsPage() {
 
               <h3 className="text-lg font-bold text-white">{fault.chargerName}</h3>
               <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">{fault.message}</p>
-              <p className="text-[10px] text-slate-500">Occurred At: {new Date(fault.occurredAt).toLocaleString()}</p>
+              <p className="text-[10px] text-slate-500" suppressHydrationWarning>Occurred At: {new Date(fault.occurredAt).toLocaleString()}</p>
             </div>
 
             {fault.status === 'ACTIVE' && (

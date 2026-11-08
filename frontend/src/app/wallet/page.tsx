@@ -140,7 +140,7 @@ export default function WalletPage() {
                   </td>
                   <td className="py-3.5 px-3 font-medium text-slate-900 dark:text-white">{tx.description}</td>
                   <td className="py-3.5 px-3 font-mono text-cyan-700 dark:text-cyan-400 text-[11px]">{tx.reference}</td>
-                  <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400">{new Date(tx.createdAt).toLocaleString()}</td>
+                  <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400" suppressHydrationWarning>{new Date(tx.createdAt).toLocaleString()}</td>
                   <td className={`py-3.5 px-3 text-right font-extrabold ${tx.type === 'CREDIT' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
                     {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toFixed(2)}
                   </td>

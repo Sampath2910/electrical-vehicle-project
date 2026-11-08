@@ -293,7 +293,7 @@ export const ThingSpeakBench: React.FC = () => {
             )}
           </h3>
           {lastFeedDate && (
-            <div className="mt-1 flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 font-mono text-[11px]" suppressHydrationWarning>
               {isLiveStreaming ? (
                 <>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
@@ -312,7 +312,7 @@ export const ThingSpeakBench: React.FC = () => {
                     🕒 STANDBY &bull; LAST RECORDED TELEMETRY (Entry #{lastFeed?.entry_id})
                   </span>
                   <span className="text-slate-400 dark:text-slate-500">&bull;</span>
-                  <span className="text-slate-600 dark:text-slate-400 font-medium">
+                  <span className="text-slate-600 dark:text-slate-400 font-medium" suppressHydrationWarning>
                     Transmitted: {lastFeedDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} at {lastFeedDate.toLocaleTimeString()}
                   </span>
                   <span className="text-slate-400 dark:text-slate-500">&bull;</span>
@@ -402,7 +402,7 @@ export const ThingSpeakBench: React.FC = () => {
 
       {/* HARDWARE STANDBY NOTIFICATION BANNER */}
       {!isLiveStreaming && lastFeed && (
-        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs" suppressHydrationWarning>
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/25 text-amber-800 dark:text-amber-400 mt-0.5 shrink-0">
               <Clock className="w-4 h-4" />
@@ -414,7 +414,7 @@ export const ThingSpeakBench: React.FC = () => {
                   Entry #{lastFeed.entry_id}
                 </span>
               </h4>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5" suppressHydrationWarning>
                 No new transmission received from ESP32 / PZEM-004T in the last 90 seconds. Showing last recorded measurements from {lastFeedDate?.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} at {lastFeedDate?.toLocaleTimeString()}. When your hardware begins streaming, live telemetry will automatically activate.
               </p>
             </div>
@@ -552,7 +552,7 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
             {voltage}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
             {isLiveStreaming ? "🟢 Live Stream" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
           </div>
         </div>
@@ -566,7 +566,7 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-cyan-600 dark:text-cyan-400 font-mono tracking-tight">
             {current}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
             {isLiveStreaming ? "🟢 Live Stream" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
           </div>
         </div>
@@ -580,7 +580,7 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
             {power}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
             {isLiveStreaming ? "🟢 Live Stream" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
           </div>
         </div>
@@ -594,7 +594,7 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-purple-600 dark:text-purple-400 font-mono tracking-tight">
             {energy}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
             {isLiveStreaming ? "🟢 Live Accumulation" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
           </div>
         </div>
@@ -608,7 +608,7 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">
             {pf}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
             {isLiveStreaming ? "🟢 Grid Efficiency" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
           </div>
         </div>
@@ -622,7 +622,7 @@ export const ThingSpeakBench: React.FC = () => {
           <div className={`text-base lg:text-lg font-extrabold font-mono tracking-tight ${relayState.includes('TRIPPED') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
             {relayState}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
             {isLiveStreaming ? "🟢 Safety Contactor" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
           </div>
         </div>
@@ -660,7 +660,7 @@ export const ThingSpeakBench: React.FC = () => {
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/40">
                   {historyFeeds.slice().reverse().slice(0, 7).map((f) => (
                     <tr key={f.entry_id} className="hover:bg-slate-100 dark:hover:bg-slate-900/50 text-slate-800 dark:text-slate-200">
-                      <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 text-[11px]">
+                      <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 text-[11px]" suppressHydrationWarning>
                         {new Date(f.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} {new Date(f.created_at).toLocaleTimeString()}
                       </td>
                       <td className="py-1.5 px-2 text-amber-700 dark:text-amber-300 font-semibold">{f.field1 ? `${f.field1} V` : '-'}</td>
