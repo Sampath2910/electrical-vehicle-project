@@ -276,29 +276,42 @@ html.light .text-slate-500 {
 }
 
 /* ==========================================================================
-   PRESERVE CRISP WHITE TEXT ON BUTTONS, ALERTS & SOLID ACCENT BACKGROUNDS
+   PRESERVE CRISP WHITE TEXT ON SOLID/GRADIENT ACTION BUTTONS & SOLID BADGES
    ========================================================================== */
-html.light button.text-white,
-html.light a.text-white,
-html.light button .text-white,
-html.light a .text-white,
-html.light [class*="bg-gradient-"].text-white,
-html.light [class*="bg-gradient-"] .text-white,
-html.light [class*="bg-cyan-600"].text-white,
-html.light [class*="bg-cyan-500"].text-white,
-html.light [class*="bg-blue-600"].text-white,
-html.light [class*="bg-blue-500"].text-white,
-html.light [class*="bg-emerald-600"].text-white,
-html.light [class*="bg-emerald-500"].text-white,
-html.light [class*="bg-emerald-600"] .text-white,
-html.light [class*="bg-rose-600"].text-white,
-html.light [class*="bg-rose-500"].text-white,
-html.light [class*="bg-rose-600"] .text-white,
-html.light [class*="bg-rose-500"] .text-white,
-html.light [class*="bg-amber-500"].text-white,
-html.light [class*="bg-amber-600"].text-white,
-html.light .badge-solid,
-html.light .btn-primary {
+html.light button[class*="bg-cyan-"],
+html.light a[class*="bg-cyan-"],
+html.light button[class*="bg-blue-"],
+html.light a[class*="bg-blue-"],
+html.light button[class*="bg-emerald-"],
+html.light a[class*="bg-emerald-"],
+html.light button[class*="bg-rose-"],
+html.light a[class*="bg-rose-"],
+html.light button[class*="bg-gradient-"],
+html.light a[class*="bg-gradient-"],
+html.light button[class*="bg-slate-900"],
+html.light a[class*="bg-slate-900"],
+html.light button[class*="bg-slate-800"],
+html.light a[class*="bg-slate-800"],
+html.light .btn-gradient,
+html.light .btn-primary,
+html.light .badge-solid {
+  color: #ffffff !important;
+}
+
+html.light button[class*="bg-cyan-"] *,
+html.light a[class*="bg-cyan-"] *,
+html.light button[class*="bg-blue-"] *,
+html.light a[class*="bg-blue-"] *,
+html.light button[class*="bg-emerald-"] *,
+html.light a[class*="bg-emerald-"] *,
+html.light button[class*="bg-rose-"] *,
+html.light a[class*="bg-rose-"] *,
+html.light button[class*="bg-gradient-"] *,
+html.light a[class*="bg-gradient-"] *,
+html.light button[class*="bg-slate-900"] *,
+html.light a[class*="bg-slate-900"] *,
+html.light .btn-gradient *,
+html.light .btn-primary * {
   color: #ffffff !important;
 }
 
