@@ -13,8 +13,13 @@ import {
   Sliders, 
   ExternalLink,
   Radio,
-  RotateCcw
+  RotateCcw,
+  Eye,
+  EyeOff,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
+import { useStore } from '@/lib/storeContext';
 
 export interface ThingSpeakFeed {
   created_at: string;
@@ -46,6 +51,10 @@ const DEFAULT_READ_KEY = process.env.NEXT_PUBLIC_THINGSPEAK_READ_API_KEY || 'MPG
 const DEFAULT_WRITE_KEY = process.env.NEXT_PUBLIC_THINGSPEAK_WRITE_API_KEY || '7DMQVJF8118QV1QM';
 
 export const ThingSpeakBench: React.FC = () => {
+  // Role-Based Access Control (RBAC): Only ADMIN and OPERATOR can view/edit API keys or push telemetry
+  const { currentUser } = useStore();
+  const isAdminOrOperator = currentUser?.role === 'ADMIN' || currentUser?.role === 'OPERATOR';
+
   // Config state
   const [channelId, setChannelId] = useState<string>(DEFAULT_CHANNEL_ID);
   const [readApiKey, setReadApiKey] = useState<string>(DEFAULT_READ_KEY);
@@ -53,6 +62,8 @@ export const ThingSpeakBench: React.FC = () => {
   
   // UI state
   const [showConfig, setShowConfig] = useState<boolean>(false);
+  const [showReadKey, setShowReadKey] = useState<boolean>(false);
+  const [showWriteKey, setShowWriteKey] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
   const [lastFeed, setLastFeed] = useState<ThingSpeakFeed | null>(null);
@@ -62,6 +73,13 @@ export const ThingSpeakBench: React.FC = () => {
   const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
   const [selectedChartField, setSelectedChartField] = useState<number>(1);
   const [secondsSinceSync, setSecondsSinceSync] = useState<number>(0);
+
+  // Enforce security: If user role is regular driver (USER), config setup panel is always closed
+  useEffect(() => {
+    if (!isAdminOrOperator) {
+      setShowConfig(false);
+    }
+  }, [isAdminOrOperator]);
 
   // Live seconds ticker since last sync
   useEffect(() => {
@@ -84,8 +102,12 @@ export const ThingSpeakBench: React.FC = () => {
     }
   }, []);
 
-  // Save config
+  // Save config (Protected by RBAC)
   const handleSaveConfig = () => {
+    if (!isAdminOrOperator) {
+      setError('Access Restricted: Only Admin and Station Operators can modify ThingSpeak Cloud credentials.');
+      return;
+    }
     localStorage.setItem('TS_CHANNEL_ID', channelId.trim());
     localStorage.setItem('TS_READ_KEY', readApiKey.trim());
     localStorage.setItem('TS_WRITE_KEY', writeApiKey.trim());
@@ -93,8 +115,12 @@ export const ThingSpeakBench: React.FC = () => {
     fetchData();
   };
 
-  // Reset to default keys
+  // Reset to default keys (Protected by RBAC)
   const handleResetToDefaultKeys = () => {
+    if (!isAdminOrOperator) {
+      setError('Access Restricted: Only Admin and Station Operators can reset cloud credentials.');
+      return;
+    }
     setChannelId(DEFAULT_CHANNEL_ID);
     setReadApiKey(DEFAULT_READ_KEY);
     setWriteApiKey(DEFAULT_WRITE_KEY);
@@ -135,7 +161,7 @@ export const ThingSpeakBench: React.FC = () => {
         setSecondsSinceSync(0);
         
         if (isManual) {
-          setPublishSuccessMsg(`Synced with ThingSpeak Channel #${activeChannel}! Showing latest Entry #${latest.entry_id} (V=${latest.field1}V, I=${latest.field2}A, P=${latest.field3}W). Note: To see changing numbers, run your MATLAB streaming loop or publisher.`);
+          setPublishSuccessMsg(`Synced with ThingSpeak Channel #${activeChannel}! Showing latest Entry #${latest.entry_id} (V=${latest.field1}V, I=${latest.field2}A, P=${latest.field3}W).`);
           setTimeout(() => setPublishSuccessMsg(null), 7000);
         }
       } else {
@@ -156,8 +182,13 @@ export const ThingSpeakBench: React.FC = () => {
     return () => clearInterval(timer);
   }, [fetchData]);
 
-  // Push live data to ThingSpeak Cloud using Write API Key
+  // Push live data to ThingSpeak Cloud using Write API Key (Strictly restricted to Admin and Operator)
   const handlePushTelemetry = async () => {
+    if (!isAdminOrOperator) {
+      setError('Access Restricted: Only Admin and Station Operators are authorized to push telemetry samples.');
+      return;
+    }
+
     const activeWriteKey = writeApiKey.trim() || DEFAULT_WRITE_KEY;
     if (!activeWriteKey) {
       setError('Write API Key is required to push telemetry to ThingSpeak.');
@@ -173,9 +204,6 @@ export const ThingSpeakBench: React.FC = () => {
     const v = (229.5 + (Math.random() * 1.5 - 0.75)).toFixed(1);
     const i = (13.9 + (Math.random() * 0.4 - 0.2)).toFixed(2);
     const p = Math.round(parseFloat(v) * parseFloat(i) * 0.98).toString();
-    const kwh = (3.45 + Math.random() * 0.05).toFixed(3);
-    const pf = '0.98';
-    const relay = '1';
 
     try {
       const url = `https://api.thingspeak.com/update?api_key=${activeWriteKey}&field1=${v}&field2=${i}&field3=${p}`;
@@ -242,6 +270,11 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-semibold text-cyan-400 mb-1.5">
             <Cloud className="w-3.5 h-3.5" />
             <span>ThingSpeak IoT Cloud Live Integration</span>
+            {!isAdminOrOperator && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-mono ml-1 font-bold">
+                <ShieldCheck className="w-3 h-3" /> Audited Stream
+              </span>
+            )}
           </div>
           <h3 className="text-xl font-extrabold tracking-tight flex flex-wrap items-center gap-2">
             <span>PZEM-004T Metrology Cloud Stream</span>
@@ -266,16 +299,24 @@ export const ThingSpeakBench: React.FC = () => {
           )}
         </div>
 
+        {/* Action Controls - Strictly Filtered by Role */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowConfig(!showConfig)}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Configure Channel ID and API Keys"
-          >
-            <Settings className="w-3.5 h-3.5 text-cyan-400" />
-            <span>API Keys</span>
-          </button>
+          {/* API Keys Button: Strictly for Admin & Operator only */}
+          {isAdminOrOperator && (
+            <button
+              onClick={() => setShowConfig(!showConfig)}
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              title="Configure Channel ID and API Keys (Admin & Operator Access)"
+            >
+              <Settings className="w-3.5 h-3.5 text-cyan-400" />
+              <span>API Keys</span>
+              <span className="text-[9px] px-1.5 py-0.2 bg-cyan-500/20 text-cyan-300 rounded font-bold uppercase tracking-wider ml-0.5">
+                {currentUser?.role}
+              </span>
+            </button>
+          )}
 
+          {/* Fetch Live: Safe read-only action available to all users (Drivers, Operators, Admins) */}
           <button
             onClick={() => fetchData(true)}
             disabled={isLoading}
@@ -286,19 +327,22 @@ export const ThingSpeakBench: React.FC = () => {
             <span>{isLoading ? 'Fetching...' : 'Fetch Live'}</span>
           </button>
 
-          <button
-            onClick={handlePushTelemetry}
-            disabled={isPublishing}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
-            title="Push Telemetry Sample to ThingSpeak Channel"
-          >
-            <CloudUpload className="w-3.5 h-3.5" />
-            <span>{isPublishing ? 'Publishing...' : 'Push Telemetry'}</span>
-          </button>
+          {/* Push Telemetry: Strictly for Admin & Operator only */}
+          {isAdminOrOperator && (
+            <button
+              onClick={handlePushTelemetry}
+              disabled={isPublishing}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 cursor-pointer"
+              title="Push Telemetry Sample to ThingSpeak Channel (Admin/Operator)"
+            >
+              <CloudUpload className="w-3.5 h-3.5" />
+              <span>{isPublishing ? 'Publishing...' : 'Push Telemetry'}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* SUCCESS / ERROR ALERTS */}
+      {/* SUCCESS ALERTS */}
       {publishSuccessMsg && (
         <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -306,43 +350,51 @@ export const ThingSpeakBench: React.FC = () => {
         </div>
       )}
 
+      {/* ERROR ALERTS (Quick-config buttons only rendered for Admin/Operator) */}
       {error && (
         <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/40 text-rose-400 text-xs flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleResetToDefaultKeys}
-              className="text-xs font-bold text-amber-300 underline hover:text-white"
-            >
-              Reset to Channel 3533059
-            </button>
-            <button
-              onClick={() => setShowConfig(true)}
-              className="underline font-bold text-rose-300 hover:text-white"
-            >
-              Configure Keys
-            </button>
-          </div>
+          {isAdminOrOperator && (
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleResetToDefaultKeys}
+                className="text-xs font-bold text-amber-300 underline hover:text-white cursor-pointer"
+              >
+                Reset to Channel 3533059
+              </button>
+              <button
+                onClick={() => setShowConfig(true)}
+                className="underline font-bold text-rose-300 hover:text-white cursor-pointer"
+              >
+                Configure Keys
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* CONFIG MODAL / DROPDOWN */}
-      {showConfig && (
+      {/* CONFIG MODAL / DROPDOWN (Strictly restricted to Admin and Operator) */}
+      {isAdminOrOperator && showConfig && (
         <div className="p-5 rounded-2xl bg-slate-950 border border-cyan-500/40 space-y-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-            <h4 className="text-sm font-bold text-cyan-400 flex items-center gap-2">
-              <Sliders className="w-4 h-4" />
-              <span>ThingSpeak Credentials Setup</span>
-            </h4>
+            <div className="flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-cyan-400" />
+              <h4 className="text-sm font-bold text-cyan-400">
+                ThingSpeak Credentials Setup
+              </h4>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold border border-cyan-500/30">
+                Restricted: {currentUser?.role}
+              </span>
+            </div>
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={handleResetToDefaultKeys}
-                className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold"
-                title="Reset to Channel 3533059 keys"
+                className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold cursor-pointer"
+                title="Reset to Channel 3533059 benchmark keys"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>Reset to Channel 3533059</span>
@@ -372,10 +424,20 @@ export const ThingSpeakBench: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Read API Key</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-slate-400 font-semibold">Read API Key</label>
+                <button
+                  type="button"
+                  onClick={() => setShowReadKey(!showReadKey)}
+                  className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-medium cursor-pointer"
+                >
+                  {showReadKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  <span>{showReadKey ? 'Hide' : 'Show'}</span>
+                </button>
+              </div>
               <input
-                type="text"
-                placeholder="MPG3G79CSBI1S6U"
+                type={showReadKey ? "text" : "password"}
+                placeholder="••••••••••••••••"
                 value={readApiKey}
                 onChange={(e) => setReadApiKey(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono focus:border-cyan-400 focus:outline-none"
@@ -383,10 +445,20 @@ export const ThingSpeakBench: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Write API Key</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-slate-400 font-semibold">Write API Key</label>
+                <button
+                  type="button"
+                  onClick={() => setShowWriteKey(!showWriteKey)}
+                  className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-medium cursor-pointer"
+                >
+                  {showWriteKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  <span>{showWriteKey ? 'Hide' : 'Show'}</span>
+                </button>
+              </div>
               <input
-                type="text"
-                placeholder="7DMQVJF8118QV1QM"
+                type={showWriteKey ? "text" : "password"}
+                placeholder="••••••••••••••••"
                 value={writeApiKey}
                 onChange={(e) => setWriteApiKey(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono focus:border-cyan-400 focus:outline-none"
@@ -397,13 +469,13 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={() => setShowConfig(false)}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleSaveConfig}
-              className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-extrabold"
+              className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-extrabold shadow-md cursor-pointer"
             >
               Save Credentials
             </button>
@@ -500,7 +572,7 @@ export const ThingSpeakBench: React.FC = () => {
 
           {historyFeeds.length === 0 ? (
             <div className="p-6 text-center text-xs text-slate-500">
-              {isLoading ? 'Connecting to ThingSpeak Cloud...' : 'No feeds found for Channel 3533059 yet. Click "Push Telemetry" or publish from ESP32.'}
+              {isLoading ? 'Connecting to ThingSpeak Cloud...' : 'No feeds found for Channel 3533059 yet. Click "Fetch Live" or publish from ESP32.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -604,41 +676,43 @@ export const ThingSpeakBench: React.FC = () => {
         </div>
       </div>
 
-      {/* CONTINUOUS STREAMING GUIDANCE BANNER */}
-      <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-slate-950 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mt-0.5">
-            <Activity className="w-4 h-4 animate-pulse" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-slate-100 flex items-center gap-2">
-              <span>Continuous Live Telemetry Status</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono">
-                ThingSpeak Rate Limit: 15s
-              </span>
-            </h4>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              ThingSpeak cloud updates when your MATLAB script or ESP32 publishes new data. To stream continuous entries:
-            </p>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              <code className="text-[11px] font-mono bg-slate-950 border border-slate-800 text-amber-300 px-2 py-1 rounded-md">
-                MATLAB: run('iot/simulator/thingspeak_continuous_stream.m')
-              </code>
-              <code className="text-[11px] font-mono bg-slate-950 border border-slate-800 text-cyan-300 px-2 py-1 rounded-md">
-                Terminal: node iot/simulator/thingspeak_publisher.js
-              </code>
+      {/* CONTINUOUS STREAMING GUIDANCE BANNER (Strictly for Operator & Admin) */}
+      {isAdminOrOperator && (
+        <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-slate-950 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mt-0.5">
+              <Activity className="w-4 h-4 animate-pulse" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-100 flex items-center gap-2">
+                <span>Continuous Live Telemetry Streamer (Admin & Operator Mode)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono">
+                  Rate Limit: 15s
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                ThingSpeak cloud updates when your MATLAB script or ESP32 publishes new data. To stream continuous entries:
+              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <code className="text-[11px] font-mono bg-slate-950 border border-slate-800 text-amber-300 px-2 py-1 rounded-md">
+                  MATLAB: run('iot/simulator/thingspeak_continuous_stream.m')
+                </code>
+                <code className="text-[11px] font-mono bg-slate-950 border border-slate-800 text-cyan-300 px-2 py-1 rounded-md">
+                  Terminal: node iot/simulator/thingspeak_publisher.js
+                </code>
+              </div>
             </div>
           </div>
-        </div>
 
-        <a
-          href="/charging/ses-active-01"
-          className="shrink-0 px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-cyan-500/20"
-        >
-          <Zap className="w-3.5 h-3.5" />
-          <span>View 1Hz Live Cockpit</span>
-        </a>
-      </div>
+          <a
+            href="/charging/ses-active-01"
+            className="shrink-0 px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-cyan-500/20"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>View 1Hz Live Cockpit</span>
+          </a>
+        </div>
+      )}
     </div>
   );
 };

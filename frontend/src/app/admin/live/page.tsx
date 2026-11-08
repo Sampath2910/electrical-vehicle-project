@@ -27,6 +27,7 @@ import {
 import { useStore } from '@/lib/storeContext';
 import { telemetryProvider, getCurrentToDSlot } from '@/lib/providers';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { ThingSpeakBench } from '@/components/ui/ThingSpeakBench';
 
 interface ChartPoint {
   time: string;
@@ -378,6 +379,9 @@ export default function AdminLiveTelemetryPage() {
           </div>
         </div>
       </div>
+
+      {/* THINGSPEAK CLOUD METROLOGY BENCH (ADMINISTRATIVE CONTROL) */}
+      <ThingSpeakBench />
 
     </div>
   );

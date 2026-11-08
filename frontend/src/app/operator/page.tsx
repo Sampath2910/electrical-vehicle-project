@@ -27,6 +27,7 @@ import { useStore } from '@/lib/storeContext';
 import { telemetryProvider } from '@/lib/providers';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { ThingSpeakBench } from '@/components/ui/ThingSpeakBench';
 import { Charger, Measurement } from '@/types/ev';
 
 function OperatorConsoleContent() {
@@ -451,6 +452,9 @@ function OperatorConsoleContent() {
         </div>
 
       </div>
+
+      {/* THINGSPEAK CLOUD METROLOGY BENCH (AUTHORIZED OPERATOR CONTROL) */}
+      <ThingSpeakBench />
 
       {/* STATION ISOLATION CONFIRMATION CARD */}
       <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 shadow-sm">

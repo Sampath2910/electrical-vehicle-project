@@ -25,7 +25,7 @@ export const EceHardwareBench: React.FC = () => {
   const [serialLogs, setSerialLogs] = useState<string[]>([
     '[INIT] ESP32 DevKit V1 Initialized @ 115200 baud',
     '[WIFI] Connected to AP (192.168.1.105)',
-    '[THINGSPEAK] Connected to Channel #3533059 (Read Key: MPG3G79CSBI1S6U)',
+    '[THINGSPEAK] Connected to Channel #3533059 (Read Key: MPG3••••••••S6U)',
     '[PZEM-004T] AC Energy Meter Active (UART2: TX 17 / RX 16)',
     '[PAYMENT] Online UPI / QR Dynamic Gateway Ready',
     '[RELAY] GPIO 26 Contactor LATCHED (3.3kW 2W AC Bay Active)'
