@@ -17,7 +17,8 @@ import {
   Eye,
   EyeOff,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  Clock
 } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 
@@ -228,6 +229,10 @@ export const ThingSpeakBench: React.FC = () => {
   };
 
   // Real metrology values extracted directly from live ThingSpeak feed (NO DUMMY DATA)
+  const lastFeedDate = lastFeed?.created_at ? new Date(lastFeed.created_at) : null;
+  const dataAgeSeconds = lastFeedDate ? Math.max(0, Math.floor((Date.now() - lastFeedDate.getTime()) / 1000)) : null;
+  const isLiveStreaming = dataAgeSeconds !== null && dataAgeSeconds <= 90;
+
   const rawV = lastFeed?.field1 ? parseFloat(lastFeed.field1) : null;
   const rawI = lastFeed?.field2 ? parseFloat(lastFeed.field2) : null;
   const rawP = lastFeed?.field3 ? parseFloat(lastFeed.field3) : (rawV !== null && rawI !== null ? rawV * rawI * 0.98 : null);
@@ -287,15 +292,34 @@ export const ThingSpeakBench: React.FC = () => {
               </span>
             )}
           </h3>
-          {lastFeed?.created_at && (
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-1.5 font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">Synced {secondsSinceSync}s ago</span>
-              <span>&bull;</span>
-              <span>Latest Cloud Entry #{lastFeed.entry_id}</span>
-              <span>&bull;</span>
-              <span>Timestamp: {new Date(lastFeed.created_at).toLocaleTimeString()}</span>
-            </p>
+          {lastFeedDate && (
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
+              {isLiveStreaming ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                    🟢 LIVE HARDWARE STREAM ACTIVE &bull; Packet received {dataAgeSeconds}s ago
+                  </span>
+                  <span className="text-slate-400 dark:text-slate-500">&bull;</span>
+                  <span className="text-slate-600 dark:text-slate-400 font-semibold">Latest Cloud Entry #{lastFeed?.entry_id}</span>
+                  <span className="text-slate-400 dark:text-slate-500">&bull;</span>
+                  <span className="text-slate-500 dark:text-slate-500">Synced to browser {secondsSinceSync}s ago</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
+                  <span className="text-amber-800 dark:text-amber-300 font-bold">
+                    🕒 STANDBY &bull; LAST RECORDED TELEMETRY (Entry #{lastFeed?.entry_id})
+                  </span>
+                  <span className="text-slate-400 dark:text-slate-500">&bull;</span>
+                  <span className="text-slate-600 dark:text-slate-400 font-medium">
+                    Transmitted: {lastFeedDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} at {lastFeedDate.toLocaleTimeString()}
+                  </span>
+                  <span className="text-slate-400 dark:text-slate-500">&bull;</span>
+                  <span className="text-slate-500 dark:text-slate-500">Cloud polled {secondsSinceSync}s ago</span>
+                </>
+              )}
+            </div>
           )}
         </div>
 
@@ -370,6 +394,40 @@ export const ThingSpeakBench: React.FC = () => {
                 className="underline font-bold text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-white cursor-pointer"
               >
                 Configure Keys
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* HARDWARE STANDBY NOTIFICATION BANNER */}
+      {!isLiveStreaming && lastFeed && (
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/25 text-amber-800 dark:text-amber-400 mt-0.5 shrink-0">
+              <Clock className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2">
+                <span>Hardware Standby Mode &bull; Displaying Last Known Telemetry</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono font-bold border border-amber-200 dark:border-amber-500/30">
+                  Entry #{lastFeed.entry_id}
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                No new transmission received from ESP32 / PZEM-004T in the last 90 seconds. Showing last recorded measurements from {lastFeedDate?.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} at {lastFeedDate?.toLocaleTimeString()}. When your hardware begins streaming, live telemetry will automatically activate.
+              </p>
+            </div>
+          </div>
+          {isAdminOrOperator && (
+            <div className="shrink-0 flex items-center gap-2">
+              <button
+                onClick={handlePushTelemetry}
+                disabled={isPublishing}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-500/40 text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <CloudUpload className="w-3.5 h-3.5" />
+                <span>Push Live Packet</span>
               </button>
             </div>
           )}
@@ -494,7 +552,9 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
             {voltage}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Real ThingSpeak Feed</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+            {isLiveStreaming ? "🟢 Live Stream" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+          </div>
         </div>
 
         {/* Field 2: Current */}
@@ -506,7 +566,9 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-cyan-600 dark:text-cyan-400 font-mono tracking-tight">
             {current}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Real ThingSpeak Feed</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+            {isLiveStreaming ? "🟢 Live Stream" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+          </div>
         </div>
 
         {/* Field 3: Active Power */}
@@ -518,7 +580,9 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
             {power}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Real ThingSpeak Feed</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+            {isLiveStreaming ? "🟢 Live Stream" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+          </div>
         </div>
 
         {/* Field 4: Energy Delivered */}
@@ -530,7 +594,9 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-purple-600 dark:text-purple-400 font-mono tracking-tight">
             {energy}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Metrology Delivered</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+            {isLiveStreaming ? "🟢 Live Accumulation" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+          </div>
         </div>
 
         {/* Field 5: Power Factor */}
@@ -542,7 +608,9 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="text-xl lg:text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">
             {pf}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Grid Efficiency</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+            {isLiveStreaming ? "🟢 Grid Efficiency" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+          </div>
         </div>
 
         {/* Field 6: Relay Status */}
@@ -554,7 +622,9 @@ export const ThingSpeakBench: React.FC = () => {
           <div className={`text-base lg:text-lg font-extrabold font-mono tracking-tight ${relayState.includes('TRIPPED') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
             {relayState}
           </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Safety Contactor</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+            {isLiveStreaming ? "🟢 Safety Contactor" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+          </div>
         </div>
       </div>
 
@@ -591,7 +661,7 @@ export const ThingSpeakBench: React.FC = () => {
                   {historyFeeds.slice().reverse().slice(0, 7).map((f) => (
                     <tr key={f.entry_id} className="hover:bg-slate-100 dark:hover:bg-slate-900/50 text-slate-800 dark:text-slate-200">
                       <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 text-[11px]">
-                        {new Date(f.created_at).toLocaleTimeString()}
+                        {new Date(f.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} {new Date(f.created_at).toLocaleTimeString()}
                       </td>
                       <td className="py-1.5 px-2 text-amber-700 dark:text-amber-300 font-semibold">{f.field1 ? `${f.field1} V` : '-'}</td>
                       <td className="py-1.5 px-2 text-cyan-700 dark:text-cyan-300 font-semibold">{f.field2 ? `${f.field2} A` : '-'}</td>

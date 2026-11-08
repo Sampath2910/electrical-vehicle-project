@@ -211,21 +211,27 @@ export class ThingSpeakTelemetryProvider implements TelemetryProvider {
     const intervalId = setInterval(() => {
       let energy = this.accumulatedEnergyMap.get(sessionId) || 0;
       
-      // Realistic 1Hz metrology micro-fluctuations anchored directly to live ThingSpeak baseline
-      const jitterV = +(Math.sin(Date.now() / 1500) * 0.35 + (Math.random() * 0.2 - 0.1)).toFixed(1);
-      const jitterA = +(Math.cos(Date.now() / 2000) * 0.08 + (Math.random() * 0.04 - 0.02)).toFixed(2);
+      const feedAgeSec = Math.floor((Date.now() - new Date(this.latestFeed.timestamp).getTime()) / 1000);
+      const isLiveStreaming = !isNaN(feedAgeSec) && feedAgeSec <= 90;
+
+      // When actively streaming (packet <= 90s), provide realistic 1Hz metrology micro-fluctuations
+      // When in standby (>90s), preserve exact last-known telemetry without artificial jitter
+      const jitterV = isLiveStreaming ? +(Math.sin(Date.now() / 1500) * 0.35 + (Math.random() * 0.2 - 0.1)).toFixed(1) : 0;
+      const jitterA = isLiveStreaming ? +(Math.cos(Date.now() / 2000) * 0.08 + (Math.random() * 0.04 - 0.02)).toFixed(2) : 0;
       
       const voltage = +(this.latestFeed.v + jitterV).toFixed(1);
       const current = +(this.latestFeed.i + jitterA).toFixed(2);
       const powerW = Math.round(voltage * current * (this.latestFeed.pf || 0.98));
       const powerKw = powerW / 1000;
       
-      energy += powerKw / 3600;
-      this.accumulatedEnergyMap.set(sessionId, energy);
+      if (isLiveStreaming) {
+        energy += powerKw / 3600;
+        this.accumulatedEnergyMap.set(sessionId, energy);
+      }
 
-      const frequencyHz = +(50.0 + Math.sin(Date.now() / 3000) * 0.03).toFixed(2);
+      const frequencyHz = isLiveStreaming ? +(50.0 + Math.sin(Date.now() / 3000) * 0.03).toFixed(2) : 50.0;
       const powerFactor = this.latestFeed.pf || 0.98;
-      const thdPercent = +(2.1 + (Math.random() * 0.08 - 0.04)).toFixed(1);
+      const thdPercent = isLiveStreaming ? +(2.1 + (Math.random() * 0.08 - 0.04)).toFixed(1) : 2.1;
 
       let voltageSagSwellStatus: 'NORMAL' | 'SAG' | 'SWELL' = 'NORMAL';
       if (voltage < 207) voltageSagSwellStatus = 'SAG';
