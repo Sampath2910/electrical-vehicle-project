@@ -91,20 +91,20 @@ export default function ChargersPage() {
 
       {/* Operator Scope Notice Banner */}
       {isOperator && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
           <div className="flex items-start sm:items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-lg shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400 font-bold text-lg shrink-0">
               ⚡
             </div>
             <div>
-              <div className="text-sm font-bold text-white flex flex-wrap items-center gap-2">
+              <div className="text-sm font-bold text-slate-900 dark:text-white flex flex-wrap items-center gap-2">
                 <span>Station Operator Mode</span>
-                <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-xs font-mono font-bold border border-amber-500/30">
+                <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-mono font-bold border border-amber-200 dark:border-amber-500/30">
                   {chargers.find(c => c.id === assignedStationId || c.chargerCode === assignedStationId)?.name || assignedStationId}
                 </span>
-                <span className="text-xs text-amber-400 font-medium font-mono">({assignedStationId})</span>
+                <span className="text-xs text-amber-700 dark:text-amber-400 font-medium font-mono">({assignedStationId})</span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                 You have full control permissions exclusively over your assigned station. Other stations in the fleet are locked and restricted.
               </p>
             </div>

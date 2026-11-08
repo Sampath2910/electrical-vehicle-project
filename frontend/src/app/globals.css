@@ -222,8 +222,8 @@ html.light .bg-navy-950 {
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03) !important;
 }
 
-/* Clear Dark Gradients on Glass Cards in Light Mode */
-html.light .glass-card {
+/* Clear Dark Gradients on Glass Cards in Light Mode UNLESS an explicit gradient class is applied */
+html.light .glass-card:not([class*="bg-gradient-"]) {
   background-image: none !important;
 }
 
@@ -276,49 +276,70 @@ html.light .text-slate-500 {
 }
 
 /* ==========================================================================
-   PRESERVE CRISP WHITE TEXT ON SOLID/GRADIENT ACTION BUTTONS & SOLID BADGES
+   PRESERVE CRISP WHITE TEXT ON SOLID/GRADIENT BUTTONS & SOLID BADGES
    ========================================================================== */
-html.light button[class*="bg-cyan-"],
-html.light a[class*="bg-cyan-"],
-html.light button[class*="bg-blue-"],
-html.light a[class*="bg-blue-"],
-html.light button[class*="bg-emerald-"],
-html.light a[class*="bg-emerald-"],
-html.light button[class*="bg-rose-"],
-html.light a[class*="bg-rose-"],
-html.light button[class*="bg-gradient-"],
-html.light a[class*="bg-gradient-"],
-html.light button[class*="bg-slate-900"],
-html.light a[class*="bg-slate-900"],
-html.light button[class*="bg-slate-800"],
-html.light a[class*="bg-slate-800"],
-html.light .btn-gradient,
+/* Only force white text when an element explicitly requests .text-white on a dark/gradient background */
+html.light button[class*="bg-gradient-"].text-white,
+html.light a[class*="bg-gradient-"].text-white,
+html.light button.bg-cyan-600.text-white,
+html.light a.bg-cyan-600.text-white,
+html.light button.bg-blue-600.text-white,
+html.light a.bg-blue-600.text-white,
+html.light button.bg-emerald-600.text-white,
+html.light a.bg-emerald-600.text-white,
+html.light button.bg-rose-600.text-white,
+html.light a.bg-rose-600.text-white,
+html.light button.bg-rose-500.text-white,
+html.light a.bg-rose-500.text-white,
+html.light button.bg-slate-900.text-white,
+html.light a.bg-slate-900.text-white,
 html.light .btn-primary,
+html.light .btn-gradient,
 html.light .badge-solid {
   color: #ffffff !important;
 }
 
-html.light button[class*="bg-cyan-"] *,
-html.light a[class*="bg-cyan-"] *,
-html.light button[class*="bg-blue-"] *,
-html.light a[class*="bg-blue-"] *,
-html.light button[class*="bg-emerald-"] *,
-html.light a[class*="bg-emerald-"] *,
-html.light button[class*="bg-rose-"] *,
-html.light a[class*="bg-rose-"] *,
-html.light button[class*="bg-gradient-"] *,
-html.light a[class*="bg-gradient-"] *,
-html.light button[class*="bg-slate-900"] *,
-html.light a[class*="bg-slate-900"] *,
-html.light .btn-gradient *,
-html.light .btn-primary * {
+html.light button[class*="bg-gradient-"].text-white *,
+html.light a[class*="bg-gradient-"].text-white *,
+html.light button.bg-cyan-600.text-white *,
+html.light a.bg-cyan-600.text-white *,
+html.light button.bg-blue-600.text-white *,
+html.light a.bg-blue-600.text-white *,
+html.light button.bg-emerald-600.text-white *,
+html.light a.bg-emerald-600.text-white *,
+html.light button.bg-rose-600.text-white *,
+html.light a.bg-rose-600.text-white *,
+html.light button.bg-slate-900.text-white *,
+html.light a.bg-slate-900.text-white * {
   color: #ffffff !important;
 }
 
-/* Preserve dark text on yellow/amber buttons */
+/* Preserve intended dark text on neon, amber, and pastel colored buttons/pills */
 html.light .text-slate-950,
-html.light .text-navy-950 {
+html.light .text-slate-950 *,
+html.light .text-navy-950,
+html.light .text-navy-950 * {
   color: #040711 !important;
+}
+
+html.light .text-cyan-700,
+html.light .text-cyan-700 * {
+  color: #0369a1 !important;
+}
+
+html.light .text-emerald-700,
+html.light .text-emerald-700 * {
+  color: #047857 !important;
+}
+
+html.light .text-amber-800,
+html.light .text-amber-800 * {
+  color: #92400e !important;
+}
+
+html.light .text-rose-700,
+html.light .text-rose-700 * {
+  color: #be123c !important;
 }
 
 /* ==========================================================================

@@ -108,28 +108,28 @@ export const Navbar: React.FC = () => {
   // Role Accent Colors
   const roleStyles = (mounted && currentUser) ? {
     USER: {
-      badgeBg: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
-      dotColor: 'bg-cyan-400',
+      badgeBg: 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-500/30',
+      dotColor: 'bg-cyan-500 dark:bg-cyan-400',
       label: 'EV Driver',
-      avatarBorder: 'border-cyan-400/50 bg-cyan-500/20 text-cyan-300',
+      avatarBorder: 'border-cyan-200 dark:border-cyan-400/50 bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300',
     },
     OPERATOR: {
-      badgeBg: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-      dotColor: 'bg-amber-400',
+      badgeBg: 'bg-amber-50 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30',
+      dotColor: 'bg-amber-500 dark:bg-amber-400',
       label: 'Station Operator',
-      avatarBorder: 'border-amber-400/50 bg-amber-500/20 text-amber-300',
+      avatarBorder: 'border-amber-200 dark:border-amber-400/50 bg-amber-50 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300',
     },
     ADMIN: {
-      badgeBg: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
-      dotColor: 'bg-rose-400',
+      badgeBg: 'bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30',
+      dotColor: 'bg-rose-500 dark:bg-rose-400',
       label: 'Fleet Admin',
-      avatarBorder: 'border-rose-400/50 bg-rose-500/20 text-rose-300',
+      avatarBorder: 'border-rose-200 dark:border-rose-400/50 bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300',
     },
   }[currentUser.role] : {
-    badgeBg: 'bg-slate-800 text-slate-400 border-slate-700',
+    badgeBg: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-700',
     dotColor: 'bg-slate-400',
     label: 'Guest',
-    avatarBorder: 'border-slate-700 bg-slate-800 text-slate-400',
+    avatarBorder: 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400',
   };
 
   return (

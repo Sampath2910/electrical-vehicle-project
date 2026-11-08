@@ -262,35 +262,35 @@ export const ThingSpeakBench: React.FC = () => {
     : (isLoading ? 'Connecting...' : '--');
 
   return (
-    <div className="glass-card rounded-3xl p-6 lg:p-8 border border-cyan-500/30 bg-slate-900/95 shadow-2xl space-y-6 text-white">
+    <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-slate-900/95 shadow-2xl space-y-6 text-slate-900 dark:text-white">
       
       {/* HEADER BAR */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-semibold text-cyan-400 mb-1.5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/30 text-xs font-semibold text-cyan-700 dark:text-cyan-400 mb-1.5">
             <Cloud className="w-3.5 h-3.5" />
             <span>ThingSpeak IoT Cloud Live Integration</span>
             {!isAdminOrOperator && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-mono ml-1 font-bold">
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-mono ml-1 font-bold">
                 <ShieldCheck className="w-3 h-3" /> Audited Stream
               </span>
             )}
           </div>
           <h3 className="text-xl font-extrabold tracking-tight flex flex-wrap items-center gap-2">
             <span>PZEM-004T Metrology Cloud Stream</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold border border-cyan-500/40">
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 font-mono font-bold border border-cyan-200 dark:border-cyan-500/40">
               Channel ID: {channelId}
             </span>
             {channelInfo?.name && (
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/40">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-500/40">
                 {channelInfo.name}
               </span>
             )}
           </h3>
           {lastFeed?.created_at && (
-            <p className="text-[11px] text-slate-400 mt-1 flex flex-wrap items-center gap-1.5 font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-emerald-400 font-bold">Synced {secondsSinceSync}s ago</span>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-1.5 font-mono">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">Synced {secondsSinceSync}s ago</span>
               <span>&bull;</span>
               <span>Latest Cloud Entry #{lastFeed.entry_id}</span>
               <span>&bull;</span>
@@ -305,12 +305,12 @@ export const ThingSpeakBench: React.FC = () => {
           {isAdminOrOperator && (
             <button
               onClick={() => setShowConfig(!showConfig)}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
               title="Configure Channel ID and API Keys (Admin & Operator Access)"
             >
-              <Settings className="w-3.5 h-3.5 text-cyan-400" />
+              <Settings className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
               <span>API Keys</span>
-              <span className="text-[9px] px-1.5 py-0.2 bg-cyan-500/20 text-cyan-300 rounded font-bold uppercase tracking-wider ml-0.5">
+              <span className="text-[9px] px-1.5 py-0.2 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 rounded font-bold uppercase tracking-wider ml-0.5">
                 {currentUser?.role}
               </span>
             </button>
@@ -320,7 +320,7 @@ export const ThingSpeakBench: React.FC = () => {
           <button
             onClick={() => fetchData(true)}
             disabled={isLoading}
-            className="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-500/20 dark:hover:bg-cyan-500/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/40 text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer shadow-xs"
             title="Fetch Latest Feed from ThingSpeak"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -332,7 +332,7 @@ export const ThingSpeakBench: React.FC = () => {
             <button
               onClick={handlePushTelemetry}
               disabled={isPublishing}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 cursor-pointer"
               title="Push Telemetry Sample to ThingSpeak Channel (Admin/Operator)"
             >
               <CloudUpload className="w-3.5 h-3.5" />
@@ -344,30 +344,30 @@ export const ThingSpeakBench: React.FC = () => {
 
       {/* SUCCESS ALERTS */}
       {publishSuccessMsg && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+        <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-400 text-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <span>{publishSuccessMsg}</span>
         </div>
       )}
 
       {/* ERROR ALERTS (Quick-config buttons only rendered for Admin/Operator) */}
       {error && (
-        <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/40 text-rose-400 text-xs flex items-center justify-between gap-2">
+        <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/40 text-rose-800 dark:text-rose-400 text-xs flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
             <span>{error}</span>
           </div>
           {isAdminOrOperator && (
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={handleResetToDefaultKeys}
-                className="text-xs font-bold text-amber-300 underline hover:text-white cursor-pointer"
+                className="text-xs font-bold text-amber-700 dark:text-amber-300 underline hover:text-amber-900 dark:hover:text-white cursor-pointer"
               >
                 Reset to Channel 3533059
               </button>
               <button
                 onClick={() => setShowConfig(true)}
-                className="underline font-bold text-rose-300 hover:text-white cursor-pointer"
+                className="underline font-bold text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-white cursor-pointer"
               >
                 Configure Keys
               </button>
@@ -378,14 +378,14 @@ export const ThingSpeakBench: React.FC = () => {
 
       {/* CONFIG MODAL / DROPDOWN (Strictly restricted to Admin and Operator) */}
       {isAdminOrOperator && showConfig && (
-        <div className="p-5 rounded-2xl bg-slate-950 border border-cyan-500/40 space-y-4 animate-in fade-in slide-in-from-top-2">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-cyan-500/40 space-y-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-cyan-400" />
-              <h4 className="text-sm font-bold text-cyan-400">
+              <Sliders className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <h4 className="text-sm font-bold text-cyan-700 dark:text-cyan-400">
                 ThingSpeak Credentials Setup
               </h4>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold border border-cyan-500/30">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 font-mono font-bold border border-cyan-200 dark:border-cyan-500/30">
                 Restricted: {currentUser?.role}
               </span>
             </div>
@@ -393,7 +393,7 @@ export const ThingSpeakBench: React.FC = () => {
               <button
                 type="button"
                 onClick={handleResetToDefaultKeys}
-                className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold cursor-pointer"
+                className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-1 font-semibold cursor-pointer"
                 title="Reset to Channel 3533059 benchmark keys"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -403,7 +403,7 @@ export const ThingSpeakBench: React.FC = () => {
                 href="https://thingspeak.com"
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-slate-400 hover:text-cyan-300 flex items-center gap-1"
+                className="text-xs text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 flex items-center gap-1"
               >
                 <span>ThingSpeak.com</span>
                 <ExternalLink className="w-3 h-3" />
@@ -413,23 +413,23 @@ export const ThingSpeakBench: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Channel ID</label>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Channel ID</label>
               <input
                 type="text"
                 placeholder="3533059"
                 value={channelId}
                 onChange={(e) => setChannelId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white font-mono focus:border-cyan-500 focus:outline-none"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-slate-400 font-semibold">Read API Key</label>
+                <label className="text-slate-600 dark:text-slate-400 font-semibold">Read API Key</label>
                 <button
                   type="button"
                   onClick={() => setShowReadKey(!showReadKey)}
-                  className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-medium cursor-pointer"
+                  className="text-[11px] text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 flex items-center gap-1 font-medium cursor-pointer"
                 >
                   {showReadKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                   <span>{showReadKey ? 'Hide' : 'Show'}</span>
@@ -440,17 +440,17 @@ export const ThingSpeakBench: React.FC = () => {
                 placeholder="••••••••••••••••"
                 value={readApiKey}
                 onChange={(e) => setReadApiKey(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white font-mono focus:border-cyan-500 focus:outline-none"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-slate-400 font-semibold">Write API Key</label>
+                <label className="text-slate-600 dark:text-slate-400 font-semibold">Write API Key</label>
                 <button
                   type="button"
                   onClick={() => setShowWriteKey(!showWriteKey)}
-                  className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-medium cursor-pointer"
+                  className="text-[11px] text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 flex items-center gap-1 font-medium cursor-pointer"
                 >
                   {showWriteKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                   <span>{showWriteKey ? 'Hide' : 'Show'}</span>
@@ -461,7 +461,7 @@ export const ThingSpeakBench: React.FC = () => {
                 placeholder="••••••••••••••••"
                 value={writeApiKey}
                 onChange={(e) => setWriteApiKey(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono focus:border-cyan-400 focus:outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white font-mono focus:border-cyan-500 focus:outline-none"
               />
             </div>
           </div>
@@ -469,7 +469,7 @@ export const ThingSpeakBench: React.FC = () => {
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={() => setShowConfig(false)}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold cursor-pointer"
             >
               Cancel
             </button>
@@ -486,88 +486,88 @@ export const ThingSpeakBench: React.FC = () => {
       {/* METRICS DISPLAY GRID (EXCLUSIVELY REAL DATA FROM THINGSPEAK) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Field 1: Voltage */}
-        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 transition-all">
-          <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500/50 transition-all">
+          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Voltage (F1)</span>
-            <span className="text-amber-400 font-bold">V</span>
+            <span className="text-amber-600 dark:text-amber-400 font-bold">V</span>
           </div>
-          <div className="text-xl lg:text-2xl font-black text-amber-400 font-mono tracking-tight">
+          <div className="text-xl lg:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
             {voltage}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Real ThingSpeak Feed</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Real ThingSpeak Feed</div>
         </div>
 
         {/* Field 2: Current */}
-        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-cyan-500/50 transition-all">
-          <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-cyan-400 dark:hover:border-cyan-500/50 transition-all">
+          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Current (F2)</span>
-            <span className="text-cyan-400 font-bold">A</span>
+            <span className="text-cyan-600 dark:text-cyan-400 font-bold">A</span>
           </div>
-          <div className="text-xl lg:text-2xl font-black text-cyan-400 font-mono tracking-tight">
+          <div className="text-xl lg:text-2xl font-black text-cyan-600 dark:text-cyan-400 font-mono tracking-tight">
             {current}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Real ThingSpeak Feed</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Real ThingSpeak Feed</div>
         </div>
 
         {/* Field 3: Active Power */}
-        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/50 transition-all">
-          <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500/50 transition-all">
+          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Power (F3)</span>
-            <span className="text-emerald-400 font-bold">W</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">W</span>
           </div>
-          <div className="text-xl lg:text-2xl font-black text-emerald-400 font-mono tracking-tight">
+          <div className="text-xl lg:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
             {power}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Real ThingSpeak Feed</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Real ThingSpeak Feed</div>
         </div>
 
         {/* Field 4: Energy Delivered */}
-        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-purple-500/50 transition-all">
-          <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-purple-400 dark:hover:border-purple-500/50 transition-all">
+          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Energy (F4)</span>
-            <span className="text-purple-400 font-bold">kWh</span>
+            <span className="text-purple-600 dark:text-purple-400 font-bold">kWh</span>
           </div>
-          <div className="text-xl lg:text-2xl font-black text-purple-400 font-mono tracking-tight">
+          <div className="text-xl lg:text-2xl font-black text-purple-600 dark:text-purple-400 font-mono tracking-tight">
             {energy}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Metrology Delivered</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Metrology Delivered</div>
         </div>
 
         {/* Field 5: Power Factor */}
-        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-blue-500/50 transition-all">
-          <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500/50 transition-all">
+          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Power Factor (F5)</span>
-            <span className="text-blue-400 font-bold">cos &phi;</span>
+            <span className="text-blue-600 dark:text-blue-400 font-bold">cos &phi;</span>
           </div>
-          <div className="text-xl lg:text-2xl font-black text-blue-400 font-mono tracking-tight">
+          <div className="text-xl lg:text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">
             {pf}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Grid Efficiency</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Grid Efficiency</div>
         </div>
 
         {/* Field 6: Relay Status */}
-        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-teal-500/50 transition-all">
-          <div className="text-xs text-slate-400 font-semibold mb-1 flex justify-between">
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-teal-400 dark:hover:border-teal-500/50 transition-all">
+          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
             <span>Relay (F6)</span>
-            <Zap className="w-3.5 h-3.5 text-teal-400" />
+            <Zap className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
           </div>
-          <div className={`text-base lg:text-lg font-extrabold font-mono tracking-tight ${relayState.includes('TRIPPED') ? 'text-rose-400' : 'text-emerald-400'}`}>
+          <div className={`text-base lg:text-lg font-extrabold font-mono tracking-tight ${relayState.includes('TRIPPED') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
             {relayState}
           </div>
-          <div className="text-[10px] text-slate-500 mt-1">Safety Contactor</div>
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Safety Contactor</div>
         </div>
       </div>
 
       {/* FEED TIMELINE HISTORY & THINGSPEAK EMBED GRAPH */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
         {/* RECENT FEEDS TABLE */}
-        <div className="lg:col-span-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3">
-          <div className="flex justify-between items-center text-xs font-semibold text-slate-400 pb-2 border-b border-slate-800">
-            <span className="flex items-center gap-1.5 text-cyan-400 font-bold">
+        <div className="lg:col-span-2 bg-slate-50/80 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="flex justify-between items-center text-xs font-semibold text-slate-600 dark:text-slate-400 pb-2 border-b border-slate-200 dark:border-slate-800">
+            <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 font-bold">
               <Activity className="w-3.5 h-3.5" />
               Live Feeds from ThingSpeak Cloud Channel {channelId} ({historyFeeds.length})
             </span>
-            <span className="font-mono text-[11px] text-slate-400">Rate: 15s</span>
+            <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">Rate: 15s</span>
           </div>
 
           {historyFeeds.length === 0 ? (
@@ -578,29 +578,29 @@ export const ThingSpeakBench: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs font-mono">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800/80 pb-1">
+                  <tr className="text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/80 pb-1">
                     <th className="py-1.5 px-2">Timestamp</th>
-                    <th className="py-1.5 px-2 text-amber-400">Voltage (F1)</th>
-                    <th className="py-1.5 px-2 text-cyan-400">Current (F2)</th>
-                    <th className="py-1.5 px-2 text-emerald-400">Power (F3)</th>
-                    <th className="py-1.5 px-2 text-purple-400">Energy (F4)</th>
-                    <th className="py-1.5 px-2 text-teal-400">Status</th>
+                    <th className="py-1.5 px-2 text-amber-600 dark:text-amber-400">Voltage (F1)</th>
+                    <th className="py-1.5 px-2 text-cyan-600 dark:text-cyan-400">Current (F2)</th>
+                    <th className="py-1.5 px-2 text-emerald-600 dark:text-emerald-400">Power (F3)</th>
+                    <th className="py-1.5 px-2 text-purple-600 dark:text-purple-400">Energy (F4)</th>
+                    <th className="py-1.5 px-2 text-teal-600 dark:text-teal-400">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/40">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/40">
                   {historyFeeds.slice().reverse().slice(0, 7).map((f) => (
-                    <tr key={f.entry_id} className="hover:bg-slate-900/50">
-                      <td className="py-1.5 px-2 text-slate-400 text-[11px]">
+                    <tr key={f.entry_id} className="hover:bg-slate-100 dark:hover:bg-slate-900/50 text-slate-800 dark:text-slate-200">
+                      <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 text-[11px]">
                         {new Date(f.created_at).toLocaleTimeString()}
                       </td>
-                      <td className="py-1.5 px-2 text-amber-300">{f.field1 ? `${f.field1} V` : '-'}</td>
-                      <td className="py-1.5 px-2 text-cyan-300">{f.field2 ? `${f.field2} A` : '-'}</td>
-                      <td className="py-1.5 px-2 text-emerald-300">{f.field3 ? `${f.field3} W` : '-'}</td>
-                      <td className="py-1.5 px-2 text-purple-300">
+                      <td className="py-1.5 px-2 text-amber-700 dark:text-amber-300 font-semibold">{f.field1 ? `${f.field1} V` : '-'}</td>
+                      <td className="py-1.5 px-2 text-cyan-700 dark:text-cyan-300 font-semibold">{f.field2 ? `${f.field2} A` : '-'}</td>
+                      <td className="py-1.5 px-2 text-emerald-700 dark:text-emerald-300 font-semibold">{f.field3 ? `${f.field3} W` : '-'}</td>
+                      <td className="py-1.5 px-2 text-purple-700 dark:text-purple-300 font-semibold">
                         {f.field4 ? `${f.field4} kWh` : (f.field3 ? `${((parseFloat(f.field3) * 0.5) / 1000).toFixed(3)} kWh` : '-')}
                       </td>
                       <td className="py-1.5 px-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${f.field6 === '0' ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${f.field6 === '0' ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30' : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'}`}>
                           {f.field6 === '0' ? 'OFF' : 'ON'}
                         </span>
                       </td>
@@ -613,10 +613,10 @@ export const ThingSpeakBench: React.FC = () => {
         </div>
 
         {/* THINGSPEAK EMBEDDED CHART IFRAME & FIELD SELECTOR */}
-        <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3 flex flex-col justify-between">
+        <div className="bg-slate-50/80 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-400 pb-2 border-b border-slate-800">
-              <span className="flex items-center gap-1.5 text-cyan-400 font-bold">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 pb-2 border-b border-slate-200 dark:border-slate-800">
+              <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 font-bold">
                 <Radio className="w-3.5 h-3.5" />
                 ThingSpeak Live Graph
               </span>
@@ -624,21 +624,21 @@ export const ThingSpeakBench: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedChartField(1)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${selectedChartField === 1 ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50' : 'bg-slate-900 text-slate-400'}`}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${selectedChartField === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/30 dark:text-amber-300 dark:border-amber-500/50' : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400'}`}
                 >
                   F1: V
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedChartField(2)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${selectedChartField === 2 ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50' : 'bg-slate-900 text-slate-400'}`}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${selectedChartField === 2 ? 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-500/30 dark:text-cyan-300 dark:border-cyan-500/50' : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400'}`}
                 >
                   F2: I
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedChartField(3)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${selectedChartField === 3 ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50' : 'bg-slate-900 text-slate-400'}`}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${selectedChartField === 3 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/30 dark:text-emerald-300 dark:border-emerald-500/50' : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400'}`}
                 >
                   F3: P
                 </button>
@@ -646,7 +646,7 @@ export const ThingSpeakBench: React.FC = () => {
             </div>
 
             {channelId ? (
-              <div className="mt-3 rounded-xl overflow-hidden border border-slate-800 bg-slate-900 h-[170px] relative">
+              <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-[170px] relative">
                 <iframe
                   width="100%"
                   height="100%"
@@ -656,7 +656,7 @@ export const ThingSpeakBench: React.FC = () => {
                 />
               </div>
             ) : (
-              <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900/50 p-6 text-center text-xs text-slate-500">
+              <div className="mt-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-6 text-center text-xs text-slate-500">
                 Channel ID 3533059 connected.
               </div>
             )}
@@ -667,7 +667,7 @@ export const ThingSpeakBench: React.FC = () => {
               href={`https://thingspeak.com/channels/${channelId}`}
               target="_blank"
               rel="noreferrer"
-              className="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-400 hover:text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+              className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-cyan-700 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
             >
               <span>View Full ThingSpeak Channel #{channelId}</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -678,26 +678,26 @@ export const ThingSpeakBench: React.FC = () => {
 
       {/* CONTINUOUS STREAMING GUIDANCE BANNER (Strictly for Operator & Admin) */}
       {isAdminOrOperator && (
-        <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-slate-950 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="rounded-2xl border border-cyan-200 dark:border-cyan-500/30 bg-cyan-50/60 dark:bg-gradient-to-r dark:from-cyan-950/40 dark:via-slate-900/60 dark:to-slate-950 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mt-0.5">
+            <div className="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20 text-cyan-700 dark:text-cyan-400 mt-0.5">
               <Activity className="w-4 h-4 animate-pulse" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-100 flex items-center gap-2">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <span>Continuous Live Telemetry Streamer (Admin & Operator Mode)</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 font-mono font-bold">
                   Rate Limit: 15s
                 </span>
               </h4>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
                 ThingSpeak cloud updates when your MATLAB script or ESP32 publishes new data. To stream continuous entries:
               </p>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <code className="text-[11px] font-mono bg-slate-950 border border-slate-800 text-amber-300 px-2 py-1 rounded-md">
+                <code className="text-[11px] font-mono bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-md">
                   MATLAB: run('iot/simulator/thingspeak_continuous_stream.m')
                 </code>
-                <code className="text-[11px] font-mono bg-slate-950 border border-slate-800 text-cyan-300 px-2 py-1 rounded-md">
+                <code className="text-[11px] font-mono bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-cyan-700 dark:text-cyan-300 px-2 py-1 rounded-md">
                   Terminal: node iot/simulator/thingspeak_publisher.js
                 </code>
               </div>
@@ -706,9 +706,9 @@ export const ThingSpeakBench: React.FC = () => {
 
           <a
             href="/charging/ses-active-01"
-            className="shrink-0 px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-cyan-500/20"
+            className="shrink-0 px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-all shadow-md shadow-cyan-500/20"
           >
-            <Zap className="w-3.5 h-3.5" />
+            <Zap className="w-3.5 h-3.5 fill-slate-950" />
             <span>View 1Hz Live Cockpit</span>
           </a>
         </div>
