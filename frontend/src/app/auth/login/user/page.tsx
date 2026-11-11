@@ -9,8 +9,8 @@ import { useStore } from '@/lib/storeContext';
 export default function UserLoginPage() {
   const router = useRouter();
   const { setCurrentUser } = useStore();
-  const [email, setEmail] = useState('alex.rivera@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 

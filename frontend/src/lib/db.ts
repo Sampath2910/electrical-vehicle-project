@@ -77,8 +77,8 @@ const INITIAL_DATA: DatabaseSchema = {
       firmwareVersion: 'v3.2.0-esp32-pzem',
       assignedOperatorId: 'user-op-101',
       assignedOperatorName: 'Ramesh Kumar (KLE-OP-101)',
-      totalEarnedRevenue: 3450.00,
-      totalEnergyConsumedKwh: 328.50,
+      totalEarnedRevenue: 0,
+      totalEnergyConsumedKwh: 0,
     },
     {
       id: 'ch-102',
@@ -98,8 +98,8 @@ const INITIAL_DATA: DatabaseSchema = {
       isPriorityBay: true,
       assignedOperatorId: 'user-op-102',
       assignedOperatorName: 'Pooja Patil (KLE-OP-102)',
-      totalEarnedRevenue: 4920.00,
-      totalEnergyConsumedKwh: 266.00,
+      totalEarnedRevenue: 0,
+      totalEnergyConsumedKwh: 0,
     },
     {
       id: 'ch-103',
@@ -121,8 +121,8 @@ const INITIAL_DATA: DatabaseSchema = {
       totalBatterySlots: 16,
       assignedOperatorId: undefined,
       assignedOperatorName: 'Unassigned',
-      totalEarnedRevenue: 1890.00,
-      totalEnergyConsumedKwh: 180.00,
+      totalEarnedRevenue: 0,
+      totalEnergyConsumedKwh: 0,
     },
     {
       id: 'ch-104',
@@ -142,8 +142,8 @@ const INITIAL_DATA: DatabaseSchema = {
       stationType: 'PLUG_CHARGER',
       assignedOperatorId: undefined,
       assignedOperatorName: 'Unassigned',
-      totalEarnedRevenue: 1250.00,
-      totalEnergyConsumedKwh: 119.00,
+      totalEarnedRevenue: 0,
+      totalEnergyConsumedKwh: 0,
     },
     {
       id: 'ch-105',
@@ -163,48 +163,11 @@ const INITIAL_DATA: DatabaseSchema = {
       stationType: 'PLUG_CHARGER',
       assignedOperatorId: undefined,
       assignedOperatorName: 'Unassigned',
-      totalEarnedRevenue: 980.00,
-      totalEnergyConsumedKwh: 93.30,
+      totalEarnedRevenue: 0,
+      totalEnergyConsumedKwh: 0,
     },
   ],
-  sessions: [
-    {
-      id: 'sess-801',
-      sessionCode: 'SES-KLE-01-801',
-      chargerId: 'ch-101',
-      chargerName: 'KLETECH EV Station 1',
-      chargerLocation: 'KLETECH Campus Engineering Zone, Station 1',
-      userId: 'user-drv-001',
-      status: 'COMPLETED',
-      startTime: '2026-10-09T08:00:00Z',
-      endTime: '2026-10-09T09:15:00Z',
-      durationSeconds: 4500,
-      tariffRate: 10.50,
-      energyKwh: 3.12,
-      estimatedCost: 37.76,
-      finalCost: 37.76,
-      paymentStatus: 'SUCCESS',
-      vehicleName: 'Ather 450X',
-    },
-    {
-      id: 'sess-802',
-      sessionCode: 'SES-KLE-02-802',
-      chargerId: 'ch-102',
-      chargerName: 'KLETECH EV Station 2',
-      chargerLocation: 'KLETECH Campus Emergency EV Zone, Station 2',
-      userId: 'user-drv-001',
-      status: 'COMPLETED',
-      startTime: '2026-10-09T14:30:00Z',
-      endTime: '2026-10-09T15:45:00Z',
-      durationSeconds: 4500,
-      tariffRate: 18.50,
-      energyKwh: 2.85,
-      estimatedCost: 62.22,
-      finalCost: 62.22,
-      paymentStatus: 'SUCCESS',
-      vehicleName: 'Ola S1 Pro',
-    },
-  ],
+  sessions: [],
 };
 
 function ensureDbFile(): DatabaseSchema {
@@ -548,5 +511,11 @@ export const db = {
       charger.totalEnergyConsumedKwh = (charger.totalEnergyConsumedKwh ?? 0) + energyKwh;
       saveDbFile(data);
     }
+  },
+
+  // COMPLETE FACTORY RESET (PURGES ALL PAST SESSIONS & METERS TO DAY-ZERO)
+  factoryReset: () => {
+    saveDbFile(INITIAL_DATA);
+    return INITIAL_DATA;
   },
 };

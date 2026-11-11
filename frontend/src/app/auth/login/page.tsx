@@ -24,24 +24,14 @@ export default function AuthLoginPage() {
   const { setCurrentUser, playSound } = useStore();
 
   const [activeRole, setActiveRole] = useState<UserRole>('OPERATOR');
-  const [email, setEmail] = useState('operator1@kletech.ac.in');
-  const [password, setPassword] = useState('operator123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRoleChange = (role: UserRole) => {
     setActiveRole(role);
     setError('');
-    if (role === 'OPERATOR') {
-      setEmail('operator1@kletech.ac.in');
-      setPassword('operator123');
-    } else if (role === 'USER') {
-      setEmail('alex.rivera@example.com');
-      setPassword('password123');
-    } else if (role === 'ADMIN') {
-      setEmail('admin@smartev.com');
-      setPassword('admin123');
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

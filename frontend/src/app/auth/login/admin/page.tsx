@@ -9,8 +9,8 @@ import { useStore } from '@/lib/storeContext';
 export default function AdminLoginPage() {
   const router = useRouter();
   const { setCurrentUser } = useStore();
-  const [email, setEmail] = useState('admin@smartev.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 

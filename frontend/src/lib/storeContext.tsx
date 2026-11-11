@@ -181,6 +181,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     updateUserSession(null);
     playSound('beep');
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('smart_ev_user');
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('tariffs');
       window.location.href = '/auth/login';
     }
   };

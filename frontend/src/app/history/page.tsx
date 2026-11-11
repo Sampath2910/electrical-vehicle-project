@@ -62,29 +62,37 @@ export default function HistoryPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-800 dark:text-slate-200">
-            {filteredSessions.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-navy-850/50 transition-colors">
-                <td className="py-3.5 px-3 font-mono font-bold text-cyan-700 dark:text-cyan-400">{s.sessionCode}</td>
-                <td className="py-3.5 px-3 font-semibold text-slate-900 dark:text-white">{s.chargerName}</td>
-                <td className="py-3.5 px-3 text-slate-600 dark:text-slate-300">{s.vehicleModel || 'Ather 450X'}</td>
-                <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400" suppressHydrationWarning>{new Date(s.startTime).toLocaleString()}</td>
-                <td className="py-3.5 px-3 font-bold text-cyan-700 dark:text-cyan-300 font-mono">{s.energyKwh.toFixed(3)} kWh</td>
-                <td className="py-3.5 px-3 font-mono text-purple-700 dark:text-purple-300 text-[11px]">{s.todSlotActive || `₹${s.tariffRate}/kWh`}</td>
-                <td className="py-3.5 px-3 font-extrabold text-slate-900 dark:text-white font-mono">₹{s.finalCost?.toFixed(2)}</td>
-                <td className="py-3.5 px-3 text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1 mt-3">
-                  <QrCode className="w-3.5 h-3.5" /> Dynamic QR / UPI
-                </td>
-                <td className="py-3.5 px-3">
-                  <Link
-                    href={`/charging/${s.id}/complete`}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-navy-800 hover:bg-cyan-500 hover:text-white dark:hover:bg-cyan-500 dark:hover:text-navy-950 text-cyan-700 dark:text-cyan-400 text-[11px] font-semibold border border-slate-200 dark:border-transparent transition-all inline-flex items-center gap-1 shadow-sm"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Receipt</span>
-                  </Link>
+            {filteredSessions.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="py-12 text-center text-xs text-slate-500 font-mono">
+                  No charging sessions recorded yet. Start a session from the Dashboard or Scan QR &amp; Charge.
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredSessions.map((s) => (
+                <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-navy-850/50 transition-colors">
+                  <td className="py-3.5 px-3 font-mono font-bold text-cyan-700 dark:text-cyan-400">{s.sessionCode}</td>
+                  <td className="py-3.5 px-3 font-semibold text-slate-900 dark:text-white">{s.chargerName}</td>
+                  <td className="py-3.5 px-3 text-slate-600 dark:text-slate-300">{s.vehicleModel || 'Ather 450X'}</td>
+                  <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400" suppressHydrationWarning>{new Date(s.startTime).toLocaleString()}</td>
+                  <td className="py-3.5 px-3 font-bold text-cyan-700 dark:text-cyan-300 font-mono">{s.energyKwh.toFixed(3)} kWh</td>
+                  <td className="py-3.5 px-3 font-mono text-purple-700 dark:text-purple-300 text-[11px]">{s.todSlotActive || `₹${s.tariffRate}/kWh`}</td>
+                  <td className="py-3.5 px-3 font-extrabold text-slate-900 dark:text-white font-mono">₹{s.finalCost?.toFixed(2)}</td>
+                  <td className="py-3.5 px-3 text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1 mt-3">
+                    <QrCode className="w-3.5 h-3.5" /> Dynamic QR / UPI
+                  </td>
+                  <td className="py-3.5 px-3">
+                    <Link
+                      href={`/charging/${s.id}/complete`}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-navy-800 hover:bg-cyan-500 hover:text-white dark:hover:bg-cyan-500 dark:hover:text-navy-950 text-cyan-700 dark:text-cyan-400 text-[11px] font-semibold border border-slate-200 dark:border-transparent transition-all inline-flex items-center gap-1 shadow-sm"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Receipt</span>
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

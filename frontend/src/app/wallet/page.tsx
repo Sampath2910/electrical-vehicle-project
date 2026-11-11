@@ -146,29 +146,37 @@ export default function WalletPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-800 dark:text-slate-200">
-              {walletTransactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-slate-50/80 dark:hover:bg-navy-850/50 transition-colors">
-                  <td className="py-3.5 px-3">
-                    {tx.type === 'CREDIT' ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold">
-                        <ArrowDownLeft className="w-4 h-4" />
-                        <span>CREDIT</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-400 font-bold">
-                        <ArrowUpRight className="w-4 h-4" />
-                        <span>DEBIT</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-3 font-medium text-slate-900 dark:text-white">{tx.description}</td>
-                  <td className="py-3.5 px-3 font-mono text-cyan-700 dark:text-cyan-400 text-[11px]">{tx.reference}</td>
-                  <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400" suppressHydrationWarning>{new Date(tx.createdAt).toLocaleString()}</td>
-                  <td className={`py-3.5 px-3 text-right font-extrabold ${tx.type === 'CREDIT' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
-                    {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toFixed(2)}
+              {walletTransactions.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-xs text-slate-500 font-mono">
+                    No wallet transactions recorded yet. Use the top-up form above to add funds.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                walletTransactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-slate-50/80 dark:hover:bg-navy-850/50 transition-colors">
+                    <td className="py-3.5 px-3">
+                      {tx.type === 'CREDIT' ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold">
+                          <ArrowDownLeft className="w-4 h-4" />
+                          <span>CREDIT</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-400 font-bold">
+                          <ArrowUpRight className="w-4 h-4" />
+                          <span>DEBIT</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-3 font-medium text-slate-900 dark:text-white">{tx.description}</td>
+                    <td className="py-3.5 px-3 font-mono text-cyan-700 dark:text-cyan-400 text-[11px]">{tx.reference}</td>
+                    <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400" suppressHydrationWarning>{new Date(tx.createdAt).toLocaleString()}</td>
+                    <td className={`py-3.5 px-3 text-right font-extrabold ${tx.type === 'CREDIT' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
+                      {tx.type === 'CREDIT' ? '+' : '-'}₹{tx.amount.toFixed(2)}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

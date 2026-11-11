@@ -243,17 +243,25 @@ export default function DriverDashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
-              {historySessions.map((session) => (
-                <tr key={session.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="py-3 px-3 font-mono font-semibold text-cyan-600 dark:text-cyan-400">{session.sessionCode}</td>
-                  <td className="py-3 px-3 font-medium text-slate-800 dark:text-slate-200">{session.chargerName}</td>
-                  <td className="py-3 px-3 font-bold font-mono text-slate-900 dark:text-slate-100">{session.energyKwh.toFixed(3)} kWh</td>
-                  <td className="py-3 px-3">{Math.floor(session.durationSeconds / 60)} min</td>
-                  <td className="py-3 px-3 font-bold text-slate-900 dark:text-white font-mono">₹{session.finalCost?.toFixed(2)}</td>
-                  <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-semibold">QR / UPI</td>
-                  <td className="py-3 px-3"><StatusBadge status={session.status} size="sm" /></td>
+              {historySessions.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-xs text-slate-500 font-mono">
+                    No charging sessions recorded yet. Start your first session via Scan QR &amp; Charge.
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                historySessions.map((session) => (
+                  <tr key={session.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 px-3 font-mono font-semibold text-cyan-600 dark:text-cyan-400">{session.sessionCode}</td>
+                    <td className="py-3 px-3 font-medium text-slate-800 dark:text-slate-200">{session.chargerName}</td>
+                    <td className="py-3 px-3 font-bold font-mono text-slate-900 dark:text-slate-100">{session.energyKwh.toFixed(3)} kWh</td>
+                    <td className="py-3 px-3">{Math.floor(session.durationSeconds / 60)} min</td>
+                    <td className="py-3 px-3 font-bold text-slate-900 dark:text-white font-mono">₹{session.finalCost?.toFixed(2)}</td>
+                    <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400 font-semibold">QR / UPI</td>
+                    <td className="py-3 px-3"><StatusBadge status={session.status} size="sm" /></td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -275,19 +283,28 @@ export default function DriverDashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {vehicles.map((veh) => (
-              <div key={veh.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">{veh.model}</h4>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">{veh.registration} &bull; {veh.batteryCapacityKwh} kWh</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-full bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 text-[10px] font-mono border border-cyan-200 dark:border-cyan-500/20">
-                    {veh.connectorType}
-                  </span>
-                </div>
+            {vehicles.length === 0 ? (
+              <div className="p-6 text-center text-xs text-slate-500 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
+                <p>No 2-wheelers registered yet in your garage.</p>
+                <Link href="/vehicles" className="inline-block text-cyan-600 dark:text-cyan-400 font-bold hover:underline">
+                  + Register Your First EV Scooter / Bike &rarr;
+                </Link>
               </div>
-            ))}
+            ) : (
+              vehicles.map((veh) => (
+                <div key={veh.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">{veh.model}</h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">{veh.registration} &bull; {veh.batteryCapacityKwh} kWh</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-full bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 text-[10px] font-mono border border-cyan-200 dark:border-cyan-500/20">
+                      {veh.connectorType}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

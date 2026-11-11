@@ -77,8 +77,8 @@ export const mockChargers: Charger[] = [
     isPriorityBay: false,
     assignedOperatorId: 'user-002',
     assignedOperatorName: 'Ramesh Kumar (KLE-OP-101)',
-    totalEarnedRevenue: 3450.00,
-    totalEnergyConsumedKwh: 328.50,
+    totalEarnedRevenue: 0.00,
+    totalEnergyConsumedKwh: 0.00,
   },
   {
     id: 'ch-102',
@@ -99,8 +99,8 @@ export const mockChargers: Charger[] = [
     isPriorityBay: true, // Subject to 120s Eviction protocol & ₹500 penalty
     assignedOperatorId: 'user-002b',
     assignedOperatorName: 'Pooja Patil (KLE-OP-102)',
-    totalEarnedRevenue: 4920.00,
-    totalEnergyConsumedKwh: 266.00,
+    totalEarnedRevenue: 0.00,
+    totalEnergyConsumedKwh: 0.00,
   },
   {
     id: 'ch-103',
@@ -174,245 +174,24 @@ export const mockChargers: Charger[] = [
   },
 ];
 
-export const mockVehicles: Vehicle[] = [
-  {
-    id: 'veh-01',
-    userId: 'user-001',
-    model: 'Ather 450X Apex (3.7 kWh)',
-    registration: 'KA-03-EV-1008',
-    connectorType: 'Standard 16A Socket',
-    batteryCapacityKwh: 3.7,
-    createdAt: '2025-02-10T14:20:00Z',
-    vehicleType: 'SCOOTER',
-    ridingRangeKm: 157,
-    isBatterySwappable: false,
-    ridingModes: { eco: 157, ride: 110, sport: 90, warp: 75 },
-    imageUrl: '/images/ev_scooter_charging.jpg',
-  },
-  {
-    id: 'veh-02',
-    userId: 'user-001',
-    model: 'Ola S1 Pro Gen 2 (4.0 kWh)',
-    registration: 'KA-01-EQ-4421',
-    connectorType: 'IEC 60309 (Industrial 3-pin)',
-    batteryCapacityKwh: 4.0,
-    createdAt: '2025-01-20T10:00:00Z',
-    vehicleType: 'SCOOTER',
-    ridingRangeKm: 195,
-    isBatterySwappable: false,
-    ridingModes: { eco: 195, ride: 143, sport: 110, warp: 90 },
-    imageUrl: '/images/ev_urban_bike.jpg',
-  },
-  {
-    id: 'veh-03',
-    userId: 'user-001',
-    model: 'TVS iQube Electric (3.4 kWh)',
-    registration: 'KA-05-EV-3309',
-    connectorType: 'LEV AC (IS 17017)',
-    batteryCapacityKwh: 3.4,
-    createdAt: '2025-03-01T11:00:00Z',
-    vehicleType: 'SCOOTER',
-    ridingRangeKm: 140,
-    isBatterySwappable: false,
-    ridingModes: { eco: 140, ride: 100, sport: 85 },
-    imageUrl: '/images/ev_scooter_charging.jpg',
-  },
-  {
-    id: 'veh-04',
-    userId: 'user-001',
-    model: 'Ultraviolette F77 Mach 2 (10.3 kWh)',
-    registration: 'KA-01-EQ-9921',
-    connectorType: 'Ather Grid / LEV DC',
-    batteryCapacityKwh: 10.3,
-    createdAt: '2025-01-15T09:00:00Z',
-    vehicleType: 'MOTORCYCLE',
-    ridingRangeKm: 307,
-    isBatterySwappable: false,
-    ridingModes: { eco: 307, ride: 260, sport: 195, warp: 145 },
-    imageUrl: '/images/ev_bike_superbike.jpg',
-  },
-  {
-    id: 'veh-05',
-    userId: 'user-001',
-    model: 'Revolt RV400 Swappable (3.24 kWh)',
-    registration: 'DL-04-EV-2044',
-    connectorType: 'BSS Swappable Dock',
-    batteryCapacityKwh: 3.24,
-    createdAt: '2025-02-28T09:15:00Z',
-    vehicleType: 'MOTORCYCLE',
-    ridingRangeKm: 150,
-    isBatterySwappable: true,
-    ridingModes: { eco: 150, ride: 100, sport: 80 },
-    imageUrl: '/images/ev_battery_swap.jpg',
-  }
-];
+export const mockVehicles: Vehicle[] = [];
 
 export const mockWallet: Wallet = {
   id: 'wal-001',
   userId: 'user-001',
-  balance: 1450.75,
+  balance: 0.00,
   currency: 'INR',
   updatedAt: new Date().toISOString(),
 };
 
-export const mockWalletTransactions: WalletTransaction[] = [
-  {
-    id: 'wtx-101',
-    walletId: 'wal-001',
-    type: 'CREDIT',
-    amount: 1000.00,
-    reference: 'UPI/ONLINE/882193',
-    description: 'Wallet top-up via Google Pay UPI',
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: 'wtx-102',
-    walletId: 'wal-001',
-    type: 'DEBIT',
-    amount: 48.38,
-    reference: 'SES-9941',
-    description: 'Instant UPI settle for Local Bay #01 (Ather 450X 3.0 kWh)',
-    sessionId: 'ses-9941',
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: 'wtx-103',
-    walletId: 'wal-001',
-    type: 'CREDIT',
-    amount: 500.00,
-    reference: 'UPI/ONLINE/991202',
-    description: 'Wallet top-up via PhonePe UPI',
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-  }
-];
+export const mockWalletTransactions: WalletTransaction[] = [];
 
 // Kept for internal backward compat
-export const mockRfidCards: RfidCard[] = [
-  {
-    id: 'rfid-01',
-    userId: 'user-001',
-    displayIdentifier: 'UPI-AUTOPAY-9842',
-    status: 'ACTIVE',
-    lastUsedAt: new Date(Date.now() - 86400000).toISOString(),
-    createdAt: '2025-01-20T12:00:00Z',
-  }
-];
+export const mockRfidCards: RfidCard[] = [];
 
-export const mockSessions: ChargingSession[] = [
-  {
-    id: 'ses-active-01',
-    sessionCode: 'SES-2025-0912',
-    userId: 'user-001',
-    chargerId: 'ch-101',
-    chargerName: 'Local Bay #01: 3.3kW 2W AC (Project Hardware Bench - Active)',
-    chargerLocation: 'Campus Electrical Engineering Labs, Bay 1',
-    vehicleId: 'veh-01',
-    vehicleName: 'Ather 450X Apex (3.7 kWh)',
-    startTime: new Date(Date.now() - 1800000).toISOString(),
-    status: 'CHARGING',
-    energyKwh: 2.15,
-    durationSeconds: 1800,
-    tariffRate: 10.50, // Standard Daytime ToD Rate
-    estimatedCost: 32.55,
-    serviceFee: 5.00,
-    gstAmount: 4.96,
-    todSlotActive: 'S_2: Standard (06:00 AM - 06:00 PM)',
-    maxCurrentA: 14.1,
-    avgVoltageV: 230.2,
-    isPriorityBay: false,
-    paymentMethod: 'QR_UPI',
-    paymentStatus: 'SUCCESS',
-  },
-  {
-    id: 'ses-9941',
-    sessionCode: 'SES-2025-0891',
-    userId: 'user-001',
-    chargerId: 'ch-101',
-    chargerName: 'Local Bay #01: 3.3kW 2W AC (Project Hardware Bench - Active)',
-    chargerLocation: 'Campus Electrical Engineering Labs, Bay 1',
-    vehicleId: 'veh-01',
-    vehicleName: 'Ather 450X Apex (3.7 kWh)',
-    startTime: new Date(Date.now() - 86400000).toISOString(),
-    endTime: new Date(Date.now() - 86400000 + 3600000).toISOString(),
-    status: 'COMPLETED',
-    energyKwh: 3.00,
-    durationSeconds: 3600,
-    tariffRate: 10.50, // Standard Daytime ToD Rate
-    estimatedCost: 31.50,
-    finalCost: 43.07, // (3.0 * 10.50 + 5.00) * 1.18 = 43.07
-    serviceFee: 5.00,
-    gstAmount: 6.57,
-    todSlotActive: 'S_2: Standard (06:00 AM - 06:00 PM)',
-    maxCurrentA: 14.2,
-    avgVoltageV: 230.4,
-    isPriorityBay: false,
-    paymentMethod: 'QR_UPI',
-    paymentStatus: 'SUCCESS',
-  },
-  {
-    id: 'ses-9912',
-    sessionCode: 'SES-2025-0812',
-    userId: 'user-001',
-    chargerId: 'ch-102',
-    chargerName: 'Local Bay #02: Priority Reserved VIP / Emergency Bay (3.3kW)',
-    chargerLocation: 'Campus Medical & Emergency EV Zone, Bay 2',
-    vehicleId: 'veh-02',
-    vehicleName: 'Ola S1 Pro Gen 2 (4.0 kWh)',
-    startTime: new Date(Date.now() - 86400000 * 4).toISOString(),
-    endTime: new Date(Date.now() - 86400000 * 4 + 2400000).toISOString(),
-    status: 'COMPLETED',
-    energyKwh: 2.50,
-    durationSeconds: 2400,
-    tariffRate: 18.50, // Standard ₹10.50 + ₹8.00/kWh Premium
-    estimatedCost: 46.25,
-    finalCost: 60.48, // (2.5 * 18.50 + 5.00) * 1.18 = 60.48
-    serviceFee: 5.00,
-    gstAmount: 9.23,
-    todSlotActive: 'S_VIP: Priority Bay (Standard 10.50 + 8.00 Premium)',
-    maxCurrentA: 14.3,
-    avgVoltageV: 231.0,
-    isPriorityBay: true,
-    paymentMethod: 'QR_UPI',
-    paymentStatus: 'SUCCESS',
-  }
-];
+export const mockSessions: ChargingSession[] = [];
 
-export const mockBills: Bill[] = [
-  {
-    id: 'bill-001',
-    billNumber: 'INV-2025-0891',
-    sessionId: 'ses-9941',
-    userId: 'user-001',
-    chargerName: 'Local Bay #01: 3.3kW 2W AC (Project Hardware Bench - Active)',
-    energyKwh: 3.00,
-    tariffRate: 10.50,
-    subtotal: 31.50, // 3.0 kWh * 10.50
-    serviceFee: 5.00, // Fixed ₹5.00
-    tax: 6.57, // 18% GST on (31.50 + 5.00) = 6.57
-    totalAmount: 43.07, // 31.50 + 5.00 + 6.57
-    todSlotActive: 'S_2: Standard (06:00 AM - 06:00 PM)',
-    status: 'PAID',
-    issuedAt: new Date(Date.now() - 86400000).toISOString(),
-    paidAt: new Date(Date.now() - 86400000 + 300000).toISOString(),
-  },
-  {
-    id: 'bill-002',
-    billNumber: 'INV-2025-0812',
-    sessionId: 'ses-9912',
-    userId: 'user-001',
-    chargerName: 'Local Bay #02: Priority Reserved VIP / Emergency Bay (3.3kW)',
-    energyKwh: 2.50,
-    tariffRate: 18.50,
-    subtotal: 46.25,
-    serviceFee: 5.00,
-    tax: 9.23, // 18% GST on (46.25 + 5.00) = 9.23
-    totalAmount: 60.48,
-    todSlotActive: 'S_VIP: Priority Bay (Current ToD + ₹8.00/kWh)',
-    status: 'PAID',
-    issuedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-    paidAt: new Date(Date.now() - 86400000 * 4 + 600000).toISOString(),
-  }
-];
+export const mockBills: Bill[] = [];
 
 // Exact Time-of-Day Tariffs from PDF Section 1 & 2
 export const mockTariffs: Tariff[] = [

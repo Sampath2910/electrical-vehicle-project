@@ -9,8 +9,8 @@ import { useStore } from '@/lib/storeContext';
 export default function OperatorLoginPage() {
   const router = useRouter();
   const { setCurrentUser } = useStore();
-  const [email, setEmail] = useState('operator1@kletech.ac.in');
-  const [password, setPassword] = useState('operator123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
