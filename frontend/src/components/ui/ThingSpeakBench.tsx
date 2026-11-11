@@ -18,8 +18,23 @@ import {
   EyeOff,
   Lock,
   ShieldCheck,
-  Clock
+  Clock,
+  BatteryCharging,
+  Cpu,
+  Layers,
+  TrendingUp,
+  Gauge
 } from 'lucide-react';
+import { 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  Tooltip as RechartsTooltip, 
+  Legend, 
+  CartesianGrid 
+} from 'recharts';
 import { useStore } from '@/lib/storeContext';
 
 export interface ThingSpeakFeed {
@@ -74,6 +89,12 @@ export const ThingSpeakBench: React.FC = () => {
   const [publishSuccessMsg, setPublishSuccessMsg] = useState<string | null>(null);
   const [selectedChartField, setSelectedChartField] = useState<number>(1);
   const [secondsSinceSync, setSecondsSinceSync] = useState<number>(0);
+  const [chartViewMode, setChartViewMode] = useState<'dual_trace' | 'thingspeak_embed'>('dual_trace');
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Enforce security: If user role is regular driver (USER), config setup panel is always closed
   useEffect(() => {
@@ -265,6 +286,34 @@ export const ThingSpeakBench: React.FC = () => {
   const relayState = rawRelay !== null 
     ? (rawRelay === '0' ? 'TRIPPED (OFF)' : 'CLOSED (ON)') 
     : (isLoading ? 'Connecting...' : '--');
+
+  // DC Vehicle Output Stage Metrology (14S Li-ion pack, 58.8V nominal, 92.0% rectifier conversion efficiency)
+  const dcVoltageVal = 58.8;
+  const efficiencyPercent = 92.0;
+  const rawDcPower = rawP !== null && !isNaN(rawP) ? Math.round(rawP * (efficiencyPercent / 100)) : null;
+  const rawDcCurrent = rawDcPower !== null ? +(rawDcPower / dcVoltageVal).toFixed(2) : null;
+
+  const dcVoltage = rawP !== null ? `${dcVoltageVal.toFixed(1)} V` : (isLoading ? 'Connecting...' : '-- V');
+  const dcCurrent = rawDcCurrent !== null ? `${rawDcCurrent.toFixed(2)} A` : (isLoading ? 'Connecting...' : '-- A');
+  const dcPower = rawDcPower !== null ? `${rawDcPower} W` : (isLoading ? 'Connecting...' : '-- W');
+  const dcEfficiency = rawP !== null ? `${efficiencyPercent.toFixed(1)}%` : (isLoading ? 'Connecting...' : '--%');
+
+  // Chart dataset for live dual-trace power graph
+  const dualTraceData = historyFeeds.length > 0
+    ? historyFeeds.slice().reverse().map((f) => {
+        const acP = f.field3 ? Math.round(parseFloat(f.field3)) : (f.field1 && f.field2 ? Math.round(parseFloat(f.field1) * parseFloat(f.field2) * 0.98) : 0);
+        const dcP = Math.round(acP * (efficiencyPercent / 100));
+        const timeStr = f.created_at ? new Date(f.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : `#${f.entry_id}`;
+        return {
+          id: f.entry_id,
+          time: timeStr,
+          acPower: acP,
+          dcPower: dcP,
+          loss: acP - dcP,
+          efficiency: efficiencyPercent,
+        };
+      })
+    : [];
 
   return (
     <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-slate-900/95 shadow-2xl space-y-6 text-slate-900 dark:text-white">
@@ -541,182 +590,320 @@ export const ThingSpeakBench: React.FC = () => {
         </div>
       )}
 
-      {/* METRICS DISPLAY GRID (EXCLUSIVELY REAL DATA FROM THINGSPEAK) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* Field 1: Voltage */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500/50 transition-all">
-          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
-            <span>Voltage (F1)</span>
-            <span className="text-amber-600 dark:text-amber-400 font-bold">V</span>
-          </div>
-          <div className="text-xl lg:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
-            {voltage}
-          </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-            {isLiveStreaming ? "🟢 Live Stream" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
-          </div>
-        </div>
-
-        {/* Field 2: Current */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-cyan-400 dark:hover:border-cyan-500/50 transition-all">
-          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
-            <span>Current (F2)</span>
-            <span className="text-cyan-600 dark:text-cyan-400 font-bold">A</span>
-          </div>
-          <div className="text-xl lg:text-2xl font-black text-cyan-600 dark:text-cyan-400 font-mono tracking-tight">
-            {current}
-          </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-            {isLiveStreaming ? "🟢 Live Stream" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
-          </div>
-        </div>
-
-        {/* Field 3: Active Power */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500/50 transition-all">
-          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
-            <span>Power (F3)</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">W</span>
-          </div>
-          <div className="text-xl lg:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
-            {power}
-          </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-            {isLiveStreaming ? "🟢 Live Stream" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
-          </div>
-        </div>
-
-        {/* Field 4: Energy Delivered */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-purple-400 dark:hover:border-purple-500/50 transition-all">
-          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
-            <span>Energy (F4)</span>
-            <span className="text-purple-600 dark:text-purple-400 font-bold">kWh</span>
-          </div>
-          <div className="text-xl lg:text-2xl font-black text-purple-600 dark:text-purple-400 font-mono tracking-tight">
-            {energy}
-          </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-            {isLiveStreaming ? "🟢 Live Accumulation" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
-          </div>
-        </div>
-
-        {/* Field 5: Power Factor */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500/50 transition-all">
-          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
-            <span>Power Factor (F5)</span>
-            <span className="text-blue-600 dark:text-blue-400 font-bold">cos &phi;</span>
-          </div>
-          <div className="text-xl lg:text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">
-            {pf}
-          </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-            {isLiveStreaming ? "🟢 Grid Efficiency" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
-          </div>
-        </div>
-
-        {/* Field 6: Relay Status */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-teal-400 dark:hover:border-teal-500/50 transition-all">
-          <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
-            <span>Relay (F6)</span>
-            <Zap className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-          </div>
-          <div className={`text-base lg:text-lg font-extrabold font-mono tracking-tight ${relayState.includes('TRIPPED') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-            {relayState}
-          </div>
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-            {isLiveStreaming ? "🟢 Safety Contactor" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
-          </div>
-        </div>
-      </div>
-
-      {/* FEED TIMELINE HISTORY & THINGSPEAK EMBED GRAPH */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
-        {/* RECENT FEEDS TABLE */}
-        <div className="lg:col-span-2 bg-slate-50/80 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-          <div className="flex justify-between items-center text-xs font-semibold text-slate-600 dark:text-slate-400 pb-2 border-b border-slate-200 dark:border-slate-800">
-            <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 font-bold">
-              <Activity className="w-3.5 h-3.5" />
-              Live Feeds from ThingSpeak Cloud Channel {channelId} ({historyFeeds.length})
+      {/* 1. DUAL STAGE ELECTRICAL METROLOGY: AC GRID INPUT & DC VEHICLE OUTPUT */}
+      <div className="space-y-4">
+        
+        {/* STAGE 1: AC GRID INPUT STAGE (PZEM-004T HARDWARE TELEMETRY) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <Cpu className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                Stage 1 &bull; AC Grid Input (Hardware PZEM-004T Metrology)
+              </h4>
+            </div>
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono font-semibold border border-slate-200 dark:border-slate-700">
+              230V AC Single-Phase &bull; &le; 14.3A
             </span>
-            <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">Rate: 15s</span>
           </div>
 
-          {historyFeeds.length === 0 ? (
-            <div className="p-6 text-center text-xs text-slate-500">
-              {isLoading ? 'Connecting to ThingSpeak Cloud...' : 'No feeds found for Channel 3533059 yet. Click "Fetch Live" or publish from ESP32.'}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead>
-                  <tr className="text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/80 pb-1">
-                    <th className="py-1.5 px-2">Timestamp</th>
-                    <th className="py-1.5 px-2 text-amber-600 dark:text-amber-400">Voltage (F1)</th>
-                    <th className="py-1.5 px-2 text-cyan-600 dark:text-cyan-400">Current (F2)</th>
-                    <th className="py-1.5 px-2 text-emerald-600 dark:text-emerald-400">Power (F3)</th>
-                    <th className="py-1.5 px-2 text-purple-600 dark:text-purple-400">Energy (F4)</th>
-                    <th className="py-1.5 px-2 text-teal-600 dark:text-teal-400">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/40">
-                  {historyFeeds.slice().reverse().slice(0, 7).map((f) => (
-                    <tr key={f.entry_id} className="hover:bg-slate-100 dark:hover:bg-slate-900/50 text-slate-800 dark:text-slate-200">
-                      <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 text-[11px]" suppressHydrationWarning>
-                        {new Date(f.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} {new Date(f.created_at).toLocaleTimeString()}
-                      </td>
-                      <td className="py-1.5 px-2 text-amber-700 dark:text-amber-300 font-semibold">{f.field1 ? `${f.field1} V` : '-'}</td>
-                      <td className="py-1.5 px-2 text-cyan-700 dark:text-cyan-300 font-semibold">{f.field2 ? `${f.field2} A` : '-'}</td>
-                      <td className="py-1.5 px-2 text-emerald-700 dark:text-emerald-300 font-semibold">{f.field3 ? `${f.field3} W` : '-'}</td>
-                      <td className="py-1.5 px-2 text-purple-700 dark:text-purple-300 font-semibold">
-                        {f.field4 ? `${f.field4} kWh` : (f.field3 ? `${((parseFloat(f.field3) * 0.5) / 1000).toFixed(3)} kWh` : '-')}
-                      </td>
-                      <td className="py-1.5 px-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${f.field6 === '0' ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30' : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'}`}>
-                          {f.field6 === '0' ? 'OFF' : 'ON'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* THINGSPEAK EMBEDDED CHART IFRAME & FIELD SELECTOR */}
-        <div className="bg-slate-50/80 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 pb-2 border-b border-slate-200 dark:border-slate-800">
-              <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 font-bold">
-                <Radio className="w-3.5 h-3.5" />
-                ThingSpeak Live Graph
-              </span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setSelectedChartField(1)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${selectedChartField === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/30 dark:text-amber-300 dark:border-amber-500/50' : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400'}`}
-                >
-                  F1: V
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedChartField(2)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${selectedChartField === 2 ? 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-500/30 dark:text-cyan-300 dark:border-cyan-500/50' : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400'}`}
-                >
-                  F2: I
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedChartField(3)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${selectedChartField === 3 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/30 dark:text-emerald-300 dark:border-emerald-500/50' : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400'}`}
-                >
-                  F3: P
-                </button>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Field 1: AC Voltage */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500/50 transition-all">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
+                <span>AC Voltage (V_AC)</span>
+                <span className="text-amber-600 dark:text-amber-400 font-bold">V</span>
+              </div>
+              <div className="text-xl lg:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
+                {voltage}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
+                {isLiveStreaming ? "🟢 Live Grid Feed" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
               </div>
             </div>
 
-            {channelId ? (
-              <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-[170px] relative">
+            {/* Field 2: AC Current */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-cyan-400 dark:hover:border-cyan-500/50 transition-all">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
+                <span>AC Current (I_AC)</span>
+                <span className="text-cyan-600 dark:text-cyan-400 font-bold">A</span>
+              </div>
+              <div className="text-xl lg:text-2xl font-black text-cyan-600 dark:text-cyan-400 font-mono tracking-tight">
+                {current}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
+                {isLiveStreaming ? "🟢 Live Amperage" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+              </div>
+            </div>
+
+            {/* Field 3: AC Active Power */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500/50 transition-all">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
+                <span>AC Active Power (P_AC)</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">W</span>
+              </div>
+              <div className="text-xl lg:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+                {power}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
+                {isLiveStreaming ? "🟢 Grid Real Power" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+              </div>
+            </div>
+
+            {/* Field 5: Power Factor */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500/50 transition-all">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
+                <span>Power Factor (cos &phi;)</span>
+                <span className="text-blue-600 dark:text-blue-400 font-bold">PF</span>
+              </div>
+              <div className="text-xl lg:text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">
+                {pf}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
+                {isLiveStreaming ? "🟢 Grid Efficiency" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* STAGE 2: DC VEHICLE OUTPUT STAGE (BATTERY DELIVERY & BILLING BASE) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                <BatteryCharging className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                Stage 2 &bull; DC Vehicle Output (Battery Delivery &amp; Billing Base)
+              </h4>
+            </div>
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 font-mono font-bold border border-cyan-200 dark:border-cyan-500/30">
+              58.8V DC Li-ion Bus &bull; &eta; = 92.0% Conversion
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* DC Voltage */}
+            <div className="p-3.5 rounded-2xl bg-cyan-50/40 dark:bg-slate-950/80 border border-cyan-200/80 dark:border-cyan-500/30 hover:border-cyan-400 transition-all">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
+                <span>DC Bus Voltage (V_DC)</span>
+                <span className="text-cyan-600 dark:text-cyan-400 font-bold">V DC</span>
+              </div>
+              <div className="text-xl lg:text-2xl font-black text-cyan-600 dark:text-cyan-400 font-mono tracking-tight">
+                {dcVoltage}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+                14S Pack Nominal Bus
+              </div>
+            </div>
+
+            {/* DC Current */}
+            <div className="p-3.5 rounded-2xl bg-emerald-50/40 dark:bg-slate-950/80 border border-emerald-200/80 dark:border-emerald-500/30 hover:border-emerald-400 transition-all">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
+                <span>DC Battery Current (I_DC)</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">A DC</span>
+              </div>
+              <div className="text-xl lg:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+                {dcCurrent}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+                P_DC / 58.8V Output
+              </div>
+            </div>
+
+            {/* DC Power */}
+            <div className="p-3.5 rounded-2xl bg-teal-50/40 dark:bg-slate-950/80 border border-teal-200/80 dark:border-teal-500/30 hover:border-teal-400 transition-all">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
+                <span>DC Net Power (P_DC)</span>
+                <span className="text-teal-600 dark:text-teal-400 font-bold">W DC</span>
+              </div>
+              <div className="text-xl lg:text-2xl font-black text-teal-600 dark:text-teal-400 font-mono tracking-tight">
+                {dcPower}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+                Net Power to Battery
+              </div>
+            </div>
+
+            {/* Conversion Efficiency */}
+            <div className="p-3.5 rounded-2xl bg-purple-50/40 dark:bg-slate-950/80 border border-purple-200/80 dark:border-purple-500/30 hover:border-purple-400 transition-all">
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 flex justify-between">
+                <span>Total Efficiency (&eta;%)</span>
+                <span className="text-purple-600 dark:text-purple-400 font-bold">&eta;</span>
+              </div>
+              <div className="text-xl lg:text-2xl font-black text-purple-600 dark:text-purple-400 font-mono tracking-tight">
+                {dcEfficiency}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+                (P_DC / P_AC) &times; 100%
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* METROLOGY & BILLING STATUS STRIP */}
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-cyan-50/80 via-white to-emerald-50/80 dark:from-slate-950 dark:via-slate-900 dark:to-cyan-950/20 border border-cyan-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="text-slate-700 dark:text-slate-300">
+              <strong className="text-slate-900 dark:text-white">DC-Strict Tariff Billing Base:</strong> All kWh energy billing is metered strictly on DC power delivered into the 2-wheeler pack. AC rectifier thermal loss (~8%) is absorbed by the operator, ensuring you pay only for net stored battery energy.
+            </span>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-500/30">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">Delivered:</span>
+              <span className="font-mono font-bold text-purple-700 dark:text-purple-300">{energy}</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <Zap className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">Contactor:</span>
+              <span className={`font-mono font-bold text-[10px] ${relayState.includes('TRIPPED') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                {relayState}
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 2. DUAL-TRACE POWER GRAPH & LIVE FEED TIMELINE */}
+      <div className="space-y-4 pt-2">
+
+        {/* DUAL-TRACE POWER MONITOR CARD */}
+        <div className="bg-slate-50/80 dark:bg-slate-950/60 p-4 lg:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                Live Dual-Trace Power Dynamic (AC Active Power vs DC Battery Output)
+              </h4>
+            </div>
+
+            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-900 p-1 rounded-xl border border-slate-300/50 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setChartViewMode('dual_trace')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${chartViewMode === 'dual_trace' ? 'bg-cyan-500 text-slate-950 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+              >
+                Dual-Trace AC / DC
+              </button>
+              <button
+                type="button"
+                onClick={() => setChartViewMode('thingspeak_embed')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${chartViewMode === 'thingspeak_embed' ? 'bg-cyan-500 text-slate-950 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+              >
+                ThingSpeak Channel #{channelId}
+              </button>
+            </div>
+          </div>
+
+          {chartViewMode === 'dual_trace' ? (
+            <div className="space-y-2">
+              <div className="h-[260px] w-full pt-2">
+                {mounted && dualTraceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={dualTraceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="acPowerGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0} />
+                        </linearGradient>
+                        <linearGradient id="dcPowerGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#059669" stopOpacity={0.5} />
+                          <stop offset="95%" stopColor="#059669" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.25} />
+                      <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} />
+                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} unit="W" />
+                      <RechartsTooltip
+                        contentStyle={{
+                          backgroundColor: '#0c1322',
+                          borderColor: '#334155',
+                          borderRadius: '0.75rem',
+                          color: '#f8fafc',
+                          fontSize: '11px',
+                        }}
+                        formatter={(val: any, name: any) => {
+                          if (name === 'acPower') return [`${val} W`, 'AC Grid Input (P_AC)'];
+                          if (name === 'dcPower') return [`${val} W`, 'DC Battery Delivery (P_DC)'];
+                          return [val, name];
+                        }}
+                      />
+                      <Legend
+                        verticalAlign="top"
+                        align="right"
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: '11px', paddingBottom: '8px' }}
+                        formatter={(value) => {
+                          if (value === 'acPower') return 'AC Grid Power (P_AC)';
+                          if (value === 'dcPower') return 'DC Battery Power (P_DC • Billing Base)';
+                          return value;
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="acPower"
+                        stroke="#0284c7"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#acPowerGrad)"
+                        name="acPower"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="dcPower"
+                        stroke="#059669"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#dcPowerGrad)"
+                        name="dcPower"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-xs text-slate-500 font-mono">
+                    {isLoading ? 'Loading ThingSpeak telemetry feeds...' : 'Awaiting live feeds from Channel 3533059...'}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-2 pt-1 border-t border-slate-200 dark:border-slate-800 font-mono">
+                <span>Cyan Curve: Hardware PZEM AC Input (W)</span>
+                <span>Emerald Curve: DC Battery Delivered Power (W)</span>
+                <span>Power Delta: ~8% Rectifier Dissipation</span>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-600 dark:text-slate-400 font-semibold">Select Channel Field:</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChartField(1)}
+                    className={`px-2.5 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-all ${selectedChartField === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/30 dark:text-amber-300 dark:border-amber-500/50' : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400'}`}
+                  >
+                    F1: AC Voltage
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChartField(2)}
+                    className={`px-2.5 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-all ${selectedChartField === 2 ? 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-500/30 dark:text-cyan-300 dark:border-cyan-500/50' : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400'}`}
+                  >
+                    F2: AC Current
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChartField(3)}
+                    className={`px-2.5 py-0.5 rounded text-[11px] font-bold cursor-pointer transition-all ${selectedChartField === 3 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/30 dark:text-emerald-300 dark:border-emerald-500/50' : 'bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-400'}`}
+                  >
+                    F3: AC Power
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-[220px] relative">
                 <iframe
                   width="100%"
                   height="100%"
@@ -725,25 +912,79 @@ export const ThingSpeakBench: React.FC = () => {
                   title={`ThingSpeak Live Chart Field ${selectedChartField}`}
                 />
               </div>
-            ) : (
-              <div className="mt-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-6 text-center text-xs text-slate-500">
-                Channel ID 3533059 connected.
-              </div>
-            )}
-          </div>
-
-          {channelId && (
-            <a
-              href={`https://thingspeak.com/channels/${channelId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-cyan-700 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
-            >
-              <span>View Full ThingSpeak Channel #{channelId}</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            </div>
           )}
         </div>
+
+        {/* RECENT FEEDS TABLE & THINGSPEAK CHANNEL LINK */}
+        <div className="bg-slate-50/80 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="flex justify-between items-center text-xs font-semibold text-slate-600 dark:text-slate-400 pb-2 border-b border-slate-200 dark:border-slate-800">
+            <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 font-bold">
+              <Activity className="w-3.5 h-3.5" />
+              Live Feeds from ThingSpeak Cloud Channel #{channelId} ({historyFeeds.length} transmissions)
+            </span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">Rate: 15s</span>
+              <a
+                href={`https://thingspeak.com/channels/${channelId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1 font-bold"
+              >
+                <span>Channel Details</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+
+          {historyFeeds.length === 0 ? (
+            <div className="p-6 text-center text-xs text-slate-500 font-mono">
+              {isLoading ? 'Connecting to ThingSpeak Cloud...' : 'No feeds found for Channel 3533059 yet. Click "Fetch Live" or publish from ESP32.'}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono">
+                <thead>
+                  <tr className="text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/80 pb-1">
+                    <th className="py-1.5 px-2">Timestamp</th>
+                    <th className="py-1.5 px-2 text-amber-600 dark:text-amber-400">AC Voltage (F1)</th>
+                    <th className="py-1.5 px-2 text-cyan-600 dark:text-cyan-400">AC Current (F2)</th>
+                    <th className="py-1.5 px-2 text-emerald-600 dark:text-emerald-400">AC Power (F3)</th>
+                    <th className="py-1.5 px-2 text-teal-600 dark:text-teal-400">DC Power (92%)</th>
+                    <th className="py-1.5 px-2 text-purple-600 dark:text-purple-400">Energy (F4)</th>
+                    <th className="py-1.5 px-2 text-teal-600 dark:text-teal-400">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/40">
+                  {historyFeeds.slice().reverse().slice(0, 8).map((f) => {
+                    const acP = f.field3 ? Math.round(parseFloat(f.field3)) : (f.field1 && f.field2 ? Math.round(parseFloat(f.field1) * parseFloat(f.field2) * 0.98) : null);
+                    const dcP = acP !== null ? Math.round(acP * 0.92) : null;
+                    return (
+                      <tr key={f.entry_id} className="hover:bg-slate-100 dark:hover:bg-slate-900/50 text-slate-800 dark:text-slate-200">
+                        <td className="py-1.5 px-2 text-slate-500 dark:text-slate-400 text-[11px]" suppressHydrationWarning>
+                          {new Date(f.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} {new Date(f.created_at).toLocaleTimeString()}
+                        </td>
+                        <td className="py-1.5 px-2 text-amber-700 dark:text-amber-300 font-semibold">{f.field1 ? `${f.field1} V` : '-'}</td>
+                        <td className="py-1.5 px-2 text-cyan-700 dark:text-cyan-300 font-semibold">{f.field2 ? `${f.field2} A` : '-'}</td>
+                        <td className="py-1.5 px-2 text-emerald-700 dark:text-emerald-300 font-semibold">{acP !== null ? `${acP} W` : '-'}</td>
+                        <td className="py-1.5 px-2 text-teal-700 dark:text-teal-300 font-semibold">{dcP !== null ? `${dcP} W` : '-'}</td>
+                        <td className="py-1.5 px-2 text-purple-700 dark:text-purple-300 font-semibold">
+                          {f.field4 ? `${f.field4} kWh` : (acP ? `${((acP * 0.5) / 1000).toFixed(3)} kWh` : '-')}
+                        </td>
+                        <td className="py-1.5 px-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${f.field6 === '0' ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30' : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'}`}>
+                            {f.field6 === '0' ? 'OFF' : 'ON'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* CONTINUOUS STREAMING GUIDANCE BANNER (Strictly for Operator & Admin) */}

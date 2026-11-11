@@ -1,15 +1,38 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, ShieldCheck, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 import { MetricCard } from '@/components/ui/MetricCard';
 
 export default function WalletPage() {
-  const { wallet, walletTransactions, topUpWallet } = useStore();
+  const router = useRouter();
+  const { currentUser, wallet, walletTransactions, topUpWallet } = useStore();
   const [topUpAmount, setTopUpAmount] = useState<number>(500);
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace('/auth/login/user');
+    } else if (currentUser.role === 'ADMIN') {
+      router.replace('/admin');
+    } else if (currentUser.role === 'OPERATOR') {
+      router.replace('/operator');
+    }
+  }, [currentUser, router]);
+
+  if (!currentUser || currentUser.role !== 'USER') {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-400 font-semibold">Redirecting to authorized dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleTopUp = async () => {
     setIsLoading(true);

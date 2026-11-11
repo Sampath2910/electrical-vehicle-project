@@ -29,6 +29,7 @@ import {
   mockBills
 } from './mockData';
 import { getCurrentToDSlot } from './providers';
+import { getTariffForKw } from '@/lib/tariffHelper';
 
 interface StoreContextType {
   currentUser: User | null;
@@ -49,6 +50,8 @@ interface StoreContextType {
 
   activeSession: ChargingSession | null;
   historySessions: ChargingSession[];
+  clearStationHistory: (stationId: string) => void;
+  getActiveTariffRate: (slotCode?: string) => number;
   startChargingSession: (
     chargerId: string,
     paymentMethod?: 'QR_UPI' | 'RFID_WALLET',
@@ -131,6 +134,33 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [rfidCards, setRfidCards] = useState<RfidCard[]>(mockRfidCards);
   const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
   const [tariffs, setTariffs] = useState<Tariff[]>(mockTariffs);
+
+  // Load saved tariffs on mount & persist updates so admin changes sync across pages
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTariffs = localStorage.getItem('smart_ev_tariffs');
+      if (savedTariffs) {
+        try {
+          const parsed = JSON.parse(savedTariffs);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTariffs(parsed);
+          }
+        } catch (e) {
+          console.error('Failed to parse saved tariffs:', e);
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('smart_ev_tariffs', JSON.stringify(tariffs));
+      } catch (e) {
+        console.error('Failed to save tariffs:', e);
+      }
+    }
+  }, [tariffs]);
   const [bills, setBills] = useState<Bill[]>(mockBills);
   const [faults, setFaults] = useState<Fault[]>(mockFaults);
   const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
@@ -322,13 +352,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateChargerRating = (chargerId: string, rating: number) => {
-    setChargers(prev => prev.map(c => c.id === chargerId ? { ...c, powerRating: rating, lastSeenAt: new Date().toISOString() } : c));
+    const calculatedPrice = getTariffForKw(rating);
+    setChargers(prev => prev.map(c => c.id === chargerId ? { ...c, powerRating: rating, pricePerKwh: calculatedPrice, lastSeenAt: new Date().toISOString() } : c));
     fetch('/api/stations', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stationId: chargerId, powerRating: rating }),
+      body: JSON.stringify({ stationId: chargerId, powerRating: rating, pricePerKwh: calculatedPrice }),
     }).catch(console.error);
     playSound('beep');
+  };
+
+  const clearStationHistory = (stationId: string) => {
+    setSessions(prev => prev.filter(s => s.chargerId !== stationId));
+    fetch('/api/stations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stationId, action: 'clear_history' }),
+    }).catch(console.error);
+    playSound('beep');
+  };
+
+  const getActiveTariffRate = (slotCode?: string): number => {
+    const currentTod = getCurrentToDSlot();
+    const targetSlot = slotCode || currentTod.slotCode;
+    const found = tariffs.find(t => t.slotCode === targetSlot);
+    return found ? found.pricePerKwh : currentTod.baseRate;
   };
 
   const startChargingSession = async (
@@ -627,6 +675,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updateChargerRating,
       activeSession,
       historySessions,
+      clearStationHistory,
+      getActiveTariffRate,
       startChargingSession,
       stopChargingSession,
       isEvictionWarningActive,

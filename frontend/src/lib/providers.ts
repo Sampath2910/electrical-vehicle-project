@@ -76,19 +76,25 @@ export class MockTelemetryProvider implements TelemetryProvider {
     }
 
     const intervalId = setInterval(() => {
-      let energy = this.accumulatedEnergyMap.get(sessionId) || 0;
-      // 3.2 kW delivery rate for electric 2-wheeler: ~0.00088 kWh per second
-      energy += 0.00088;
-      this.accumulatedEnergyMap.set(sessionId, energy);
-
       // 2-Wheeler Single Phase 230V Electrical Profile (Restricted to <= 14.3 Amps at 230V)
       const baseVoltage = 230.2;
       const voltage = +(baseVoltage + (Math.random() * 2.0 - 1.0)).toFixed(1);
       // Current draw strictly limited to max 14.3A (averaging ~13.8A for 3.2kW delivery)
       const current = Math.min(14.3, +(13.8 + (Math.random() * 0.4 - 0.2)).toFixed(1));
-      const powerW = Math.min(3300, +(voltage * current * 0.98).toFixed(0));
+      const powerAcW = Math.min(3300, +(voltage * current * 0.98).toFixed(0));
       const frequencyHz = +(50.0 + (Math.random() * 0.06 - 0.03)).toFixed(2);
       const powerFactor = +(0.98 + (Math.random() * 0.006 - 0.003)).toFixed(2);
+
+      // Dual Metrology: DC Battery Output Stage (14S 48V-58.8V Li-ion pack, nominal 58.8V full charge)
+      const voltageDcV = 58.8;
+      const efficiencyPercent = 92.0;
+      const powerDcW = Math.round(powerAcW * (efficiencyPercent / 100));
+      const currentDcA = +(powerDcW / voltageDcV).toFixed(2);
+
+      // Billing Energy Accumulation strictly on DC energy delivered to vehicle
+      let energy = this.accumulatedEnergyMap.get(sessionId) || 0;
+      energy += (powerDcW / 1000) / 3600;
+      this.accumulatedEnergyMap.set(sessionId, energy);
 
       // Power Quality Metrics (THD & Voltage Sag/Swell)
       const thdPercent = +(2.1 + (Math.random() * 0.2 - 0.1)).toFixed(1); // IEEE 519 compliant (<5%)
@@ -105,7 +111,12 @@ export class MockTelemetryProvider implements TelemetryProvider {
         timestamp: new Date().toISOString(),
         voltageV: voltage,
         currentA: current,
-        powerW: powerW,
+        powerW: powerDcW,
+        powerAcW,
+        voltageDcV,
+        currentDcA,
+        powerDcW,
+        efficiencyPercent,
         energyKwh: +energy.toFixed(3),
         frequencyHz,
         powerFactor,
@@ -129,6 +140,9 @@ export class MockTelemetryProvider implements TelemetryProvider {
   getLatest(sessionId: string): Measurement | null {
     const energy = this.accumulatedEnergyMap.get(sessionId) || 2.15;
     const todInfo = getCurrentToDSlot();
+    const powerAcW = 3180;
+    const powerDcW = Math.round(powerAcW * 0.92);
+    const voltageDcV = 58.8;
     return {
       id: `meas-latest`,
       sessionId,
@@ -136,7 +150,12 @@ export class MockTelemetryProvider implements TelemetryProvider {
       timestamp: new Date().toISOString(),
       voltageV: 230.4,
       currentA: 14.1, // Restricted to <= 14.3A
-      powerW: 3180, // 3.18 kW
+      powerW: powerDcW,
+      powerAcW,
+      voltageDcV,
+      currentDcA: +(powerDcW / voltageDcV).toFixed(2),
+      powerDcW,
+      efficiencyPercent: 92.0,
       energyKwh: +energy.toFixed(3),
       frequencyHz: 50.01,
       powerFactor: 0.98,
@@ -221,11 +240,17 @@ export class ThingSpeakTelemetryProvider implements TelemetryProvider {
       
       const voltage = +(this.latestFeed.v + jitterV).toFixed(1);
       const current = +(this.latestFeed.i + jitterA).toFixed(2);
-      const powerW = Math.round(voltage * current * (this.latestFeed.pf || 0.98));
-      const powerKw = powerW / 1000;
+      const powerAcW = Math.round(voltage * current * (this.latestFeed.pf || 0.98));
+
+      // Dual Metrology: DC Vehicle Output Stage (58.8V nominal, 92% rectifier efficiency)
+      const voltageDcV = 58.8;
+      const efficiencyPercent = 92.0;
+      const powerDcW = Math.round(powerAcW * (efficiencyPercent / 100));
+      const currentDcA = +(powerDcW / voltageDcV).toFixed(2);
       
+      // Tariff Billing Accumulation strictly on DC energy delivered to vehicle battery
       if (isLiveStreaming) {
-        energy += powerKw / 3600;
+        energy += (powerDcW / 1000) / 3600;
         this.accumulatedEnergyMap.set(sessionId, energy);
       }
 
@@ -246,7 +271,12 @@ export class ThingSpeakTelemetryProvider implements TelemetryProvider {
         timestamp: new Date().toISOString(),
         voltageV: voltage,
         currentA: current,
-        powerW: powerW,
+        powerW: powerDcW,
+        powerAcW,
+        voltageDcV,
+        currentDcA,
+        powerDcW,
+        efficiencyPercent,
         energyKwh: this.latestFeed.kwh ?? +energy.toFixed(3),
         frequencyHz,
         powerFactor,
@@ -271,6 +301,9 @@ export class ThingSpeakTelemetryProvider implements TelemetryProvider {
   getLatest(sessionId: string): Measurement | null {
     const energy = this.accumulatedEnergyMap.get(sessionId) || 2.15;
     const todInfo = getCurrentToDSlot();
+    const powerAcW = this.latestFeed.p;
+    const powerDcW = Math.round(powerAcW * 0.92);
+    const voltageDcV = 58.8;
     return {
       id: `meas-latest`,
       sessionId,
@@ -278,7 +311,12 @@ export class ThingSpeakTelemetryProvider implements TelemetryProvider {
       timestamp: this.latestFeed.timestamp,
       voltageV: this.latestFeed.v,
       currentA: this.latestFeed.i,
-      powerW: this.latestFeed.p,
+      powerW: powerDcW,
+      powerAcW,
+      voltageDcV,
+      currentDcA: +(powerDcW / voltageDcV).toFixed(2),
+      powerDcW,
+      efficiencyPercent: 92.0,
       energyKwh: this.latestFeed.kwh ?? +energy.toFixed(3),
       frequencyHz: 50.01,
       powerFactor: this.latestFeed.pf || 0.98,

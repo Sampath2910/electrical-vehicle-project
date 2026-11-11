@@ -31,7 +31,7 @@ import { getCurrentToDSlot } from '@/lib/providers';
 
 export default function DriverDashboardPage() {
   const router = useRouter();
-  const { currentUser, wallet, activeSession, historySessions, vehicles } = useStore();
+  const { currentUser, wallet, activeSession, historySessions, vehicles, tariffs } = useStore();
 
   useEffect(() => {
     if (!currentUser) {
@@ -49,6 +49,10 @@ export default function DriverDashboardPage() {
       </div>
     );
   }
+
+  const s1Tariff = tariffs.find(t => t.slotCode === 'S_1')?.pricePerKwh ?? 8.00;
+  const s2Tariff = tariffs.find(t => t.slotCode === 'S_2')?.pricePerKwh ?? 10.50;
+  const s3Tariff = tariffs.find(t => t.slotCode === 'S_3')?.pricePerKwh ?? 14.00;
 
   const todInfo = getCurrentToDSlot();
 
@@ -83,13 +87,15 @@ export default function DriverDashboardPage() {
             <span>Scan QR & Charge</span>
           </Link>
 
-          <Link
-            href="/wallet"
-            className="px-4 py-3.5 rounded-2xl bg-white dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-cyan-500 text-slate-800 dark:text-white font-semibold text-xs flex items-center gap-2 transition-all shadow-sm"
-          >
-            <Plus className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-            <span>Top Up UPI Wallet</span>
-          </Link>
+          {currentUser.role === 'USER' && (
+            <Link
+              href="/wallet"
+              className="px-4 py-3.5 rounded-2xl bg-white dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-cyan-500 text-slate-800 dark:text-white font-semibold text-xs flex items-center gap-2 transition-all shadow-sm"
+            >
+              <Plus className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <span>Top Up UPI Wallet</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -301,7 +307,7 @@ export default function DriverDashboardPage() {
                 <span className="text-emerald-700 dark:text-emerald-400 font-bold block">S_1: Off-Peak (10 PM – 6 AM)</span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">Cheapest overnight grid tier</span>
               </div>
-              <span className="text-base font-bold text-emerald-700 dark:text-emerald-400">₹8.00/kWh</span>
+              <span className="text-base font-bold text-emerald-700 dark:text-emerald-400">₹{s1Tariff.toFixed(2)}/kWh</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
@@ -309,7 +315,7 @@ export default function DriverDashboardPage() {
                 <span className="text-cyan-700 dark:text-cyan-400 font-bold block">S_2: Standard (6 AM – 6 PM)</span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">Solar hours & daytime load</span>
               </div>
-              <span className="text-base font-bold text-cyan-700 dark:text-cyan-400">₹10.50/kWh</span>
+              <span className="text-base font-bold text-cyan-700 dark:text-cyan-400">₹{s2Tariff.toFixed(2)}/kWh</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
@@ -317,7 +323,7 @@ export default function DriverDashboardPage() {
                 <span className="text-rose-700 dark:text-rose-400 font-bold block">S_3: Peak (6 PM – 10 PM)</span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">Heavy evening domestic surcharge</span>
               </div>
-              <span className="text-base font-bold text-rose-700 dark:text-rose-400">₹14.00/kWh</span>
+              <span className="text-base font-bold text-rose-700 dark:text-rose-400">₹{s3Tariff.toFixed(2)}/kWh</span>
             </div>
 
             <div className="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-500/30 flex items-center justify-between text-amber-800 dark:text-amber-300 text-[11px]">

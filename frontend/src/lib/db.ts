@@ -370,14 +370,23 @@ export const db = {
     return charger;
   },
 
-  updateChargerRating: (id: string, rating: number): Charger | null => {
+  updateChargerRating: (id: string, rating: number, pricePerKwh?: number): Charger | null => {
     const data = ensureDbFile();
     const charger = data.chargers.find(c => c.id === id || c.chargerCode === id);
     if (!charger) return null;
     charger.powerRating = rating;
+    if (pricePerKwh !== undefined) {
+      charger.pricePerKwh = pricePerKwh;
+    }
     charger.lastSeenAt = new Date().toISOString();
     saveDbFile(data);
     return charger;
+  },
+
+  clearSessionsByStationId: (stationId: string): void => {
+    const data = ensureDbFile();
+    data.sessions = data.sessions.filter(s => s.chargerId !== stationId);
+    saveDbFile(data);
   },
 
   assignOperatorToStation: (stationId: string, operatorId: string): Charger | null => {

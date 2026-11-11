@@ -15,19 +15,25 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { stationId, status, operatorId, powerRating } = body;
+    const { stationId, status, operatorId, powerRating, pricePerKwh, action } = body;
 
     if (!stationId) {
       return NextResponse.json({ error: 'Station ID is required.' }, { status: 400 });
     }
 
-    // 1. Persist changes reliably in local JSON database
+    // 1. Clear history action for dedicated station operator
+    if (action === 'clear_history') {
+      db.clearSessionsByStationId(stationId);
+      return NextResponse.json({ success: true, message: `History cleared for station ${stationId}` });
+    }
+
+    // 2. Persist changes reliably in local JSON database
     if (status) {
       db.updateChargerStatus(stationId, status);
     }
 
     if (powerRating !== undefined) {
-      db.updateChargerRating(stationId, Number(powerRating));
+      db.updateChargerRating(stationId, Number(powerRating), pricePerKwh !== undefined ? Number(pricePerKwh) : undefined);
     }
 
     if (operatorId !== undefined) {

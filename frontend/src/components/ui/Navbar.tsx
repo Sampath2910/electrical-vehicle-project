@@ -213,15 +213,17 @@ export const Navbar: React.FC = () => {
             {/* RIGHT UTILITY & ACTIONS BAR */}
             <div className="flex items-center gap-2 shrink-0">
 
-              {/* WALLET CHIP */}
-              <Link
-                href="/wallet"
-                title="Open EV Wallet & Top-up"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/80 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 transition-all text-xs font-mono font-bold shadow-sm text-slate-700 dark:text-slate-200 group"
-              >
-                <Wallet className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform" />
-                <span className="text-slate-900 dark:text-white">₹{wallet.balance.toFixed(2)}</span>
-              </Link>
+              {/* WALLET CHIP (Visible ONLY for EV Customers / Riders) */}
+              {currentUser?.role === 'USER' && (
+                <Link
+                  href="/wallet"
+                  title="Open EV Wallet & Top-up"
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/80 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 transition-all text-xs font-mono font-bold shadow-sm text-slate-700 dark:text-slate-200 group"
+                >
+                  <Wallet className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-slate-900 dark:text-white">₹{wallet.balance.toFixed(2)}</span>
+                </Link>
+              )}
 
               {/* NOTIFICATION BELL */}
               <Link

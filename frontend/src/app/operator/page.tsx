@@ -21,7 +21,8 @@ import {
   ShieldCheck,
   UserCheck,
   LogOut,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 import { telemetryProvider } from '@/lib/providers';
@@ -29,10 +30,11 @@ import { MetricCard } from '@/components/ui/MetricCard';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ThingSpeakBench } from '@/components/ui/ThingSpeakBench';
 import { Charger, Measurement } from '@/types/ev';
+import { getTariffForKw } from '@/lib/tariffHelper';
 
 function OperatorConsoleContent() {
   const router = useRouter();
-  const { currentUser, playSound, logout, updateChargerRating, updateChargerStatus } = useStore();
+  const { currentUser, playSound, logout, updateChargerRating, updateChargerStatus, clearStationHistory, historySessions } = useStore();
   const [stationStats, setStationStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [relayTripped, setRelayTripped] = useState(false);
@@ -124,20 +126,30 @@ function OperatorConsoleContent() {
   const handleUpdateRating = async (newRating: number) => {
     try {
       playSound('beep');
+      const calculatedTariff = getTariffForKw(newRating);
       updateChargerRating(assignedStationId, newRating);
       const res = await fetch('/api/stations', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stationId: assignedStationId, powerRating: newRating }),
+        body: JSON.stringify({ stationId: assignedStationId, powerRating: newRating, pricePerKwh: calculatedTariff }),
       });
       const data = await res.json();
       if (data.success) {
-        setActionMessage(`Station power rating updated to ${newRating} kW`);
+        setActionMessage(`Station power rating updated to ${newRating} kW (Coupled Tariff: ₹${calculatedTariff.toFixed(2)}/kWh)`);
         fetchStats();
-        setTimeout(() => setActionMessage(''), 3000);
+        setTimeout(() => setActionMessage(''), 3500);
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleClearStationHistory = () => {
+    if (confirm(`Are you sure you want to clear session history for ${station?.name || 'this station'}? This action is scoped strictly to this bay.`)) {
+      clearStationHistory(assignedStationId);
+      setActionMessage(`Session history cleared for ${station?.name || 'this bay'}`);
+      fetchStats();
+      setTimeout(() => setActionMessage(''), 3500);
     }
   };
 
@@ -150,6 +162,7 @@ function OperatorConsoleContent() {
 
   const station = stationStats?.station || stationStats;
   const stats = stationStats?.stats || stationStats;
+  const stationSessions = historySessions.filter(s => s.chargerId === assignedStationId || s.chargerName === station?.name);
 
   if (!currentUser) {
     return (
@@ -455,6 +468,66 @@ function OperatorConsoleContent() {
 
       {/* THINGSPEAK CLOUD METROLOGY BENCH (AUTHORIZED OPERATOR CONTROL) */}
       <ThingSpeakBench />
+
+      {/* DEDICATED STATION SESSION HISTORY & OPERATOR SCOPE WIPE */}
+      <div className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 space-y-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Clock className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+              <span>Bay Charging History &bull; {station?.name || 'Assigned Bay'}</span>
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Dedicated session log scoped exclusively to this charger ({stationSessions.length} sessions logged)
+            </p>
+          </div>
+
+          <button
+            onClick={handleClearStationHistory}
+            disabled={stationSessions.length === 0}
+            className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/15 dark:hover:bg-rose-500/25 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center gap-1.5 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+            title="Clear all session logs for this station"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+            <span>Clear Bay History</span>
+          </button>
+        </div>
+
+        {stationSessions.length === 0 ? (
+          <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+            No past charging sessions recorded for this station yet.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono">
+              <thead>
+                <tr className="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/80 pb-2">
+                  <th className="py-2 px-3">Session Code</th>
+                  <th className="py-2 px-3">Vehicle</th>
+                  <th className="py-2 px-3">Energy (kWh)</th>
+                  <th className="py-2 px-3">Duration</th>
+                  <th className="py-2 px-3">Final (₹)</th>
+                  <th className="py-2 px-3">Date</th>
+                  <th className="py-2 px-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {stationSessions.map((s) => (
+                  <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-850/50 text-slate-800 dark:text-slate-200">
+                    <td className="py-2.5 px-3 font-bold text-cyan-600 dark:text-cyan-400">{s.sessionCode}</td>
+                    <td className="py-2.5 px-3 font-sans text-slate-700 dark:text-slate-300">{s.vehicleName || 'Ather 450X'}</td>
+                    <td className="py-2.5 px-3 font-bold">{s.energyKwh.toFixed(3)}</td>
+                    <td className="py-2.5 px-3">{Math.floor(s.durationSeconds / 60)} min</td>
+                    <td className="py-2.5 px-3 font-bold text-emerald-600 dark:text-emerald-400">₹{s.finalCost?.toFixed(2)}</td>
+                    <td className="py-2.5 px-3 text-slate-500 text-[11px]" suppressHydrationWarning>{new Date(s.startTime).toLocaleDateString([], { month: 'short', day: 'numeric' })}</td>
+                    <td className="py-2.5 px-3"><StatusBadge status={s.status} size="sm" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* STATION ISOLATION CONFIRMATION CARD */}
       <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 shadow-sm">

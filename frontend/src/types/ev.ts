@@ -83,6 +83,11 @@ export interface Measurement {
   voltageSagSwellStatus: 'NORMAL' | 'SAG' | 'SWELL';
   todSlotActive: string; // e.g. "S_2: Standard (06:00 AM - 06:00 PM)"
   todRate: number; // in INR per kWh
+  powerAcW?: number;
+  voltageDcV?: number;
+  currentDcA?: number;
+  powerDcW?: number;
+  efficiencyPercent?: number;
 }
 
 export interface ChargingSession {
