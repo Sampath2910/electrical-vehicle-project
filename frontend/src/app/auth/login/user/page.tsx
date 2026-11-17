@@ -9,7 +9,7 @@ import { useStore } from '@/lib/storeContext';
 export default function UserLoginPage() {
   const router = useRouter();
   const { setCurrentUser } = useStore();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,7 @@ export default function UserLoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, expectedRole: 'USER' }),
+        body: JSON.stringify({ identifier, password, expectedRole: 'USER' }),
       });
 
       const data = await res.json();
@@ -32,7 +32,7 @@ export default function UserLoginPage() {
       }
 
       setCurrentUser(data.user);
-      router.push('/dashboard');
+      router.push(data.redirectTo || '/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login error occurred.');
     } finally {
@@ -69,15 +69,15 @@ export default function UserLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 block">Driver Email Address</label>
+            <label className="text-xs font-semibold text-slate-300 block">Email, Username, or Mobile Number</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="driver@example.com"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="e.g. driver@example.com, rahul, or +91 98765 43210"
                 className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-xs text-white focus:outline-none focus:border-cyan-500 transition-colors"
               />
             </div>
@@ -118,7 +118,7 @@ export default function UserLoginPage() {
           <button
             type="button"
             onClick={() => {
-              setEmail('alex.rivera@example.com');
+              setIdentifier('alex.rivera@example.com');
               setPassword('password123');
             }}
             className="w-full py-2 px-3 rounded-lg bg-navy-950 border border-slate-800 text-[11px] text-slate-300 hover:text-cyan-400 flex items-center justify-between text-left transition-colors"

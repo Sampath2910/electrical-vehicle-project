@@ -9,12 +9,11 @@ import {
   ShieldAlert, 
   ArrowRight, 
   Lock, 
-  Mail, 
+  UserCheck, 
   AlertCircle, 
   CheckCircle2, 
   KeyRound,
-  Building2,
-  UserCheck
+  Building2
 } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 import { UserRole } from '@/types/ev';
@@ -23,27 +22,31 @@ export default function AuthLoginPage() {
   const router = useRouter();
   const { setCurrentUser, playSound } = useStore();
 
-  const [activeRole, setActiveRole] = useState<UserRole>('OPERATOR');
-  const [email, setEmail] = useState('');
+  // Default to EV Driver as the primary entry point
+  const [activeRole, setActiveRole] = useState<UserRole>('USER');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [infoNotice, setInfoNotice] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRoleChange = (role: UserRole) => {
     setActiveRole(role);
     setError('');
+    setInfoNotice('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setInfoNotice('');
     setLoading(true);
 
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, expectedRole: activeRole }),
+        body: JSON.stringify({ identifier, password, expectedRole: activeRole }),
       });
 
       const data = await res.json();
@@ -54,13 +57,19 @@ export default function AuthLoginPage() {
       playSound('success');
       setCurrentUser(data.user);
 
-      if (data.user.role === 'OPERATOR') {
-        router.push('/operator');
-      } else if (data.user.role === 'ADMIN') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
+      if (data.roleMismatch) {
+        setInfoNotice(`Authenticated as ${data.user.role}. Opening your console...`);
       }
+
+      const targetPath = data.redirectTo || (
+        data.user.role === 'OPERATOR' ? '/operator' :
+        data.user.role === 'ADMIN' ? '/admin' : '/dashboard'
+      );
+
+      setTimeout(() => {
+        router.push(targetPath);
+      }, data.roleMismatch ? 400 : 100);
+
     } catch (err: any) {
       playSound('alert');
       setError(err.message || 'Login error occurred.');
@@ -70,18 +79,6 @@ export default function AuthLoginPage() {
   };
 
   const roleMeta = {
-    OPERATOR: {
-      title: 'Station Operator Sign In',
-      subtitle: 'Manage assigned charging bay metrology, relay cutoff & isolated revenue',
-      icon: Radio,
-      badge: 'Operator Console',
-      themeColor: 'amber',
-      borderClass: 'border-amber-500/40',
-      activeTab: 'bg-amber-500 text-navy-950 font-bold shadow-lg',
-      inactiveTab: 'text-slate-400 hover:text-white bg-navy-950/60',
-      btnGradient: 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-orange-400 text-navy-950',
-      iconBg: 'bg-amber-500/20 border-amber-400 text-amber-400 shadow-amber-500/20',
-    },
     USER: {
       title: 'EV Rider Sign In',
       subtitle: 'Access two-wheeler charging bays, live telemetry & UPI payments',
@@ -93,6 +90,18 @@ export default function AuthLoginPage() {
       inactiveTab: 'text-slate-400 hover:text-white bg-navy-950/60',
       btnGradient: 'bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-400 hover:from-blue-500 hover:to-cyan-400 text-navy-950',
       iconBg: 'bg-cyan-500/20 border-cyan-400 text-cyan-400 shadow-cyan-500/20',
+    },
+    OPERATOR: {
+      title: 'Station Operator Sign In',
+      subtitle: 'Manage assigned charging bay metrology, relay cutoff & isolated revenue',
+      icon: Radio,
+      badge: 'Operator Console',
+      themeColor: 'amber',
+      borderClass: 'border-amber-500/40',
+      activeTab: 'bg-amber-500 text-navy-950 font-bold shadow-lg',
+      inactiveTab: 'text-slate-400 hover:text-white bg-navy-950/60',
+      btnGradient: 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 hover:from-amber-400 hover:to-orange-400 text-navy-950',
+      iconBg: 'bg-amber-500/20 border-amber-400 text-amber-400 shadow-amber-500/20',
     },
     ADMIN: {
       title: 'System Administrator Sign In',
@@ -121,17 +130,6 @@ export default function AuthLoginPage() {
         <div className="p-1 rounded-2xl bg-navy-950 border border-slate-800 grid grid-cols-3 gap-1">
           <button
             type="button"
-            onClick={() => handleRoleChange('OPERATOR')}
-            className={`py-2 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeRole === 'OPERATOR' ? roleMeta.activeTab : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Radio className="w-3.5 h-3.5" />
-            <span>Operator</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => handleRoleChange('USER')}
             className={`py-2 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeRole === 'USER' ? roleMeta.activeTab : 'text-slate-400 hover:text-white'
@@ -139,6 +137,17 @@ export default function AuthLoginPage() {
           >
             <Zap className="w-3.5 h-3.5" />
             <span>EV Driver</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleRoleChange('OPERATOR')}
+            className={`py-2 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              activeRole === 'OPERATOR' ? roleMeta.activeTab : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5" />
+            <span>Operator</span>
           </button>
 
           <button
@@ -172,20 +181,27 @@ export default function AuthLoginPage() {
           </div>
         )}
 
+        {infoNotice && (
+          <div className="p-3.5 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-start gap-2.5 text-cyan-300 text-xs">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-cyan-400" />
+            <span>{infoNotice}</span>
+          </div>
+        )}
+
         {/* LOGIN FORM */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-300 block">
-              {activeRole === 'OPERATOR' ? 'Operator Email / KLE ID' : activeRole === 'ADMIN' ? 'Admin Email' : 'Driver Email'}
+              Email, Username, or Mobile Number
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <UserCheck className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="e.g. rahul@example.com, rahul, or +91 98765 43210"
                 className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-xs text-white focus:outline-none focus:border-cyan-400 transition-colors"
               />
             </div>
@@ -223,12 +239,26 @@ export default function AuthLoginPage() {
         {/* QUICK CREDENTIAL PRESETS FOR TESTING */}
         <div className="pt-2 border-t border-slate-800/80 space-y-2">
           <p className="text-[11px] text-slate-400">1-Click Test Credentials Preset:</p>
+          {activeRole === 'USER' && (
+            <button
+              type="button"
+              onClick={() => {
+                setIdentifier('alex.rivera@example.com');
+                setPassword('password123');
+              }}
+              className="w-full py-2 px-3 rounded-xl bg-navy-950 border border-slate-800 text-[10px] text-left hover:border-cyan-400 transition-colors cursor-pointer"
+            >
+              <span className="font-bold block text-white">Alex Rivera (Ather 450X)</span>
+              <span className="text-cyan-400 font-mono">alex.rivera@example.com &bull; password123</span>
+            </button>
+          )}
+
           {activeRole === 'OPERATOR' && (
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('operator1@kletech.ac.in');
+                  setIdentifier('operator1@kletech.ac.in');
                   setPassword('operator123');
                 }}
                 className="py-2 px-2.5 rounded-xl bg-navy-950 border border-slate-800 text-[10px] text-left hover:border-amber-400 transition-colors cursor-pointer"
@@ -239,7 +269,7 @@ export default function AuthLoginPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('operator2@kletech.ac.in');
+                  setIdentifier('operator2@kletech.ac.in');
                   setPassword('operator123');
                 }}
                 className="py-2 px-2.5 rounded-xl bg-navy-950 border border-slate-800 text-[10px] text-left hover:border-amber-400 transition-colors cursor-pointer"
@@ -250,25 +280,11 @@ export default function AuthLoginPage() {
             </div>
           )}
 
-          {activeRole === 'USER' && (
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('alex.rivera@example.com');
-                setPassword('password123');
-              }}
-              className="w-full py-2 px-3 rounded-xl bg-navy-950 border border-slate-800 text-[10px] text-left hover:border-cyan-400 transition-colors cursor-pointer"
-            >
-              <span className="font-bold block text-white">Alex Rivera (Ather 450X)</span>
-              <span className="text-cyan-400 font-mono">alex.rivera@example.com &bull; password123</span>
-            </button>
-          )}
-
           {activeRole === 'ADMIN' && (
             <button
               type="button"
               onClick={() => {
-                setEmail('admin@smartev.com');
+                setIdentifier('admin@smartev.com');
                 setPassword('admin123');
               }}
               className="w-full py-2 px-3 rounded-xl bg-navy-950 border border-slate-800 text-[10px] text-left hover:border-rose-400 transition-colors cursor-pointer"

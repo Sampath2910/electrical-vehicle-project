@@ -9,7 +9,7 @@ import { useStore } from '@/lib/storeContext';
 export default function OperatorLoginPage() {
   const router = useRouter();
   const { setCurrentUser } = useStore();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,7 @@ export default function OperatorLoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, expectedRole: 'OPERATOR' }),
+        body: JSON.stringify({ identifier, password, expectedRole: 'OPERATOR' }),
       });
 
       const data = await res.json();
@@ -32,7 +32,7 @@ export default function OperatorLoginPage() {
       }
 
       setCurrentUser(data.user);
-      router.push('/operator');
+      router.push(data.redirectTo || '/operator');
     } catch (err: any) {
       setError(err.message || 'Operator login error.');
     } finally {
@@ -69,15 +69,15 @@ export default function OperatorLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 block">Operator Email / ID</label>
+            <label className="text-xs font-semibold text-slate-300 block">Operator Email, Badge ID, or Mobile</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="operator1@kletech.ac.in"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="e.g. operator1@kletech.ac.in or KLE-OP-101"
                 className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors"
               />
             </div>
@@ -119,7 +119,7 @@ export default function OperatorLoginPage() {
             <button
               type="button"
               onClick={() => {
-                setEmail('operator1@kletech.ac.in');
+                setIdentifier('operator1@kletech.ac.in');
                 setPassword('operator123');
               }}
               className="py-2 px-2.5 rounded-lg bg-navy-950 border border-slate-800 text-[10px] text-slate-300 hover:text-amber-400 text-left transition-colors"
@@ -130,7 +130,7 @@ export default function OperatorLoginPage() {
             <button
               type="button"
               onClick={() => {
-                setEmail('operator2@kletech.ac.in');
+                setIdentifier('operator2@kletech.ac.in');
                 setPassword('operator123');
               }}
               className="py-2 px-2.5 rounded-lg bg-navy-950 border border-slate-800 text-[10px] text-slate-300 hover:text-amber-400 text-left transition-colors"

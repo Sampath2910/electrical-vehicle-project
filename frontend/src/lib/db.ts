@@ -206,8 +206,33 @@ export const db = {
   },
 
   getUserByEmail: (email: string) => {
+    if (!email) return undefined;
     const data = ensureDbFile();
-    return data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    return data.users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase());
+  },
+
+  getUserByIdentifier: (identifier: string) => {
+    if (!identifier) return undefined;
+    const data = ensureDbFile();
+    const cleanId = identifier.trim().toLowerCase();
+    const cleanDigits = identifier.replace(/\D/g, '');
+
+    return data.users.find(u => {
+      // 1. Exact Email match
+      if (u.email && u.email.trim().toLowerCase() === cleanId) return true;
+      // 2. Full Name / Username match
+      if (u.name && u.name.trim().toLowerCase() === cleanId) return true;
+      // 3. Phone number match (matches local or international format)
+      if (cleanDigits.length >= 7 && u.phone) {
+        const uPhoneDigits = u.phone.replace(/\D/g, '');
+        if (uPhoneDigits.length >= 7 && (uPhoneDigits.endsWith(cleanDigits) || cleanDigits.endsWith(uPhoneDigits))) {
+          return true;
+        }
+      }
+      // 4. Operator badge ID match
+      if (u.operatorBadgeId && u.operatorBadgeId.trim().toLowerCase() === cleanId) return true;
+      return false;
+    });
   },
 
   getUserById: (id: string) => {
@@ -217,7 +242,11 @@ export const db = {
 
   createUser: (user: Partial<User> & { password: string }): User => {
     const data = ensureDbFile();
-    let existing = data.users.find(u => u.email.toLowerCase() === user.email?.toLowerCase());
+    const cleanEmail = (user.email || '').trim().toLowerCase();
+    const cleanName = (user.name || 'Anonymous User').trim();
+    const cleanPhone = (user.phone || '+91 00000 00000').trim();
+
+    let existing = data.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
 
     // Resolve charger helper matching id, code, or index fallback
     const resolveCharger = (stationIdentifier?: string): Charger | undefined => {
@@ -234,11 +263,12 @@ export const db = {
 
     if (existing) {
       // If user exists, update their profile and station mapping seamlessly
-      existing.name = user.name || existing.name;
-      existing.phone = user.phone || existing.phone;
+      existing.name = cleanName || existing.name;
+      existing.phone = cleanPhone || existing.phone;
       if (user.password) existing.passwordHash = user.password;
-      if (user.operatorBadgeId) existing.operatorBadgeId = user.operatorBadgeId;
+      if (user.operatorBadgeId) existing.operatorBadgeId = user.operatorBadgeId.trim();
       if (user.role) existing.role = user.role;
+      if (user.vehicleModel) existing.vehicleModel = user.vehicleModel;
 
       if (existing.role === 'OPERATOR' && user.assignedStationId) {
         const charger = resolveCharger(user.assignedStationId);
@@ -268,15 +298,15 @@ export const db = {
 
     const newUser = {
       id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      name: user.name || 'Anonymous User',
-      email: user.email!,
-      phone: user.phone || '+91 00000 00000',
+      name: cleanName,
+      email: cleanEmail,
+      phone: cleanPhone,
       role: user.role || 'USER',
       passwordHash: user.password,
       assignedStationId: user.assignedStationId,
-      operatorBadgeId: user.operatorBadgeId,
+      operatorBadgeId: user.operatorBadgeId ? user.operatorBadgeId.trim() : undefined,
       vehicleModel: user.vehicleModel,
-      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${user.email}`,
+      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`,
       createdAt: new Date().toISOString(),
     };
 
