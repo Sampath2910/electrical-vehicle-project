@@ -662,21 +662,35 @@ export const db = {
       throw err;
     }
 
+    // Prevent double-stop replay / double-billing
+    if (targetSession.status === 'COMPLETED' || targetSession.status === 'FAILED') {
+      const err: any = new Error('This charging session has already been completed and settled.');
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const charger = data.chargers.find(c => c.id === targetSession.chargerId);
+    const safeTariffRate =
+      Number.isFinite(targetSession.tariffRate) && targetSession.tariffRate > 0
+        ? targetSession.tariffRate
+        : (charger?.pricePerKwh && charger.pricePerKwh > 0 ? charger.pricePerKwh : 10.5);
+
     const endTime = new Date().toISOString();
-    const finalEnergy = +Math.max(0, meteredEnergyKwh).toFixed(3);
-    const energySubtotal = +(finalEnergy * targetSession.tariffRate).toFixed(2);
+    const finalEnergy = +Math.max(0, Number.isFinite(meteredEnergyKwh) ? meteredEnergyKwh : 0).toFixed(3);
+    const energySubtotal = +(finalEnergy * safeTariffRate).toFixed(2);
     const serviceFee = 5.0;
     const taxableSubtotal = +(energySubtotal + serviceFee).toFixed(2);
     const gstTax = +(taxableSubtotal * 0.18).toFixed(2);
     const penaltyFee = penaltyApplies ? 500.0 : 0.0;
-    const finalTotal = +(taxableSubtotal + gstTax + penaltyFee).toFixed(2);
+    const finalTotal = +Math.max(0, taxableSubtotal + gstTax + penaltyFee).toFixed(2);
 
     const updatedSession: ChargingSession = {
       ...targetSession,
+      tariffRate: safeTariffRate,
       status: 'COMPLETED',
       endTime,
       energyKwh: finalEnergy,
-      durationSeconds: Math.max(0, Math.round(durationSeconds)),
+      durationSeconds: Math.max(0, Math.round(Number.isFinite(durationSeconds) ? durationSeconds : 0)),
       finalCost: finalTotal,
       estimatedCost: finalTotal,
       serviceFee,
@@ -687,7 +701,6 @@ export const db = {
     };
     data.sessions[idx] = updatedSession;
 
-    const charger = data.chargers.find(c => c.id === targetSession.chargerId);
     if (charger) {
       charger.status = 'AVAILABLE';
       charger.totalEarnedRevenue = +((charger.totalEarnedRevenue ?? 0) + finalTotal).toFixed(2);
@@ -703,7 +716,7 @@ export const db = {
       userId: ownerUserId,
       chargerName: targetSession.chargerName,
       energyKwh: finalEnergy,
-      tariffRate: targetSession.tariffRate,
+      tariffRate: safeTariffRate,
       subtotal: energySubtotal,
       energyCost: energySubtotal,
       serviceFee,

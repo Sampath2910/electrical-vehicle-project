@@ -22,8 +22,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
 
+  let body: any;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON request payload.' }, { status: 400 });
+  }
+
+  try {
     const { action } = body;
 
     if (action === 'topup_wallet') {
@@ -62,11 +68,30 @@ export async function POST(request: Request) {
       if (!charger) {
         return NextResponse.json({ error: 'Charger not found.' }, { status: 404 });
       }
-      if (charger.status === 'FAULT' || charger.status === 'OFFLINE') {
-        return NextResponse.json({ error: `Cannot start session: Station is currently ${charger.status}` }, { status: 400 });
+      if (charger.status === 'CHARGING') {
+        return NextResponse.json(
+          { error: 'Charger bay is already occupied by an active charging session.' },
+          { status: 409 }
+        );
+      }
+      if (charger.status === 'FAULT' || charger.status === 'OFFLINE' || charger.status === 'MAINTENANCE') {
+        return NextResponse.json(
+          { error: `Cannot start session: Station is currently ${charger.status}` },
+          { status: 400 }
+        );
+      }
+      const requestedRate = Number(newSession.tariffRate);
+      if (!Number.isFinite(requestedRate) || requestedRate <= 0 || requestedRate > 200) {
+        return NextResponse.json(
+          { error: 'Invalid tariff rate specified for charging session.' },
+          { status: 400 }
+        );
       }
       const result = db.startSession({
         ...newSession,
+        tariffRate: requestedRate,
+        energyKwh: 0,
+        durationSeconds: 0,
         userId: session.userId,
       });
       return NextResponse.json({ success: true, ...result });

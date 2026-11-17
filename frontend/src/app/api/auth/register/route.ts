@@ -3,8 +3,17 @@ import { db } from '@/lib/db';
 import { getSessionFromRequest, signSessionToken } from '@/lib/auth';
 
 export async function POST(request: Request) {
+  let body: any;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON request payload.' },
+      { status: 400 }
+    );
+  }
+
+  try {
     const {
       name,
       email,
@@ -18,14 +27,22 @@ export async function POST(request: Request) {
       skipSessionCookie,
     } = body;
 
-    const sanitizedName = (name || '').trim();
-    const sanitizedEmail = (email || '').trim().toLowerCase();
-    const sanitizedPhone = (phone || '').trim();
+    const sanitizedName = (name || '').toString().trim();
+    const sanitizedEmail = (email || '').toString().trim().toLowerCase();
+    const sanitizedPhone = (phone || '').toString().trim();
+    const sanitizedPassword = (password || '').toString().trim();
     const targetRole = (role || 'USER') as 'USER' | 'OPERATOR' | 'ADMIN';
 
-    if (!sanitizedEmail || !password || !sanitizedName) {
+    if (!sanitizedEmail || !sanitizedPassword || !sanitizedName) {
       return NextResponse.json(
-        { error: 'Name, email, and password are required fields.' },
+        { error: 'Name, email, and a non-empty password are required fields.' },
+        { status: 400 }
+      );
+    }
+
+    if (!/^[^\s@]+@[^\s@]+$/.test(sanitizedEmail)) {
+      return NextResponse.json(
+        { error: 'Please provide a valid email address.' },
         { status: 400 }
       );
     }

@@ -25,20 +25,24 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
   const [scanned, setScanned] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setIsScanning(true);
-      setScanned(false);
-      const timer = setTimeout(() => {
-        setIsScanning(false);
-        setScanned(true);
-        playSound('success');
-        setTimeout(() => {
-          onScanSuccess();
-        }, 1000);
-      }, 2500);
+    if (!isOpen) return;
 
-      return () => clearTimeout(timer);
-    }
+    setIsScanning(true);
+    setScanned(false);
+    let innerTimer: ReturnType<typeof setTimeout> | null = null;
+    const timer = setTimeout(() => {
+      setIsScanning(false);
+      setScanned(true);
+      playSound('success');
+      innerTimer = setTimeout(() => {
+        onScanSuccess();
+      }, 1000);
+    }, 2500);
+
+    return () => {
+      clearTimeout(timer);
+      if (innerTimer) clearTimeout(innerTimer);
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;

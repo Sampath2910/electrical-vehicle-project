@@ -13,6 +13,17 @@ export async function GET() {
   }
 }
 
+const VALID_CHARGER_STATUSES = new Set([
+  'AVAILABLE',
+  'PREPARING',
+  'CONNECTED',
+  'CHARGING',
+  'PAUSED',
+  'MAINTENANCE',
+  'FAULT',
+  'OFFLINE',
+]);
+
 export async function PATCH(request: Request) {
   const session = await getSessionFromRequest(request);
   if (!session) {
@@ -22,12 +33,36 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Forbidden: Operator or Administrator access required.' }, { status: 403 });
   }
 
+  let body: any;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON request payload.' }, { status: 400 });
+  }
+
+  try {
     const { stationId, status, operatorId, powerRating, pricePerKwh, action } = body;
 
     if (!stationId) {
       return NextResponse.json({ error: 'Station ID is required.' }, { status: 400 });
+    }
+
+    if (status !== undefined && !VALID_CHARGER_STATUSES.has(String(status))) {
+      return NextResponse.json({ error: `Invalid charger status: ${status}` }, { status: 400 });
+    }
+
+    if (powerRating !== undefined) {
+      const ratingNum = Number(powerRating);
+      if (!Number.isFinite(ratingNum) || ratingNum <= 0 || ratingNum > 50) {
+        return NextResponse.json({ error: 'Power rating must be a positive number between 0.1 and 50 kW.' }, { status: 400 });
+      }
+    }
+
+    if (pricePerKwh !== undefined) {
+      const priceNum = Number(pricePerKwh);
+      if (!Number.isFinite(priceNum) || priceNum <= 0 || priceNum > 500) {
+        return NextResponse.json({ error: 'Tariff pricePerKwh must be a positive number.' }, { status: 400 });
+      }
     }
 
     // Operators may only manage their own assigned station and cannot reassign operators

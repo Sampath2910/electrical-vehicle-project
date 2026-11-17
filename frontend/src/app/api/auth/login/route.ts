@@ -5,8 +5,17 @@ import { signSessionToken } from '@/lib/auth';
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export async function POST(request: Request) {
+  let body: any;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON request payload.' },
+      { status: 400 }
+    );
+  }
+
+  try {
     const { identifier, email, username, phone, password, expectedRole } = body;
 
     const rawId = (identifier || email || username || phone || '').toString().trim();
