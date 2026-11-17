@@ -17,7 +17,6 @@
       "phone": "+91 98765 11111",
       "role": "OPERATOR",
       "passwordHash": "operator123",
-      "assignedStationId": "ch-101",
       "operatorBadgeId": "KLE-OP-101",
       "avatarUrl": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150",
       "createdAt": "2024-11-10T10:00:00Z"
@@ -55,6 +54,18 @@
       "vehicleModel": "Ather 450X (3.7 kWh)",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
       "createdAt": "2025-01-15T08:30:00Z"
+    },
+    {
+      "id": "user-1794938820067-y5msm",
+      "name": "suresh",
+      "email": "deepak@ev",
+      "phone": "8529638524",
+      "role": "OPERATOR",
+      "passwordHash": "123456789",
+      "assignedStationId": "ch-101",
+      "operatorBadgeId": "OP-0031",
+      "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=deepak@ev",
+      "createdAt": "2026-11-17T18:07:00.067Z"
     }
   ],
   "chargers": [
@@ -73,8 +84,8 @@
       "maxCurrentA": 14.3,
       "voltageV": 230,
       "firmwareVersion": "v3.2.0-esp32-pzem",
-      "assignedOperatorId": "user-op-101",
-      "assignedOperatorName": "Ramesh Kumar (KLE-OP-101)",
+      "assignedOperatorId": "user-1794938820067-y5msm",
+      "assignedOperatorName": "suresh (OP-0031)",
       "totalEarnedRevenue": 0,
       "totalEnergyConsumedKwh": 0
     },
