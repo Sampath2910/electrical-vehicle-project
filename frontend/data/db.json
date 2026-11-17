@@ -80,7 +80,7 @@
       "connectorType": "IEC 60309 (Industrial 3-pin)",
       "status": "AVAILABLE",
       "pricePerKwh": 10.5,
-      "lastSeenAt": "2026-11-11T12:00:00.000Z",
+      "lastSeenAt": "2026-11-17T19:09:08.470Z",
       "maxCurrentA": 14.3,
       "voltageV": 230,
       "firmwareVersion": "v3.2.0-esp32-pzem",
@@ -173,5 +173,9 @@
       "totalEnergyConsumedKwh": 0
     }
   ],
-  "sessions": []
+  "sessions": [],
+  "wallets": {},
+  "walletTransactions": [],
+  "vehicles": [],
+  "bills": []
 }
