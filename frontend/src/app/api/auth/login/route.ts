@@ -11,16 +11,31 @@ export async function POST(request: Request) {
     const rawId = (identifier || email || username || phone || '').toString().trim();
     const cleanPassword = (password || '').toString().trim();
 
-    if (!rawId || !cleanPassword) {
+    // 1. Validation for empty / missing fields
+    if (!rawId && !cleanPassword) {
       return NextResponse.json(
-        { error: 'Email, Username, or Mobile Number and Password are required.' },
+        { error: 'Please enter your Email/Username/Phone and Password to sign in.' },
+        { status: 400 }
+      );
+    }
+    if (!rawId) {
+      return NextResponse.json(
+        { error: 'Please enter your Email, Username, or Mobile Number.' },
+        { status: 400 }
+      );
+    }
+    if (!cleanPassword) {
+      return NextResponse.json(
+        { error: 'Please enter your account password.' },
         { status: 400 }
       );
     }
 
-    // 1. Authoritative Local Database Lookup using Multi-Identifier Resolver
+    // 2. Authoritative Local Database Lookup
     const user = db.getUserByIdentifier(rawId);
+
     if (user) {
+      // User account exists — check password
       const isPasswordValid = (
         user.passwordHash === cleanPassword ||
         (user as any).password === cleanPassword ||
@@ -29,36 +44,43 @@ export async function POST(request: Request) {
         cleanPassword === 'password123'
       );
 
-      if (isPasswordValid) {
-        const { passwordHash, ...safeUser } = user;
-        const mockJwt = `mock_jwt_${user.id}_${Date.now()}`;
-        const targetRedirect = user.role === 'OPERATOR' ? '/operator' : user.role === 'ADMIN' ? '/admin' : '/dashboard';
-
-        const response = NextResponse.json({
-          success: true,
-          message: expectedRole && user.role !== expectedRole 
-            ? `Authenticated as ${user.role}. Redirecting to your console.` 
-            : 'Login successful.',
-          user: safeUser,
-          token: mockJwt,
-          role: user.role,
-          redirectTo: targetRedirect,
-          roleMismatch: Boolean(expectedRole && user.role !== expectedRole),
-        });
-
-        response.cookies.set('jwt_token', mockJwt, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 86400, // 24 hours
-          path: '/',
-        });
-
-        return response;
+      if (!isPasswordValid) {
+        // EXACT ERROR: Account exists, but password was incorrect
+        return NextResponse.json(
+          { error: 'Incorrect password. Please verify your password and try again.' },
+          { status: 401 }
+        );
       }
+
+      // Password is correct — authenticate and issue session
+      const { passwordHash, ...safeUser } = user;
+      const mockJwt = `mock_jwt_${user.id}_${Date.now()}`;
+      const targetRedirect = user.role === 'OPERATOR' ? '/operator' : user.role === 'ADMIN' ? '/admin' : '/dashboard';
+
+      const response = NextResponse.json({
+        success: true,
+        message: expectedRole && user.role !== expectedRole 
+          ? `Authenticated as ${user.role}. Redirecting to your console.` 
+          : 'Login successful.',
+        user: safeUser,
+        token: mockJwt,
+        role: user.role,
+        redirectTo: targetRedirect,
+        roleMismatch: Boolean(expectedRole && user.role !== expectedRole),
+      });
+
+      response.cookies.set('jwt_token', mockJwt, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 86400, // 24 hours
+        path: '/',
+      });
+
+      return response;
     }
 
-    // 2. Best-effort Spring Boot backend check if running and user not verified locally
+    // 3. Fallback check on Spring Boot backend (if running)
     try {
       const backendRes = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
         method: 'POST',
@@ -93,9 +115,10 @@ export async function POST(request: Request) {
       // Backend offline or timeout; local DB is authoritative
     }
 
+    // EXACT ERROR: No account found
     return NextResponse.json(
-      { error: 'Invalid credentials. Please verify your Email, Username, or Mobile Number and Password.' },
-      { status: 401 }
+      { error: 'No account found with this Email, Username, or Mobile Number. Please check your credentials or register a new account.' },
+      { status: 404 }
     );
   } catch (err: any) {
     return NextResponse.json(

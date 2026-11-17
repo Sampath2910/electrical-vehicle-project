@@ -17,6 +17,12 @@ export default function AdminLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!identifier.trim() || !password.trim()) {
+      setError('Please fill in both your identifier and password.');
+      return;
+    }
+
     setLoading(true);
 
     try {

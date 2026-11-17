@@ -40,6 +40,20 @@ export default function AuthLoginPage() {
     e.preventDefault();
     setError('');
     setInfoNotice('');
+
+    if (!identifier.trim() && !password.trim()) {
+      setError('Please fill in all required fields (Identifier and Password).');
+      return;
+    }
+    if (!identifier.trim()) {
+      setError('Please enter your Email, Username, or Mobile Number.');
+      return;
+    }
+    if (!password.trim()) {
+      setError('Please enter your account password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
