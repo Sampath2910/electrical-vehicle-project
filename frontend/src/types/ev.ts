@@ -88,6 +88,8 @@ export interface Measurement {
   currentDcA?: number;
   powerDcW?: number;
   efficiencyPercent?: number;
+  isHardwareStreaming?: boolean;
+  dataAgeSeconds?: number;
 }
 
 export interface ChargingSession {

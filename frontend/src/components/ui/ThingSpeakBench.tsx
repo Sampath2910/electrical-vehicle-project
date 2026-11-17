@@ -249,7 +249,7 @@ export const ThingSpeakBench: React.FC = () => {
     }
   };
 
-  // Real metrology values extracted directly from live ThingSpeak feed (NO DUMMY DATA)
+  // Real metrology values extracted directly from live ThingSpeak feed (STRICT ZERO-WHEN-OFFLINE)
   const lastFeedDate = lastFeed?.created_at ? new Date(lastFeed.created_at) : null;
   const dataAgeSeconds = lastFeedDate ? Math.max(0, Math.floor((Date.now() - lastFeedDate.getTime()) / 1000)) : null;
   const isLiveStreaming = dataAgeSeconds !== null && dataAgeSeconds <= 90;
@@ -263,40 +263,41 @@ export const ThingSpeakBench: React.FC = () => {
     ? lastFeed.field6 
     : (rawP && rawP > 0 ? '1' : null);
 
-  const voltage = rawV !== null && !isNaN(rawV) 
+  // When live data is not arriving, strictly display 0 across all live indicators
+  const voltage = isLiveStreaming && rawV !== null && !isNaN(rawV) 
     ? `${rawV.toFixed(1)} V` 
-    : (isLoading ? 'Connecting...' : '-- V');
+    : (isLoading && !lastFeed ? 'Connecting...' : '0.0 V');
 
-  const current = rawI !== null && !isNaN(rawI) 
+  const current = isLiveStreaming && rawI !== null && !isNaN(rawI) 
     ? `${rawI.toFixed(2)} A` 
-    : (isLoading ? 'Connecting...' : '-- A');
+    : (isLoading && !lastFeed ? 'Connecting...' : '0.00 A');
 
-  const power = rawP !== null && !isNaN(rawP) 
+  const power = isLiveStreaming && rawP !== null && !isNaN(rawP) 
     ? `${Math.round(rawP)} W` 
-    : (isLoading ? 'Connecting...' : '-- W');
+    : (isLoading && !lastFeed ? 'Connecting...' : '0 W');
 
   const energy = rawKwh !== null && !isNaN(rawKwh) 
     ? `${rawKwh.toFixed(3)} kWh` 
-    : (rawP ? `${((rawP * 0.5) / 1000).toFixed(3)} kWh` : (isLoading ? 'Connecting...' : '-- kWh'));
+    : (isLiveStreaming && rawP ? `${((rawP * 0.5) / 1000).toFixed(3)} kWh` : '0.000 kWh');
 
-  const pf = rawPf !== null && !isNaN(rawPf) 
+  const pf = isLiveStreaming && rawPf !== null && !isNaN(rawPf) 
     ? `${rawPf.toFixed(2)}` 
-    : (isLoading ? 'Connecting...' : '--');
+    : (isLoading && !lastFeed ? 'Connecting...' : '0.00');
 
-  const relayState = rawRelay !== null 
+  const relayState = isLiveStreaming && rawRelay !== null 
     ? (rawRelay === '0' ? 'TRIPPED (OFF)' : 'CLOSED (ON)') 
-    : (isLoading ? 'Connecting...' : '--');
+    : 'STANDBY / CUTOFF (0 W)';
 
   // DC Vehicle Output Stage Metrology (14S Li-ion pack, 58.8V nominal, 92.0% rectifier conversion efficiency)
-  const dcVoltageVal = 58.8;
-  const efficiencyPercent = 92.0;
-  const rawDcPower = rawP !== null && !isNaN(rawP) ? Math.round(rawP * (efficiencyPercent / 100)) : null;
-  const rawDcCurrent = rawDcPower !== null ? +(rawDcPower / dcVoltageVal).toFixed(2) : null;
+  const dcVoltageVal = isLiveStreaming && rawP !== null && rawP > 0 ? 58.8 : 0.0;
+  const efficiencyPercent = isLiveStreaming && rawP !== null && rawP > 0 ? 92.0 : 0.0;
+  const rawDcPower = isLiveStreaming && rawP !== null && !isNaN(rawP) && rawP > 0 ? Math.round(rawP * 0.92) : 0;
+  const rawDcCurrent = isLiveStreaming && rawDcPower > 0 ? +(rawDcPower / 58.8).toFixed(2) : 0.0;
 
-  const dcVoltage = rawP !== null ? `${dcVoltageVal.toFixed(1)} V` : (isLoading ? 'Connecting...' : '-- V');
-  const dcCurrent = rawDcCurrent !== null ? `${rawDcCurrent.toFixed(2)} A` : (isLoading ? 'Connecting...' : '-- A');
-  const dcPower = rawDcPower !== null ? `${rawDcPower} W` : (isLoading ? 'Connecting...' : '-- W');
-  const dcEfficiency = rawP !== null ? `${efficiencyPercent.toFixed(1)}%` : (isLoading ? 'Connecting...' : '--%');
+  const dcVoltage = `${dcVoltageVal.toFixed(1)} V`;
+  const dcCurrent = `${rawDcCurrent.toFixed(2)} A`;
+  const dcPower = `${rawDcPower} W`;
+  const dcEfficiency = `${efficiencyPercent.toFixed(1)}%`;
 
   // Chart dataset for live dual-trace power graph
   const dualTraceData = historyFeeds.length > 0
@@ -356,13 +357,13 @@ export const ThingSpeakBench: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
+                  <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500" />
                   <span className="text-amber-800 dark:text-amber-300 font-bold">
-                    🕒 STANDBY &bull; LAST RECORDED TELEMETRY (Entry #{lastFeed?.entry_id})
+                    ⚪ HARDWARE STREAM STOPPED &bull; DISPLAYING 0.00
                   </span>
                   <span className="text-slate-400 dark:text-slate-500">&bull;</span>
                   <span className="text-slate-600 dark:text-slate-400 font-medium" suppressHydrationWarning>
-                    Transmitted: {lastFeedDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} at {lastFeedDate.toLocaleTimeString()}
+                    Last packet: {lastFeedDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} at {lastFeedDate.toLocaleTimeString()} (Entry #{lastFeed?.entry_id})
                   </span>
                   <span className="text-slate-400 dark:text-slate-500">&bull;</span>
                   <span className="text-slate-500 dark:text-slate-500">Cloud polled {secondsSinceSync}s ago</span>
@@ -450,7 +451,7 @@ export const ThingSpeakBench: React.FC = () => {
       )}
 
       {/* HARDWARE STANDBY NOTIFICATION BANNER */}
-      {!isLiveStreaming && lastFeed && (
+      {!isLiveStreaming && !isLoading && (
         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs" suppressHydrationWarning>
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/25 text-amber-800 dark:text-amber-400 mt-0.5 shrink-0">
@@ -458,13 +459,19 @@ export const ThingSpeakBench: React.FC = () => {
             </div>
             <div>
               <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2">
-                <span>Hardware Standby Mode &bull; Displaying Last Known Telemetry</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono font-bold border border-amber-200 dark:border-amber-500/30">
-                  Entry #{lastFeed.entry_id}
-                </span>
+                <span>Hardware Stream Inactive &bull; All Real-Time Meters at 0.00</span>
+                {lastFeed && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-mono font-bold border border-amber-200 dark:border-amber-500/30">
+                    Last Packet: Entry #{lastFeed.entry_id}
+                  </span>
+                )}
               </h4>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5" suppressHydrationWarning>
-                No new transmission received from ESP32 / PZEM-004T in the last 90 seconds. Showing last recorded measurements from {lastFeedDate?.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} at {lastFeedDate?.toLocaleTimeString()}. When your hardware begins streaming, live telemetry will automatically activate.
+                No live transmission received from ESP32 / PZEM-004T in the last 90 seconds. Showing 0.0 V, 0.00 A, and 0 W.{' '}
+                {lastFeedDate
+                  ? `The last recorded cloud packet was transmitted on ${lastFeedDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} at ${lastFeedDate.toLocaleTimeString()}. `
+                  : 'No telemetry packets are currently present on the ThingSpeak channel. '}
+                When live hardware transmits again, meters will activate automatically.
               </p>
             </div>
           </div>
@@ -476,7 +483,7 @@ export const ThingSpeakBench: React.FC = () => {
                 className="px-3.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-500/40 text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
               >
                 <CloudUpload className="w-3.5 h-3.5" />
-                <span>Push Live Packet</span>
+                <span>Publish Test Packet</span>
               </button>
             </div>
           )}
@@ -620,7 +627,7 @@ export const ThingSpeakBench: React.FC = () => {
                 {voltage}
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-                {isLiveStreaming ? "🟢 Live Grid Feed" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+                {isLiveStreaming ? "🟢 Live Grid Feed" : "⚪ Stream Stopped (0.0 V)"}
               </div>
             </div>
 
@@ -634,7 +641,7 @@ export const ThingSpeakBench: React.FC = () => {
                 {current}
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-                {isLiveStreaming ? "🟢 Live Amperage" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+                {isLiveStreaming ? "🟢 Live Amperage" : "⚪ Stream Stopped (0.00 A)"}
               </div>
             </div>
 
@@ -648,7 +655,7 @@ export const ThingSpeakBench: React.FC = () => {
                 {power}
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-                {isLiveStreaming ? "🟢 Grid Real Power" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+                {isLiveStreaming ? "🟢 Grid Real Power" : "⚪ Stream Stopped (0 W)"}
               </div>
             </div>
 
@@ -662,7 +669,7 @@ export const ThingSpeakBench: React.FC = () => {
                 {pf}
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1" suppressHydrationWarning>
-                {isLiveStreaming ? "🟢 Grid Efficiency" : `🕒 Last Entry #${lastFeed?.entry_id ?? ''}`}
+                {isLiveStreaming ? "🟢 Grid Efficiency" : "⚪ Stream Stopped (0.00)"}
               </div>
             </div>
           </div>
@@ -759,7 +766,13 @@ export const ThingSpeakBench: React.FC = () => {
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
               <Zap className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
               <span className="text-[10px] text-slate-500 dark:text-slate-400">Contactor:</span>
-              <span className={`font-mono font-bold text-[10px] ${relayState.includes('TRIPPED') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+              <span className={`font-mono font-bold text-[10px] ${
+                relayState.includes('TRIPPED')
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : relayState.includes('STANDBY')
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-emerald-600 dark:text-emerald-400'
+              }`}>
                 {relayState}
               </span>
             </div>

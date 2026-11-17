@@ -35,6 +35,7 @@ interface ChartPoint {
   voltage: number;
   current: number;
   thd: number;
+  pf: number;
 }
 
 export default function AdminLiveTelemetryPage() {
@@ -49,29 +50,27 @@ export default function AdminLiveTelemetryPage() {
 
   const [selectedChargerId, setSelectedChargerId] = useState(chargers[0]?.id || 'CHG-001');
   const [telemetryHistory, setTelemetryHistory] = useState<ChartPoint[]>([]);
+  const [isHardwareLive, setIsHardwareLive] = useState<boolean>(false);
   const [sagSwellAlerts, setSagSwellAlerts] = useState<string[]>([
-    '09:42:15 - Voltage nominal 230.4V within IEEE-519 ±6% tolerance',
-    '09:15:30 - Minor transient dip to 226.1V resolved without sag trip'
+    'System ready — monitoring IEEE-519 voltage sag/swell envelope (207V – 253V)'
   ]);
 
   const selectedCharger = chargers.find(c => c.id === selectedChargerId) || chargers[0];
   const todInfo = getCurrentToDSlot();
 
   useEffect(() => {
-    // Generate initial history wave restricted strictly to 2-wheeler academic scope (Max 3.3 kW / 14.3 A @ 230V)
+    // Initialize chart baseline cleanly at 0.00 until live ThingSpeak packets arrive
     const initialPoints: ChartPoint[] = [];
     const now = Date.now();
     for (let i = 15; i >= 0; i--) {
       const timestamp = new Date(now - i * 2000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const volt = +(229.0 + Math.random() * 2.2 - 1.1).toFixed(1);
-      const curr = +(13.2 + Math.random() * 0.9).toFixed(1); // strictly <= 14.3A
-      const pkw = +((volt * curr) / 1000).toFixed(2);
       initialPoints.push({
         time: timestamp,
-        powerKw: Math.min(3.3, pkw),
-        voltage: volt,
-        current: Math.min(14.3, curr),
-        thd: +(2.0 + Math.random() * 0.3).toFixed(1)
+        powerKw: 0,
+        voltage: 0,
+        current: 0,
+        thd: 0,
+        pf: 0
       });
     }
     setTelemetryHistory(initialPoints);
@@ -79,21 +78,25 @@ export default function AdminLiveTelemetryPage() {
     // Subscribe to live telemetry ticks
     const unsub = telemetryProvider.subscribe('ses-live-admin', (meas) => {
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const isLive = Boolean(meas.isHardwareStreaming);
+      setIsHardwareLive(isLive);
+
       setTelemetryHistory(prev => {
         const next = [...prev.slice(1), {
           time: timeStr,
-          powerKw: +(Math.min(3.3, meas.powerW / 1000)).toFixed(2),
-          voltage: meas.voltageV,
-          current: Math.min(14.3, meas.currentA),
-          thd: meas.thdPercent || 2.1
+          powerKw: isLive ? +(Math.min(3.3, meas.powerW / 1000)).toFixed(2) : 0,
+          voltage: isLive ? meas.voltageV : 0,
+          current: isLive ? Math.min(14.3, meas.currentA) : 0,
+          thd: isLive ? (meas.thdPercent ?? 0) : 0,
+          pf: isLive ? (meas.powerFactor ?? 0) : 0
         }];
         return next;
       });
 
-      // Power quality sag/swell detection
-      if (meas.voltageV < 207) {
+      // Power quality sag/swell detection only when hardware is actively streaming
+      if (isLive && meas.voltageV > 0 && meas.voltageV < 207) {
         setSagSwellAlerts(prev => [`${timeStr} - VOLTAGE SAG DETECTED: ${meas.voltageV}V (<207V)`, ...prev.slice(0, 4)]);
-      } else if (meas.voltageV > 253) {
+      } else if (isLive && meas.voltageV > 253) {
         setSagSwellAlerts(prev => [`${timeStr} - VOLTAGE SWELL DETECTED: ${meas.voltageV}V (>253V Overvoltage Trip)`, ...prev.slice(0, 4)]);
       }
     });
@@ -101,7 +104,7 @@ export default function AdminLiveTelemetryPage() {
     return () => unsub();
   }, [selectedChargerId]);
 
-  const latestPoint = telemetryHistory[telemetryHistory.length - 1] || { powerKw: 3.14, voltage: 229.7, current: 13.94, thd: 2.1 };
+  const latestPoint = telemetryHistory[telemetryHistory.length - 1] || { powerKw: 0, voltage: 0, current: 0, thd: 0, pf: 0 };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -109,8 +112,18 @@ export default function AdminLiveTelemetryPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/30 text-[11px] font-mono font-bold text-cyan-700 dark:text-cyan-400 mb-2">
-            PZEM-004T AC Metrology Engine &bull; Grid Telemetry
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/30 text-[11px] font-mono font-bold text-cyan-700 dark:text-cyan-400">
+              PZEM-004T AC Metrology Engine &bull; Grid Telemetry
+            </div>
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-mono font-bold ${
+              isHardwareLive
+                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                : 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${isHardwareLive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <span>{isHardwareLive ? 'THINGSPEAK STREAM LIVE' : 'HARDWARE STREAM STOPPED (0.00 kW)'}</span>
+            </div>
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
             <Activity className="w-8 h-8 text-cyan-600 dark:text-cyan-400 animate-pulse" />
@@ -203,7 +216,9 @@ export default function AdminLiveTelemetryPage() {
         <div className="p-4 rounded-2xl glass-card border border-slate-200 dark:border-emerald-500/30 bg-white dark:bg-navy-900/80 shadow-sm">
           <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Power Quality (THD)</span>
           <span className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">{latestPoint.thd.toFixed(1)}%</span>
-          <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">PF: 0.98 | IEEE-519 &lt;5%</span>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">
+            {isHardwareLive ? `PF: ${latestPoint.pf.toFixed(2)} | IEEE-519 <5%` : 'PF: 0.00 | Stream Stopped'}
+          </span>
         </div>
 
         {/* Active ToD Slot */}
@@ -313,7 +328,7 @@ export default function AdminLiveTelemetryPage() {
               <LineChart data={telemetryHistory}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                 <XAxis dataKey="time" stroke="#64748b" fontSize={10} />
-                <YAxis domain={[215, 245]} stroke="#64748b" fontSize={10} unit="V" />
+                <YAxis domain={isHardwareLive ? [215, 245] : [0, 260]} stroke="#64748b" fontSize={10} unit="V" />
                 <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', fontSize: '12px', color: '#0f172a' }} />
                 <Line type="monotone" dataKey="voltage" stroke="#0284c7" strokeWidth={2} dot={false} />
               </LineChart>
@@ -352,8 +367,14 @@ export default function AdminLiveTelemetryPage() {
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-2">
             <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Total Harmonic Distortion</span>
             <div className="flex items-center justify-between">
-              <span className="text-xl font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">2.1% THD</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 font-bold">PASS (&lt;5%)</span>
+              <span className="text-xl font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">{latestPoint.thd.toFixed(1)}% THD</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                isHardwareLive
+                  ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}>
+                {isHardwareLive ? 'PASS (<5%)' : 'OFFLINE (0.0%)'}
+              </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">Compliant with IEEE-519 standards for residential/commercial EV grid interconnect.</p>
           </div>
@@ -361,8 +382,14 @@ export default function AdminLiveTelemetryPage() {
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-2">
             <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Operating Power Factor</span>
             <div className="flex items-center justify-between">
-              <span className="text-xl font-extrabold text-cyan-700 dark:text-cyan-400 font-mono">0.98 PF</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400 font-bold">NEAR UNITY</span>
+              <span className="text-xl font-extrabold text-cyan-700 dark:text-cyan-400 font-mono">{latestPoint.pf.toFixed(2)} PF</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                isHardwareLive
+                  ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}>
+                {isHardwareLive ? 'NEAR UNITY' : 'STANDBY (0.00)'}
+              </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">High efficiency active power factor correction validated by PZEM-004T metrology.</p>
           </div>

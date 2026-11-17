@@ -51,6 +51,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
   const todInfo = getCurrentToDSlot();
 
   // Real-world 2-wheeler electrical profile from ThingSpeak Channel 3533059
+  // Strictly initializes to 0 when hardware stream is offline (>90s stale or unreachable)
   const [liveMeasurement, setLiveMeasurement] = useState<Measurement>(() => {
     const latest = telemetryProvider.getLatest(resolvedParams.sessionId);
     return latest || {
@@ -58,21 +59,22 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
       sessionId: resolvedParams.sessionId,
       chargerId: currentSession?.chargerId || 'ch-101',
       timestamp: new Date().toISOString(),
-      voltageV: 229.7,
-      currentA: 13.94,
-      powerW: 3138,
-      energyKwh: currentSession?.energyKwh || 2.15,
-      frequencyHz: 50.01,
-      powerFactor: 0.98,
-      thdPercent: 2.1,
+      voltageV: 0,
+      currentA: 0,
+      powerW: 0,
+      energyKwh: currentSession?.energyKwh || 0,
+      frequencyHz: 0,
+      powerFactor: 0,
+      thdPercent: 0,
       voltageSagSwellStatus: 'NORMAL',
       todSlotActive: `${todInfo.slotCode}: ${todInfo.slotName}`,
       todRate: currentSession?.tariffRate || todInfo.baseRate,
+      isHardwareStreaming: false,
     };
   });
 
   const [isStopping, setIsStopping] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(currentSession?.durationSeconds || 1800);
+  const [elapsedSeconds, setElapsedSeconds] = useState(currentSession?.durationSeconds || 0);
 
   // Subscribe to 1Hz Telemetry Provider
   useEffect(() => {
@@ -366,6 +368,7 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
         frequencyHz={liveMeasurement.frequencyHz}
         powerFactor={liveMeasurement.powerFactor}
         maxPowerKw={3.3} // Restricted to 3.3 kW max for 2-wheelers
+        isLive={Boolean(liveMeasurement.isHardwareStreaming)}
       />
 
       {/* PDF SECTION 3: POWER QUALITY METRICS ROW */}
@@ -375,9 +378,15 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
         <div className="glass-card rounded-2xl p-4 border border-slate-800 bg-slate-900/60">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-bold uppercase text-slate-400">Power Factor (cos &phi;)</span>
-            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold">PFC Active</span>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+              liveMeasurement.isHardwareStreaming
+                ? 'bg-emerald-500/20 text-emerald-400'
+                : 'bg-slate-800 text-slate-400'
+            }`}>
+              {liveMeasurement.isHardwareStreaming ? 'PFC Active' : 'Standby (0.00)'}
+            </span>
           </div>
-          <span className="text-2xl font-extrabold text-white font-mono">{liveMeasurement.powerFactor}</span>
+          <span className="text-2xl font-extrabold text-white font-mono">{liveMeasurement.powerFactor.toFixed(2)}</span>
           <p className="text-[10px] text-slate-500 mt-1">High power factor ensures near-unity grid efficiency.</p>
         </div>
 
@@ -385,9 +394,15 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
         <div className="glass-card rounded-2xl p-4 border border-cyan-500/30 bg-slate-900/60">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-bold uppercase text-slate-400">Total Harmonic Distortion (THD)</span>
-            <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-[10px] font-mono font-bold">&lt; 5% Limit</span>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+              liveMeasurement.isHardwareStreaming
+                ? 'bg-cyan-500/20 text-cyan-400'
+                : 'bg-slate-800 text-slate-400'
+            }`}>
+              {liveMeasurement.isHardwareStreaming ? '< 5% Limit' : 'Offline (0.0%)'}
+            </span>
           </div>
-          <span className="text-2xl font-extrabold text-cyan-400 font-mono">{liveMeasurement.thdPercent}%</span>
+          <span className="text-2xl font-extrabold text-cyan-400 font-mono">{(liveMeasurement.thdPercent ?? 0).toFixed(1)}%</span>
           <p className="text-[10px] text-slate-500 mt-1">IEEE-519 compliant low current distortion.</p>
         </div>
 
@@ -395,12 +410,22 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
         <div className="glass-card rounded-2xl p-4 border border-slate-800 bg-slate-900/60">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-bold uppercase text-slate-400">Voltage Stability</span>
-            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold">Safe Nominal</span>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+              liveMeasurement.isHardwareStreaming
+                ? 'bg-emerald-500/20 text-emerald-400'
+                : 'bg-amber-500/20 text-amber-400'
+            }`}>
+              {liveMeasurement.isHardwareStreaming ? 'Safe Nominal' : 'Stream Stopped'}
+            </span>
           </div>
           <span className="text-2xl font-extrabold text-emerald-400 font-mono">
-            {liveMeasurement.voltageV} V
+            {liveMeasurement.voltageV.toFixed(1)} V
           </span>
-          <p className="text-[10px] text-slate-500 mt-1">No Sag (&lt;207V) or Swell (&gt;253V) detected.</p>
+          <p className="text-[10px] text-slate-500 mt-1">
+            {liveMeasurement.isHardwareStreaming
+              ? 'No Sag (<207V) or Swell (>253V) detected.'
+              : 'Waiting for live ThingSpeak hardware packet (<= 90s).'}
+          </p>
         </div>
 
       </div>

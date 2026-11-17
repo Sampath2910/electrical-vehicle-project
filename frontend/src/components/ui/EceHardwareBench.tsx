@@ -18,33 +18,40 @@ import { telemetryProvider } from '@/lib/providers';
 
 export const EceHardwareBench: React.FC = () => {
   const [testState, setTestState] = useState<'NORMAL' | 'SURGE_FAULT' | 'PREEMPT_OVERRIDE'>('NORMAL');
-  const [relayContactor, setRelayContactor] = useState<boolean>(true);
-  const [gridVoltage, setGridVoltage] = useState<number>(229.7);
-  const [loadCurrent, setLoadCurrent] = useState<number>(13.94);
-  const [thdVal, setThdVal] = useState<number>(2.1);
+  const [isHardwareLive, setIsHardwareLive] = useState<boolean>(false);
+  const [relayContactor, setRelayContactor] = useState<boolean>(false);
+  const [gridVoltage, setGridVoltage] = useState<number>(0);
+  const [loadCurrent, setLoadCurrent] = useState<number>(0);
+  const [powerFactor, setPowerFactor] = useState<number>(0);
+  const [thdVal, setThdVal] = useState<number>(0);
   const [serialLogs, setSerialLogs] = useState<string[]>([
     '[INIT] ESP32 DevKit V1 Initialized @ 115200 baud',
     '[WIFI] Connected to AP (192.168.1.105)',
-    '[THINGSPEAK] Connected to Channel #3533059 (Read Key: MPG3••••••••S6U)',
-    '[PZEM-004T] AC Energy Meter Active (UART2: TX 17 / RX 16)',
-    '[PAYMENT] Online UPI / QR Dynamic Gateway Ready',
-    '[RELAY] GPIO 26 Contactor LATCHED (3.3kW 2W AC Bay Active)'
+    '[THINGSPEAK] Polling Channel #3533059 for active hardware stream (<= 90s freshness)',
+    '[PZEM-004T] Waiting for live telemetry packets (displaying 0.0 V / 0.00 A until active)'
   ]);
 
   // Simulate hardware behaviors on test state changes
   useEffect(() => {
     if (testState === 'NORMAL') {
-      setGridVoltage(229.7);
-      setLoadCurrent(13.94);
-      setThdVal(2.1);
-      setRelayContactor(true);
+      const latest = telemetryProvider.getLatest('hardware-bench');
+      const live = Boolean(latest?.isHardwareStreaming);
+      setIsHardwareLive(live);
+      setGridVoltage(live && latest ? latest.voltageV : 0);
+      setLoadCurrent(live && latest ? latest.currentA : 0);
+      setPowerFactor(live && latest ? latest.powerFactor : 0);
+      setThdVal(live && latest ? (latest.thdPercent ?? 0) : 0);
+      setRelayContactor(live);
       setSerialLogs(prev => [
         ...prev.slice(-6),
-        `[PZEM-004T] V=229.7V | I=13.94A (max 14.3A) | P=3.14kW | PF=0.98 | THD=2.1% | Contactor: CLOSED`
+        live && latest
+          ? `[PZEM-004T] V=${latest.voltageV}V | I=${latest.currentA}A | P=${(latest.powerW / 1000).toFixed(2)}kW | PF=${latest.powerFactor} | Contactor: CLOSED`
+          : `[THINGSPEAK] Hardware stream stopped (>90s) | V=0.0V | I=0.00A | P=0.00kW | Contactor: STANDBY (OPEN)`
       ]);
     } else if (testState === 'SURGE_FAULT') {
       setGridVoltage(264.8); // Exceeds 253V threshold!
       setLoadCurrent(0.0);
+      setPowerFactor(0.0);
       setRelayContactor(false); // Trip relay
       setSerialLogs(prev => [
         ...prev.slice(-6),
@@ -67,21 +74,28 @@ export const EceHardwareBench: React.FC = () => {
     if (testState !== 'NORMAL') return;
 
     const unsub = telemetryProvider.subscribe('hardware-bench', (meas) => {
-      setGridVoltage(meas.voltageV);
-      setLoadCurrent(meas.currentA);
-      setThdVal(meas.thdPercent || 2.1);
+      const live = Boolean(meas.isHardwareStreaming);
+      setIsHardwareLive(live);
+      setGridVoltage(live ? meas.voltageV : 0);
+      setLoadCurrent(live ? meas.currentA : 0);
+      setPowerFactor(live ? meas.powerFactor : 0);
+      setThdVal(live ? (meas.thdPercent ?? 0) : 0);
+      setRelayContactor(live);
 
-      const pKw = (meas.powerW / 1000).toFixed(2);
+      const pKw = live ? (meas.powerW / 1000).toFixed(2) : '0.00';
       setSerialLogs(prev => [
         ...prev.slice(-6),
-        `[ThingSpeak Ch#3533059] V=${meas.voltageV}V | I=${meas.currentA}A | P=${pKw}kW | PF=${meas.powerFactor} | Contactor: ON`
+        live
+          ? `[ThingSpeak Ch#3533059] V=${meas.voltageV}V | I=${meas.currentA}A | P=${pKw}kW | PF=${meas.powerFactor} | Contactor: ON`
+          : `[ThingSpeak Ch#3533059] STREAM STOPPED (>90s) | V=0.0V | I=0.00A | P=0.00kW | PF=0.00 | Contactor: STANDBY`
       ]);
     });
 
     return () => unsub();
   }, [testState]);
 
-  const powerWatts = Math.round(gridVoltage * loadCurrent * 0.98);
+  const powerWatts = Math.round(gridVoltage * loadCurrent * powerFactor);
+  const powerKwLabel = (powerWatts / 1000).toFixed(2);
 
   return (
     <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-200 dark:border-cyan-500/30 bg-white dark:bg-slate-900/90 shadow-xl space-y-6">
@@ -107,10 +121,22 @@ export const EceHardwareBench: React.FC = () => {
           <span className={`px-3 py-1 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 border ${
             relayContactor 
               ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/40 dark:text-emerald-400' 
-              : 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-500/10 dark:border-rose-500/40 dark:text-rose-400 animate-pulse'
+              : testState === 'SURGE_FAULT'
+                ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-500/10 dark:border-rose-500/40 dark:text-rose-400 animate-pulse'
+                : 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-500/10 dark:border-amber-500/40 dark:text-amber-300'
           }`}>
-            <span className={`w-2 h-2 rounded-full ${relayContactor ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400'}`} />
-            {relayContactor ? 'LATCHED (CLOSED)' : 'TRIPPED (OPEN)'}
+            <span className={`w-2 h-2 rounded-full ${
+              relayContactor
+                ? 'bg-emerald-500 dark:bg-emerald-400'
+                : testState === 'SURGE_FAULT'
+                  ? 'bg-rose-500 dark:bg-rose-400'
+                  : 'bg-amber-500 dark:bg-amber-400'
+            }`} />
+            {relayContactor
+              ? 'LATCHED (CLOSED)'
+              : testState === 'SURGE_FAULT'
+                ? 'TRIPPED (OPEN)'
+                : isHardwareLive ? 'OPEN' : 'STANDBY (0 W)'}
           </span>
         </div>
       </div>
@@ -132,8 +158,10 @@ export const EceHardwareBench: React.FC = () => {
 
         <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1">
           <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 block">Power Quality Monitoring</span>
-          <span className="font-extrabold text-slate-900 dark:text-white text-sm block">PF: 0.98 | THD: 2.1%</span>
-          <span className="text-[10px] text-blue-700 dark:text-blue-400 font-mono block">IEEE 519 Standard (&lt;5% THD)</span>
+          <span className="font-extrabold text-slate-900 dark:text-white text-sm block">PF: {powerFactor.toFixed(2)} | THD: {thdVal.toFixed(1)}%</span>
+          <span className="text-[10px] text-blue-700 dark:text-blue-400 font-mono block">
+            {isHardwareLive ? 'IEEE 519 Standard (<5% THD)' : 'Hardware Stream Stopped (0.00)'}
+          </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1">
@@ -219,12 +247,12 @@ export const EceHardwareBench: React.FC = () => {
 
               <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 shadow-xs">
                 <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Active Power (P = V &times; I &times; cos&phi;):</span>
-                <span className="text-cyan-700 dark:text-cyan-400 font-bold">P = {gridVoltage}V &times; {loadCurrent}A &times; 0.98 = <strong>{powerWatts} W (3.2 kW)</strong></span>
+                <span className="text-cyan-700 dark:text-cyan-400 font-bold">P = {gridVoltage}V &times; {loadCurrent}A &times; {powerFactor.toFixed(2)} = <strong>{powerWatts} W ({powerKwLabel} kW)</strong></span>
               </div>
 
               <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 shadow-xs">
                 <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Power Quality (THD & Power Factor):</span>
-                <span className="text-amber-700 dark:text-amber-400 font-bold">PF = 0.98 | THD = {thdVal}% (&lt; 5% IEEE-519 Standard)</span>
+                <span className="text-amber-700 dark:text-amber-400 font-bold">PF = {powerFactor.toFixed(2)} | THD = {thdVal.toFixed(1)}% (&lt; 5% IEEE-519 Standard)</span>
               </div>
             </div>
           </div>

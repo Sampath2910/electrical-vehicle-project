@@ -314,43 +314,58 @@ function OperatorConsoleContent() {
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">Live ThingSpeak telemetry (Channel #3533059) for {station?.name}</p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[11px] font-mono font-bold flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>THINGSPEAK STREAM ACTIVE</span>
-            </span>
+            {liveMeas?.isHardwareStreaming ? (
+              <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[11px] font-mono font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>THINGSPEAK STREAM ACTIVE</span>
+              </span>
+            ) : (
+              <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[11px] font-mono font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-slate-400" />
+                <span>HARDWARE STREAM STOPPED (0.00 kW)</span>
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">AC Voltage</span>
               <div className="text-xl font-extrabold font-mono text-cyan-400">
-                {liveMeas ? `${liveMeas.voltageV.toFixed(1)} V` : '229.7 V'}
+                {liveMeas?.isHardwareStreaming ? `${liveMeas.voltageV.toFixed(1)} V` : '0.0 V'}
               </div>
-              <span className="text-[10px] text-slate-400">Grid Safe (207–253V)</span>
+              <span className="text-[10px] text-slate-400">
+                {liveMeas?.isHardwareStreaming ? 'Grid Safe (207–253V)' : 'Standby / No Feed'}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Active Current</span>
               <div className="text-xl font-extrabold font-mono text-amber-400">
-                {liveMeas ? `${liveMeas.currentA.toFixed(2)} A` : '13.94 A'}
+                {liveMeas?.isHardwareStreaming ? `${liveMeas.currentA.toFixed(2)} A` : '0.00 A'}
               </div>
-              <span className="text-[10px] text-emerald-400">&le; 14.3A 2W Limit</span>
+              <span className="text-[10px] text-slate-400">
+                {liveMeas?.isHardwareStreaming ? '≤ 14.3A 2W Limit' : 'Idle (0.00 A)'}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Active Power</span>
               <div className="text-xl font-extrabold font-mono text-emerald-400">
-                {liveMeas ? `${(liveMeas.powerW / 1000).toFixed(2)} kW` : '3.14 kW'}
+                {liveMeas?.isHardwareStreaming ? `${(liveMeas.powerW / 1000).toFixed(2)} kW` : '0.00 kW'}
               </div>
-              <span className="text-[10px] text-slate-400">PF: {liveMeas?.powerFactor || '0.98'} Active</span>
+              <span className="text-[10px] text-slate-400">
+                {liveMeas?.isHardwareStreaming ? `PF: ${liveMeas.powerFactor} Active` : 'Cutoff / 0 W'}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800/80 space-y-1">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Total Harmonics</span>
               <div className="text-xl font-extrabold font-mono text-purple-400">
-                {liveMeas ? `${liveMeas.thdPercent}% THD` : '2.1% THD'}
+                {liveMeas?.isHardwareStreaming ? `${liveMeas.thdPercent}% THD` : '0.0% THD'}
               </div>
-              <span className="text-[10px] text-emerald-400">IEEE-519 Compliant</span>
+              <span className="text-[10px] text-slate-400">
+                {liveMeas?.isHardwareStreaming ? 'IEEE-519 Compliant' : 'Grid Inactive'}
+              </span>
             </div>
           </div>
 

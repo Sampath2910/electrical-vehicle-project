@@ -173,11 +173,11 @@ const TS_READ_KEY = process.env.NEXT_PUBLIC_THINGSPEAK_READ_API_KEY || 'MPG3G79C
 export class ThingSpeakTelemetryProvider implements TelemetryProvider {
   private activeSubscriptions = new Map<string, { intervalId: NodeJS.Timeout; pollId: NodeJS.Timeout }>();
   private accumulatedEnergyMap = new Map<string, number>();
-  private latestFeed: { v: number; i: number; p: number; kwh?: number; pf?: number; timestamp: string } = {
-    v: 229.7,
-    i: 13.94,
-    p: 3138,
-    timestamp: new Date().toISOString()
+  private latestFeed: { v: number; i: number; p: number; kwh?: number; pf?: number; timestamp: string; entryId?: number } = {
+    v: 0,
+    i: 0,
+    p: 0,
+    timestamp: ''
   };
 
   constructor() {
@@ -195,98 +195,129 @@ export class ThingSpeakTelemetryProvider implements TelemetryProvider {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        if (data && data.field1) {
-          const v = parseFloat(data.field1);
-          const i = data.field2 ? parseFloat(data.field2) : 13.94;
+        if (data && data.created_at) {
+          const v = data.field1 ? parseFloat(data.field1) : 0;
+          const i = data.field2 ? parseFloat(data.field2) : 0;
           const p = data.field3 ? parseFloat(data.field3) : Math.round(v * i * 0.98);
           const kwh = data.field4 ? parseFloat(data.field4) : undefined;
-          const pf = data.field5 ? parseFloat(data.field5) : +(p / (v * i)).toFixed(2);
+          const pf = data.field5 ? parseFloat(data.field5) : (v > 0 && i > 0 ? +(p / (v * i)).toFixed(2) : 0);
           this.latestFeed = {
-            v: !isNaN(v) ? v : 229.7,
-            i: !isNaN(i) ? i : 13.94,
-            p: !isNaN(p) ? p : 3138,
-            kwh,
-            pf,
-            timestamp: data.created_at || new Date().toISOString()
+            v: !isNaN(v) ? v : 0,
+            i: !isNaN(i) ? i : 0,
+            p: !isNaN(p) ? p : 0,
+            kwh: kwh !== undefined && !isNaN(kwh) ? kwh : undefined,
+            pf: !isNaN(pf) ? pf : 0,
+            timestamp: data.created_at,
+            entryId: data.entry_id
           };
         }
       }
     } catch (e) {
-      // Continue with current latestFeed
+      // Network offline or API failure -> keep timestamp stale so UI displays 0
     }
+  }
+
+  private buildMeasurement(sessionId: string): Measurement {
+    let energy = this.accumulatedEnergyMap.get(sessionId) || 0;
+    const todInfo = getCurrentToDSlot();
+
+    const feedTime = this.latestFeed.timestamp ? new Date(this.latestFeed.timestamp).getTime() : 0;
+    const feedAgeSec = feedTime > 0 ? Math.max(0, Math.floor((Date.now() - feedTime) / 1000)) : Infinity;
+    const isLiveStreaming = feedAgeSec <= 90;
+
+    // STRICT ZERO-WHEN-OFFLINE RULE: If no live packet within 90s, emit strictly 0 across all live meters
+    if (!isLiveStreaming) {
+      return {
+        id: `meas-ts-offline-${Date.now()}`,
+        sessionId,
+        chargerId: 'ch-101',
+        timestamp: new Date().toISOString(),
+        voltageV: 0,
+        currentA: 0,
+        powerW: 0,
+        powerAcW: 0,
+        voltageDcV: 0,
+        currentDcA: 0,
+        powerDcW: 0,
+        efficiencyPercent: 0,
+        energyKwh: +energy.toFixed(3),
+        frequencyHz: 0,
+        powerFactor: 0,
+        thdPercent: 0,
+        voltageSagSwellStatus: 'NORMAL',
+        todSlotActive: `${todInfo.slotCode}: ${todInfo.slotName} (${todInfo.timeWindow})`,
+        todRate: todInfo.baseRate,
+        isHardwareStreaming: false,
+        dataAgeSeconds: isFinite(feedAgeSec) ? feedAgeSec : undefined,
+      };
+    }
+
+    // LIVE STREAMING ACTIVE (packet received <= 90s ago)
+    const jitterV = +(Math.sin(Date.now() / 1500) * 0.35 + (Math.random() * 0.2 - 0.1)).toFixed(1);
+    const jitterA = +(Math.cos(Date.now() / 2000) * 0.08 + (Math.random() * 0.04 - 0.02)).toFixed(2);
+    
+    const voltage = Math.max(0, +(this.latestFeed.v + jitterV).toFixed(1));
+    const current = Math.max(0, +(this.latestFeed.i + jitterA).toFixed(2));
+    const powerFactor = this.latestFeed.pf || 0.98;
+    const powerAcW = Math.round(voltage * current * powerFactor);
+
+    // Dual Metrology: DC Vehicle Output Stage (58.8V nominal, 92% rectifier efficiency)
+    const voltageDcV = powerAcW > 0 ? 58.8 : 0;
+    const efficiencyPercent = powerAcW > 0 ? 92.0 : 0;
+    const powerDcW = Math.round(powerAcW * (efficiencyPercent / 100));
+    const currentDcA = voltageDcV > 0 ? +(powerDcW / voltageDcV).toFixed(2) : 0;
+    
+    // Tariff Billing Accumulation strictly on DC energy delivered to vehicle battery
+    energy += (powerDcW / 1000) / 3600;
+    this.accumulatedEnergyMap.set(sessionId, energy);
+
+    const frequencyHz = +(50.0 + Math.sin(Date.now() / 3000) * 0.03).toFixed(2);
+    const thdPercent = +(2.1 + (Math.random() * 0.08 - 0.04)).toFixed(1);
+
+    let voltageSagSwellStatus: 'NORMAL' | 'SAG' | 'SWELL' = 'NORMAL';
+    if (voltage > 0 && voltage < 207) voltageSagSwellStatus = 'SAG';
+    else if (voltage > 253) voltageSagSwellStatus = 'SWELL';
+
+    return {
+      id: `meas-ts-${Date.now()}`,
+      sessionId,
+      chargerId: 'ch-101',
+      timestamp: new Date().toISOString(),
+      voltageV: voltage,
+      currentA: current,
+      powerW: powerDcW,
+      powerAcW,
+      voltageDcV,
+      currentDcA,
+      powerDcW,
+      efficiencyPercent,
+      energyKwh: this.latestFeed.kwh ?? +energy.toFixed(3),
+      frequencyHz,
+      powerFactor,
+      thdPercent,
+      voltageSagSwellStatus,
+      todSlotActive: `${todInfo.slotCode}: ${todInfo.slotName} (${todInfo.timeWindow})`,
+      todRate: todInfo.baseRate,
+      isHardwareStreaming: true,
+      dataAgeSeconds: feedAgeSec,
+    };
   }
 
   subscribe(sessionId: string, onUpdate: (data: Measurement) => void): () => void {
     if (!this.accumulatedEnergyMap.has(sessionId)) {
-      this.accumulatedEnergyMap.set(sessionId, 2.15);
+      this.accumulatedEnergyMap.set(sessionId, 0);
     }
 
-    this.fetchLatestThingSpeakFeed();
+    this.fetchLatestThingSpeakFeed().then(() => {
+      onUpdate(this.buildMeasurement(sessionId));
+    });
 
     const pollId = setInterval(() => {
       this.fetchLatestThingSpeakFeed();
     }, 10000);
 
     const intervalId = setInterval(() => {
-      let energy = this.accumulatedEnergyMap.get(sessionId) || 0;
-      
-      const feedAgeSec = Math.floor((Date.now() - new Date(this.latestFeed.timestamp).getTime()) / 1000);
-      const isLiveStreaming = !isNaN(feedAgeSec) && feedAgeSec <= 90;
-
-      // When actively streaming (packet <= 90s), provide realistic 1Hz metrology micro-fluctuations
-      // When in standby (>90s), preserve exact last-known telemetry without artificial jitter
-      const jitterV = isLiveStreaming ? +(Math.sin(Date.now() / 1500) * 0.35 + (Math.random() * 0.2 - 0.1)).toFixed(1) : 0;
-      const jitterA = isLiveStreaming ? +(Math.cos(Date.now() / 2000) * 0.08 + (Math.random() * 0.04 - 0.02)).toFixed(2) : 0;
-      
-      const voltage = +(this.latestFeed.v + jitterV).toFixed(1);
-      const current = +(this.latestFeed.i + jitterA).toFixed(2);
-      const powerAcW = Math.round(voltage * current * (this.latestFeed.pf || 0.98));
-
-      // Dual Metrology: DC Vehicle Output Stage (58.8V nominal, 92% rectifier efficiency)
-      const voltageDcV = 58.8;
-      const efficiencyPercent = 92.0;
-      const powerDcW = Math.round(powerAcW * (efficiencyPercent / 100));
-      const currentDcA = +(powerDcW / voltageDcV).toFixed(2);
-      
-      // Tariff Billing Accumulation strictly on DC energy delivered to vehicle battery
-      if (isLiveStreaming) {
-        energy += (powerDcW / 1000) / 3600;
-        this.accumulatedEnergyMap.set(sessionId, energy);
-      }
-
-      const frequencyHz = isLiveStreaming ? +(50.0 + Math.sin(Date.now() / 3000) * 0.03).toFixed(2) : 50.0;
-      const powerFactor = this.latestFeed.pf || 0.98;
-      const thdPercent = isLiveStreaming ? +(2.1 + (Math.random() * 0.08 - 0.04)).toFixed(1) : 2.1;
-
-      let voltageSagSwellStatus: 'NORMAL' | 'SAG' | 'SWELL' = 'NORMAL';
-      if (voltage < 207) voltageSagSwellStatus = 'SAG';
-      else if (voltage > 253) voltageSagSwellStatus = 'SWELL';
-
-      const todInfo = getCurrentToDSlot();
-
-      const measurement: Measurement = {
-        id: `meas-ts-${Date.now()}`,
-        sessionId,
-        chargerId: 'ch-101',
-        timestamp: new Date().toISOString(),
-        voltageV: voltage,
-        currentA: current,
-        powerW: powerDcW,
-        powerAcW,
-        voltageDcV,
-        currentDcA,
-        powerDcW,
-        efficiencyPercent,
-        energyKwh: this.latestFeed.kwh ?? +energy.toFixed(3),
-        frequencyHz,
-        powerFactor,
-        thdPercent,
-        voltageSagSwellStatus,
-        todSlotActive: `${todInfo.slotCode}: ${todInfo.slotName} (${todInfo.timeWindow})`,
-        todRate: todInfo.baseRate,
-      };
-
-      onUpdate(measurement);
+      onUpdate(this.buildMeasurement(sessionId));
     }, 1000);
 
     this.activeSubscriptions.set(sessionId, { intervalId, pollId });
@@ -299,32 +330,7 @@ export class ThingSpeakTelemetryProvider implements TelemetryProvider {
   }
 
   getLatest(sessionId: string): Measurement | null {
-    const energy = this.accumulatedEnergyMap.get(sessionId) || 2.15;
-    const todInfo = getCurrentToDSlot();
-    const powerAcW = this.latestFeed.p;
-    const powerDcW = Math.round(powerAcW * 0.92);
-    const voltageDcV = 58.8;
-    return {
-      id: `meas-latest`,
-      sessionId,
-      chargerId: 'ch-101',
-      timestamp: this.latestFeed.timestamp,
-      voltageV: this.latestFeed.v,
-      currentA: this.latestFeed.i,
-      powerW: powerDcW,
-      powerAcW,
-      voltageDcV,
-      currentDcA: +(powerDcW / voltageDcV).toFixed(2),
-      powerDcW,
-      efficiencyPercent: 92.0,
-      energyKwh: this.latestFeed.kwh ?? +energy.toFixed(3),
-      frequencyHz: 50.01,
-      powerFactor: this.latestFeed.pf || 0.98,
-      thdPercent: 2.1,
-      voltageSagSwellStatus: 'NORMAL',
-      todSlotActive: `${todInfo.slotCode}: ${todInfo.slotName} (${todInfo.timeWindow})`,
-      todRate: todInfo.baseRate,
-    };
+    return this.buildMeasurement(sessionId);
   }
 }
 

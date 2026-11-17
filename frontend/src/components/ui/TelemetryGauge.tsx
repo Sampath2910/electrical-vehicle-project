@@ -10,6 +10,7 @@ interface TelemetryGaugeProps {
   frequencyHz: number;
   powerFactor: number;
   maxPowerKw?: number;
+  isLive?: boolean;
 }
 
 export const TelemetryGauge: React.FC<TelemetryGaugeProps> = ({
@@ -19,7 +20,9 @@ export const TelemetryGauge: React.FC<TelemetryGaugeProps> = ({
   frequencyHz,
   powerFactor,
   maxPowerKw = 22.0,
+  isLive,
 }) => {
+  const isActiveStream = isLive !== undefined ? isLive : powerW > 0;
   const currentKw = +(powerW / 1000).toFixed(2);
   const percentage = Math.min(100, Math.max(0, (currentKw / maxPowerKw) * 100));
 
@@ -32,16 +35,20 @@ export const TelemetryGauge: React.FC<TelemetryGaugeProps> = ({
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400">
-            <Zap className="w-5 h-5 animate-pulse" />
+            <Zap className={`w-5 h-5 ${isActiveStream ? 'animate-pulse' : ''}`} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Live Power Delivery</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">ESP32 IoT Telemetry Stream (1Hz)</p>
           </div>
         </div>
-        <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+        <div className={`px-3 py-1 rounded-full border text-xs font-semibold flex items-center gap-1.5 ${
+          isActiveStream
+            ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+            : 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300'
+        }`}>
           <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Contactor Engaged</span>
+          <span>{isActiveStream ? 'Contactor Engaged' : 'Stream Stopped (0.00 kW)'}</span>
         </div>
       </div>
 
