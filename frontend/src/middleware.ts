@@ -10,6 +10,8 @@ const AUTH_REQUIRED_PREFIXES = [
   '/charging',
   '/profile',
   '/settings',
+  '/notifications',
+  '/rfid',
 ];
 
 export async function middleware(request: NextRequest) {
@@ -74,5 +76,7 @@ export const config = {
     '/charging/:path*',
     '/profile/:path*',
     '/settings/:path*',
+    '/notifications/:path*',
+    '/rfid/:path*',
   ],
 };

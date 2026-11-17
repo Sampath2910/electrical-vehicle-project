@@ -57,23 +57,23 @@ export default function AdminChargerDetail({ params }: { params: Promise<{ id: s
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      <Link href="/admin/chargers" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-400">
+      <Link href="/admin/chargers" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400">
         <ArrowLeft className="w-4 h-4" />
         <span>Back to Fleet List</span>
       </Link>
 
-      <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-800 bg-navy-900/90 shadow-2xl space-y-6">
+      <div className="glass-card rounded-3xl p-6 lg:p-8 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/90 shadow-2xl space-y-6">
         
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
           <div>
-            <span className="text-xs font-mono font-bold text-cyan-400">{charger.chargerCode}</span>
-            <h1 className="text-2xl font-bold text-white">{charger.name}</h1>
+            <span className="text-xs font-mono font-bold text-cyan-700 dark:text-cyan-400">{charger.chargerCode}</span>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{charger.name}</h1>
           </div>
           <StatusBadge status={charger.status} size="lg" />
         </div>
 
         {savedMsg && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4" />
             <span>Charger hardware configuration updated!</span>
           </div>
@@ -82,11 +82,11 @@ export default function AdminChargerDetail({ params }: { params: Promise<{ id: s
         <form onSubmit={handleSave} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-slate-300 font-semibold block mb-1">Operational State Override</label>
+              <label className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">Operational State Override</label>
               <select
                 value={status}
                 onChange={(e: any) => setStatus(e.target.value)}
-                className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white"
+                className="w-full bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white"
               >
                 <option value="AVAILABLE">AVAILABLE</option>
                 <option value="PREPARING">PREPARING</option>
@@ -100,11 +100,11 @@ export default function AdminChargerDetail({ params }: { params: Promise<{ id: s
             </div>
 
             <div>
-              <label className="text-slate-300 font-semibold block mb-1">Power Rating</label>
+              <label className="text-slate-700 dark:text-slate-300 font-semibold block mb-1">Power Rating</label>
               <select
                 value={rating}
                 onChange={(e: any) => setRating(Number(e.target.value))}
-                className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-mono font-bold"
+                className="w-full bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-900 dark:text-white font-mono font-bold"
               >
                 <option value={1}>1 kW</option>
                 <option value={3.3}>3.3 kW</option>
@@ -114,18 +114,18 @@ export default function AdminChargerDetail({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-navy-950 border border-slate-800 space-y-2">
-            <h4 className="font-bold text-cyan-400">MQTT Hardware Topics</h4>
-            <div className="space-y-1 font-mono text-[11px] text-slate-400">
-              <p>Telemetry: <span className="text-slate-200">ev/chargers/{charger.chargerCode}/telemetry</span></p>
-              <p>Status: <span className="text-slate-200">ev/chargers/{charger.chargerCode}/status</span></p>
-              <p>Commands: <span className="text-slate-200">ev/chargers/{charger.chargerCode}/commands</span></p>
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-2">
+            <h4 className="font-bold text-cyan-700 dark:text-cyan-400">MQTT Hardware Topics</h4>
+            <div className="space-y-1 font-mono text-[11px] text-slate-600 dark:text-slate-400">
+              <p>Telemetry: <span className="text-slate-900 dark:text-slate-200">ev/chargers/{charger.chargerCode}/telemetry</span></p>
+              <p>Status: <span className="text-slate-900 dark:text-slate-200">ev/chargers/{charger.chargerCode}/status</span></p>
+              <p>Commands: <span className="text-slate-900 dark:text-slate-200">ev/chargers/{charger.chargerCode}/commands</span></p>
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs uppercase tracking-wider"
+            className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white dark:text-navy-950 font-bold text-xs uppercase tracking-wider cursor-pointer"
           >
             Apply Configuration Changes
           </button>

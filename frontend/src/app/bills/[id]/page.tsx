@@ -23,10 +23,10 @@ export default function DetailedBillPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  const energyCost = bill.energyCost ?? (bill.energyKwh * bill.tariffRate);
+  const energyCost = bill.energyCost ?? bill.subtotal ?? (bill.energyKwh * bill.tariffRate);
   const serviceFee = bill.serviceFee ?? 5.00;
-  const gstAmount = bill.gstAmount ?? ((energyCost + serviceFee) * 0.18);
-  const penaltyFee = bill.penaltyFee || 0;
+  const gstAmount = bill.gstAmount ?? bill.tax ?? ((energyCost + serviceFee) * 0.18);
+  const penaltyFee = bill.penaltyAmount ?? bill.penaltyFee ?? 0;
   const totalAmount = bill.totalAmount;
 
   return (
@@ -132,11 +132,11 @@ export default function DetailedBillPage({ params }: { params: Promise<{ id: str
             </div>
             <div className="bg-white dark:bg-navy-950/80 p-2 rounded border border-slate-200 dark:border-slate-800/80 shadow-xs">
               <span className="text-[9px] text-slate-500 block">Max_Current_A</span>
-              <span className="text-amber-700 dark:text-amber-400 font-bold">{(bill.maxCurrentA || 13.8).toFixed(1)} A (≤14.3A)</span>
+              <span className="text-amber-700 dark:text-amber-400 font-bold">{(bill.maxCurrentA ?? 0).toFixed(1)} A (≤14.3A)</span>
             </div>
             <div className="bg-white dark:bg-navy-950/80 p-2 rounded border border-slate-200 dark:border-slate-800/80 shadow-xs">
               <span className="text-[9px] text-slate-500 block">Avg_Voltage_V</span>
-              <span className="text-emerald-700 dark:text-emerald-400 font-bold">{(bill.avgVoltageV || 229.4).toFixed(1)} V</span>
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold">{(bill.avgVoltageV ?? 0).toFixed(1)} V</span>
             </div>
             <div className="bg-white dark:bg-navy-950/80 p-2 rounded border border-slate-200 dark:border-slate-800/80 shadow-xs">
               <span className="text-[9px] text-slate-500 block">ToD_Slot_Active</span>

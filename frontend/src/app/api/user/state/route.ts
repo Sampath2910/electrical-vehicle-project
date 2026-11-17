@@ -79,6 +79,7 @@ export async function POST(request: Request) {
       }
       const result = db.stopSession(
         session.userId,
+        session.role,
         sessionId,
         Number(energyKwh) || 0,
         Number(durationSeconds) || 0,
@@ -92,6 +93,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: 'Unsupported action.' }, { status: 400 });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed to persist user state.' }, { status: 500 });
+    const status = typeof err?.statusCode === 'number' ? err.statusCode : 500;
+    return NextResponse.json({ error: err.message || 'Failed to persist user state.' }, { status });
   }
 }
+

@@ -280,6 +280,35 @@ export const db = {
       throw err;
     }
 
+    // Prevent duplicate mobile number collisions (ignoring placeholder default)
+    const cleanPhoneDigits = cleanPhone.replace(/\D/g, '');
+    const isPlaceholderPhone = cleanPhoneDigits === '910000000000' || cleanPhoneDigits === '0000000000';
+    if (cleanPhoneDigits.length >= 7 && !isPlaceholderPhone) {
+      const phoneTaken = data.users.some(u => {
+        const uDigits = (u.phone || '').replace(/\D/g, '');
+        if (uDigits.length < 7 || uDigits === '910000000000' || uDigits === '0000000000') return false;
+        return uDigits.endsWith(cleanPhoneDigits) || cleanPhoneDigits.endsWith(uDigits);
+      });
+      if (phoneTaken) {
+        const err: any = new Error('An account with this mobile number already exists. Please sign in or use a different number.');
+        err.statusCode = 409;
+        throw err;
+      }
+    }
+
+    // Prevent duplicate Operator Badge ID collisions
+    const cleanBadge = user.operatorBadgeId ? user.operatorBadgeId.trim() : undefined;
+    if (cleanBadge) {
+      const badgeTaken = data.users.some(
+        u => u.operatorBadgeId && u.operatorBadgeId.trim().toLowerCase() === cleanBadge.toLowerCase()
+      );
+      if (badgeTaken) {
+        const err: any = new Error('An operator account with this Badge ID already exists.');
+        err.statusCode = 409;
+        throw err;
+      }
+    }
+
     // Resolve charger helper matching id or chargerCode strictly (no silent fallback)
     const resolveCharger = (stationIdentifier?: string): Charger | undefined => {
       if (!stationIdentifier) return undefined;
@@ -614,6 +643,7 @@ export const db = {
 
   stopSession: (
     userId: string,
+    role: User['role'],
     sessionId: string,
     meteredEnergyKwh: number,
     durationSeconds: number,
@@ -625,6 +655,13 @@ export const db = {
     if (idx === -1) return null;
 
     const targetSession = data.sessions[idx];
+    // Strict ownership check: only session owner or ADMIN may stop the session
+    if (role !== 'ADMIN' && targetSession.userId !== userId) {
+      const err: any = new Error('Forbidden: You can only stop your own charging session.');
+      err.statusCode = 403;
+      throw err;
+    }
+
     const endTime = new Date().toISOString();
     const finalEnergy = +Math.max(0, meteredEnergyKwh).toFixed(3);
     const energySubtotal = +(finalEnergy * targetSession.tariffRate).toFixed(2);
@@ -645,6 +682,7 @@ export const db = {
       serviceFee,
       gstAmount: gstTax,
       penaltyAmount: penaltyFee,
+      penaltyFee,
       paymentStatus: 'SUCCESS',
     };
     data.sessions[idx] = updatedSession;
@@ -657,18 +695,24 @@ export const db = {
       charger.lastSeenAt = endTime;
     }
 
+    const ownerUserId = targetSession.userId || userId;
     const newBill: Bill = {
       id: `bill-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       billNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       sessionId,
-      userId: targetSession.userId || userId,
+      userId: ownerUserId,
       chargerName: targetSession.chargerName,
       energyKwh: finalEnergy,
       tariffRate: targetSession.tariffRate,
       subtotal: energySubtotal,
+      energyCost: energySubtotal,
       serviceFee,
       tax: gstTax,
+      gstAmount: gstTax,
       penaltyAmount: penaltyFee,
+      penaltyFee,
+      maxCurrentA: targetSession.maxCurrentA ?? 0,
+      avgVoltageV: targetSession.avgVoltageV ?? 0,
       totalAmount: finalTotal,
       todSlotActive: targetSession.todSlotActive || 'S_2: Standard (06:00 AM - 06:00 PM)',
       status: 'PAID',
@@ -677,21 +721,44 @@ export const db = {
     };
     data.bills.unshift(newBill);
 
-    // Also log debit transaction in ledger for global auditability
+    // Keep wallet balance & ledger mathematically consistent:
+    // Auto-debit wallet when balance covers invoice; otherwise settle via direct UPI without contradicting wallet balance.
+    if (!data.wallets) data.wallets = {};
     if (!data.walletTransactions) data.walletTransactions = [];
+
+    const existingWallet: Wallet = data.wallets[ownerUserId] || {
+      id: `wal-${ownerUserId}`,
+      userId: ownerUserId,
+      balance: 0,
+      currency: 'INR',
+      updatedAt: endTime,
+    };
+
+    let updatedWallet = existingWallet;
+    let settlementDesc = `Direct UPI Settlement @ ${targetSession.chargerName} (${finalEnergy.toFixed(3)} kWh)`;
+    if (existingWallet.balance >= finalTotal) {
+      updatedWallet = {
+        ...existingWallet,
+        balance: +(existingWallet.balance - finalTotal).toFixed(2),
+        updatedAt: endTime,
+      };
+      data.wallets[ownerUserId] = updatedWallet;
+      settlementDesc = `Wallet Auto-Debit @ ${targetSession.chargerName} (${finalEnergy.toFixed(3)} kWh)`;
+    }
+
     const debitTx: WalletTransaction = {
       id: `wtx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      walletId: `wal-${targetSession.userId || userId}`,
+      walletId: updatedWallet.id,
       type: 'DEBIT',
       amount: finalTotal,
       reference: newBill.billNumber,
-      description: `EV Charging @ ${targetSession.chargerName} (${finalEnergy.toFixed(3)} kWh)`,
+      description: settlementDesc,
       createdAt: endTime,
     };
     data.walletTransactions.unshift(debitTx);
 
     saveDbFile(data);
-    return { session: updatedSession, bill: newBill, charger, transaction: debitTx };
+    return { session: updatedSession, bill: newBill, charger, transaction: debitTx, wallet: updatedWallet };
   },
 
   // SESSION & PAYMENT RECORDING

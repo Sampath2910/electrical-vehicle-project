@@ -36,19 +36,19 @@ export default function SessionCompletePage({ params }: { params: Promise<{ sess
     );
   }
 
-  // Exact PDF Page 6 Billing Formula Calculations
-  const energyKwh = session.energyKwh || 0.05;
-  const rate = session.tariffRate || 10.50;
-  const energySubtotal = bill?.energyCost ?? (energyKwh * rate);
+  // Exact PDF Page 6 Billing Formula Calculations (never fabricate energy/current/voltage when 0)
+  const energyKwh = session.energyKwh ?? 0;
+  const rate = session.tariffRate ?? 10.50;
+  const energySubtotal = bill?.energyCost ?? bill?.subtotal ?? (energyKwh * rate);
   const serviceFee = bill?.serviceFee ?? 5.00;
   const subtotalBeforeGst = energySubtotal + serviceFee;
-  const gstAmount = bill?.gstAmount ?? (subtotalBeforeGst * 0.18);
-  const penaltyFee = (session.penaltyFee || bill?.penaltyFee || 0);
+  const gstAmount = bill?.gstAmount ?? bill?.tax ?? (subtotalBeforeGst * 0.18);
+  const penaltyFee = session.penaltyAmount ?? session.penaltyFee ?? bill?.penaltyAmount ?? bill?.penaltyFee ?? 0;
   const totalAmount = bill?.totalAmount ?? (subtotalBeforeGst + gstAmount + penaltyFee);
 
   const todSlot = session.todSlotActive || bill?.todSlotActive || 'S_2: Standard (₹10.50/kWh)';
-  const maxCurrent = session.maxCurrentA || bill?.maxCurrentA || 13.8;
-  const avgVoltage = session.avgVoltageV || bill?.avgVoltageV || 229.4;
+  const maxCurrent = session.maxCurrentA ?? bill?.maxCurrentA ?? 0;
+  const avgVoltage = session.avgVoltageV ?? bill?.avgVoltageV ?? 0;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">

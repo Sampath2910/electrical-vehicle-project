@@ -590,6 +590,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (data.transaction) {
           setWalletTransactions(prev => [data.transaction, ...prev]);
         }
+        if (data.wallet) {
+          setWallet(data.wallet);
+        }
         if (data.charger) {
           setChargers(prev => prev.map(c => c.id === targetSession.chargerId ? data.charger : c));
         }
