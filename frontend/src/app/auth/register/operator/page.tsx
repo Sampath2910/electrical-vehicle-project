@@ -51,6 +51,7 @@ export default function OperatorRegisterPage() {
           role: 'OPERATOR',
           assignedStationId,
           operatorBadgeId: operatorBadgeId || `OP-${Date.now().toString().slice(-4)}`,
+          skipSessionCookie: currentUser?.role === 'ADMIN',
         }),
       });
 

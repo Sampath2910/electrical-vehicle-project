@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -28,7 +28,13 @@ import { QrScannerModal } from '@/components/ui/QrScannerModal';
 function StartChargingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { chargers, vehicles, startChargingSession, playSound } = useStore();
+  const { currentUser, chargers, vehicles, startChargingSession, playSound } = useStore();
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace('/auth/login/user');
+    }
+  }, [currentUser, router]);
 
   const preselectedChargerId = searchParams.get('chargerId') || chargers[0]?.id || '';
 
@@ -128,79 +134,79 @@ function StartChargingContent() {
           <Zap className="w-4 h-4" />
           <span>Smart EV Station &bull; Single-Phase Contactor & Metrology Authorization</span>
         </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">
+        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           Authorize Bike Charging / Battery Swap
         </h1>
-        <p className="text-xs text-slate-400 max-w-xl mx-auto">
+        <p className="text-xs text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
           Select target 2-wheeler bay and authorize via Camera Scan (Dynamic QR / UPI Online Payment).
         </p>
       </div>
 
       {/* QUICK PRESETS */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-blue-950/30 to-purple-950/40 border border-cyan-500/30 shadow-lg space-y-2.5">
+      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-gradient-to-r dark:from-cyan-950/40 dark:via-blue-950/30 dark:to-purple-950/40 border border-cyan-200 dark:border-cyan-500/30 shadow-lg space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5 uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+          <span className="text-xs font-bold text-cyan-700 dark:text-cyan-300 flex items-center gap-1.5 uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 animate-pulse" />
             <span>Quick 2-Wheeler & Bay Presets</span>
           </span>
-          <span className="text-[10px] text-slate-400">Click any preset to auto-configure:</span>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400">Click any preset to auto-configure:</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <button
             type="button"
             onClick={() => {
-              const ch = chargers.find(c => c.chargerCode === 'BAY-01-LOCAL') || chargers[0];
+              const ch = chargers.find(c => c.chargerCode === 'KLETECH-STATION-1') || chargers[0];
               const veh = vehicles.find(v => v.model.includes('Ather')) || vehicles[0];
               setSelectedChargerId(ch.id);
               if (veh) setSelectedVehicleId(veh.id);
               setChargeGoal('80_HEALTH');
               playSound('beep');
             }}
-            className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-cyan-400 text-left transition-all hover:scale-[1.02] group"
+            className="p-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 hover:border-cyan-400 text-left transition-all hover:scale-[1.02] group"
           >
-            <div className="flex items-center justify-between text-[11px] font-bold text-white mb-0.5">
-              <span className="group-hover:text-cyan-400">🛵 Ather 450X (3.7 kWh)</span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">BAY #01</span>
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-900 dark:text-white mb-0.5">
+              <span className="group-hover:text-cyan-600 dark:group-hover:text-cyan-400">🛵 Ather 450X (3.7 kWh)</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-mono">STATION #1</span>
             </div>
-            <p className="text-[10px] text-slate-400">Local Bay #01 &bull; 80% Health Goal &bull; UPI QR Online</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">KLETECH Station 1 &bull; 80% Health Goal &bull; UPI QR Online</p>
           </button>
 
           <button
             type="button"
             onClick={() => {
-              const ch = chargers.find(c => c.chargerCode === 'BAY-01-LOCAL') || chargers[0];
-              const veh = vehicles.find(v => v.model.includes('Ola')) || vehicles[1];
+              const ch = chargers.find(c => c.chargerCode === 'KLETECH-STATION-1') || chargers[0];
+              const veh = vehicles.find(v => v.model.includes('Ola')) || vehicles[1] || vehicles[0];
               setSelectedChargerId(ch.id);
               if (veh) setSelectedVehicleId(veh.id);
               setChargeGoal('100_FULL');
               playSound('beep');
             }}
-            className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-emerald-400 text-left transition-all hover:scale-[1.02] group"
+            className="p-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 hover:border-emerald-400 text-left transition-all hover:scale-[1.02] group"
           >
-            <div className="flex items-center justify-between text-[11px] font-bold text-white mb-0.5">
-              <span className="group-hover:text-emerald-400">🛵 Ola S1 Pro (4.0 kWh)</span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">100% FULL</span>
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-900 dark:text-white mb-0.5">
+              <span className="group-hover:text-emerald-600 dark:group-hover:text-emerald-400">🛵 Ola S1 Pro (4.0 kWh)</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-mono">100% FULL</span>
             </div>
-            <p className="text-[10px] text-slate-400">Standard ToD Rate (₹10.50/kWh) &bull; Full 195km Range</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">Standard ToD Rate (₹10.50/kWh) &bull; Full 195km Range</p>
           </button>
 
           <button
             type="button"
             onClick={() => {
-              const ch = chargers.find(c => c.chargerCode === 'BAY-02-VIP') || chargers[1];
+              const ch = chargers.find(c => c.chargerCode === 'KLETECH-STATION-2') || chargers[1] || chargers[0];
               const veh = vehicles.find(v => v.model.includes('TVS') || v.model.includes('Ather')) || vehicles[0];
               setSelectedChargerId(ch.id);
               if (veh) setSelectedVehicleId(veh.id);
               playSound('beep');
             }}
-            className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-amber-400 text-left transition-all hover:scale-[1.02] group"
+            className="p-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 hover:border-amber-400 text-left transition-all hover:scale-[1.02] group"
           >
-            <div className="flex items-center justify-between text-[11px] font-bold text-white mb-0.5">
-              <span className="group-hover:text-amber-400">🚑 Priority Bay #02 (VIP)</span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono">PREEMPTION</span>
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-900 dark:text-white mb-0.5">
+              <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400">🚑 Priority Station #2 (VIP)</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-mono">PREEMPTION</span>
             </div>
-            <p className="text-[10px] text-slate-400">Current ToD + ₹8.00 Premium &bull; 120s Eviction Protocol</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">Current ToD + ₹8.00 Premium &bull; 120s Eviction Protocol</p>
           </button>
         </div>
       </div>

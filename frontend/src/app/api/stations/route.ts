@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -13,12 +14,40 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  const session = await getSessionFromRequest(request);
+  if (!session) {
+    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  }
+  if (session.role !== 'ADMIN' && session.role !== 'OPERATOR') {
+    return NextResponse.json({ error: 'Forbidden: Operator or Administrator access required.' }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const { stationId, status, operatorId, powerRating, pricePerKwh, action } = body;
 
     if (!stationId) {
       return NextResponse.json({ error: 'Station ID is required.' }, { status: 400 });
+    }
+
+    // Operators may only manage their own assigned station and cannot reassign operators
+    if (session.role === 'OPERATOR') {
+      if (operatorId !== undefined) {
+        return NextResponse.json(
+          { error: 'Forbidden: Only Fleet Administrators can reassign station operators.' },
+          { status: 403 }
+        );
+      }
+      const liveOp = db.getUserById(session.userId);
+      const boundStationId = liveOp?.assignedStationId || session.assignedStationId;
+      const boundCharger = boundStationId ? db.getChargerById(boundStationId) : undefined;
+      const allowed = [boundStationId, boundCharger?.id, boundCharger?.chargerCode].filter(Boolean);
+      if (!allowed.includes(stationId)) {
+        return NextResponse.json(
+          { error: 'Forbidden: Operators can only modify their own assigned charging station.' },
+          { status: 403 }
+        );
+      }
     }
 
     // 1. Clear history action for dedicated station operator

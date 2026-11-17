@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
 
 export async function POST(request: Request) {
+  const session = await getSessionFromRequest(request);
+  if (!session) {
+    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  }
+  if (session.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden: Administrator access required.' }, { status: 403 });
+  }
+
   try {
     const data = db.factoryReset();
     return NextResponse.json({

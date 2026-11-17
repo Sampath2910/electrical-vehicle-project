@@ -1,25 +1,62 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { verifySessionToken } from '@/lib/auth';
 
-export function middleware(request: NextRequest) {
+const AUTH_REQUIRED_PREFIXES = [
+  '/dashboard',
+  '/wallet',
+  '/vehicles',
+  '/bills',
+  '/history',
+  '/charging',
+  '/profile',
+  '/settings',
+];
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('jwt_token')?.value;
+  const session = await verifySessionToken(token);
 
-  // Protect Admin routes
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-    if (!token) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/auth/login/admin';
-      return NextResponse.redirect(url);
+  const redirectTo = (targetPath: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = targetPath;
+    url.search = '';
+    return NextResponse.redirect(url);
+  };
+
+  // 1. Live telemetry route: shared by ADMIN and OPERATOR
+  if (pathname === '/admin/live' || pathname.startsWith('/admin/live/')) {
+    if (!session) return redirectTo('/auth/login/admin');
+    if (session.role !== 'ADMIN' && session.role !== 'OPERATOR') {
+      return redirectTo('/dashboard');
     }
+    return NextResponse.next();
   }
 
-  // Protect Operator routes
-  if (pathname.startsWith('/operator') && pathname !== '/operator/login') {
-    if (!token) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/auth/login/operator';
-      return NextResponse.redirect(url);
+  // 2. All other Admin routes: strictly ADMIN only
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    if (!session) return redirectTo('/auth/login/admin');
+    if (session.role !== 'ADMIN') {
+      return redirectTo(session.role === 'OPERATOR' ? '/operator' : '/dashboard');
     }
+    return NextResponse.next();
+  }
+
+  // 3. Operator Console routes: strictly OPERATOR or ADMIN
+  if (pathname === '/operator' || pathname.startsWith('/operator/')) {
+    if (!session) return redirectTo('/auth/login/operator');
+    if (session.role !== 'OPERATOR' && session.role !== 'ADMIN') {
+      return redirectTo('/dashboard');
+    }
+    return NextResponse.next();
+  }
+
+  // 4. Authenticated Driver / User portal routes
+  const requiresAuth = AUTH_REQUIRED_PREFIXES.some(
+    prefix => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+  if (requiresAuth && !session) {
+    return redirectTo('/auth/login/user');
   }
 
   return NextResponse.next();
@@ -29,5 +66,13 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/operator/:path*',
+    '/dashboard/:path*',
+    '/wallet/:path*',
+    '/vehicles/:path*',
+    '/bills/:path*',
+    '/history/:path*',
+    '/charging/:path*',
+    '/profile/:path*',
+    '/settings/:path*',
   ],
 };

@@ -43,16 +43,19 @@ function OperatorConsoleContent() {
 
   const searchParams = useSearchParams();
   const queryStationId = searchParams.get('stationId');
-  const [selectedStationId, setSelectedStationId] = useState<string>(queryStationId || currentUser?.assignedStationId || 'ch-101');
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const [selectedStationId, setSelectedStationId] = useState<string>(
+    (isAdmin ? queryStationId : null) || currentUser?.assignedStationId || 'ch-101'
+  );
   const [allStations, setAllStations] = useState<any[]>([]);
 
   useEffect(() => {
-    if (queryStationId) {
+    if (currentUser?.role === 'ADMIN' && queryStationId) {
       setSelectedStationId(queryStationId);
     } else if (currentUser?.assignedStationId) {
       setSelectedStationId(currentUser.assignedStationId);
     }
-  }, [queryStationId, currentUser?.assignedStationId]);
+  }, [queryStationId, currentUser?.role, currentUser?.assignedStationId]);
 
   // If admin, load all stations for dropdown switching
   useEffect(() => {
@@ -105,19 +108,10 @@ function OperatorConsoleContent() {
 
   const handleToggleStatus = async (newStatus: Charger['status']) => {
     try {
-      playSound('beep');
       updateChargerStatus(assignedStationId, newStatus);
-      const res = await fetch('/api/stations', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stationId: assignedStationId, status: newStatus }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setActionMessage(`Station status updated to ${newStatus}`);
-        fetchStats();
-        setTimeout(() => setActionMessage(''), 3000);
-      }
+      setActionMessage(`Station status updated to ${newStatus}`);
+      setTimeout(() => fetchStats(), 250);
+      setTimeout(() => setActionMessage(''), 3000);
     } catch (err) {
       console.error(err);
     }
@@ -125,20 +119,11 @@ function OperatorConsoleContent() {
 
   const handleUpdateRating = async (newRating: number) => {
     try {
-      playSound('beep');
       const calculatedTariff = getTariffForKw(newRating);
       updateChargerRating(assignedStationId, newRating);
-      const res = await fetch('/api/stations', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stationId: assignedStationId, powerRating: newRating, pricePerKwh: calculatedTariff }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setActionMessage(`Station power rating updated to ${newRating} kW (Coupled Tariff: ₹${calculatedTariff.toFixed(2)}/kWh)`);
-        fetchStats();
-        setTimeout(() => setActionMessage(''), 3500);
-      }
+      setActionMessage(`Station power rating updated to ${newRating} kW (Coupled Tariff: ₹${calculatedTariff.toFixed(2)}/kWh)`);
+      setTimeout(() => fetchStats(), 250);
+      setTimeout(() => setActionMessage(''), 3500);
     } catch (err) {
       console.error(err);
     }

@@ -61,26 +61,26 @@ export default function AdminSettingsPage() {
         <div className="space-y-3 text-xs">
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <span className="font-bold text-slate-900 dark:text-white block">PostgreSQL Primary Database</span>
-              <span className="text-slate-600 dark:text-slate-400 text-[11px]">HikariCP Pool: 10 connections active</span>
+              <span className="font-bold text-slate-900 dark:text-white block">Authoritative Local Fleet Database (db.json)</span>
+              <span className="text-slate-600 dark:text-slate-400 text-[11px]">Persists accounts, station bindings, wallets, sessions, and tax invoices</span>
             </div>
-            <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">CONNECTED</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">ACTIVE</span>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <span className="font-bold text-slate-900 dark:text-white block">Redis Telemetry Cache</span>
-              <span className="text-slate-600 dark:text-slate-400 text-[11px]">TTL: 60s for active session states</span>
+              <span className="font-bold text-slate-900 dark:text-white block">ThingSpeak IoT Cloud Telemetry (Channel #3533059)</span>
+              <span className="text-slate-600 dark:text-slate-400 text-[11px]">90-second UTC freshness threshold &bull; Zero-display safety when hardware stops</span>
             </div>
-            <span className="text-cyan-600 dark:text-cyan-400 font-mono font-bold">CACHE_ACTIVE</span>
+            <span className="text-cyan-600 dark:text-cyan-400 font-mono font-bold">CONFIGURED</span>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <span className="font-bold text-slate-900 dark:text-white block">MQTT Broker (Paho Client)</span>
-              <span className="text-slate-600 dark:text-slate-400 text-[11px]">TLS 1.3 encrypted device channel</span>
+              <span className="font-bold text-slate-900 dark:text-white block">Signed HMAC-SHA256 Role Session Guard</span>
+              <span className="text-slate-600 dark:text-slate-400 text-[11px]">HttpOnly jwt_token cookie with strict USER / OPERATOR / ADMIN isolation</span>
             </div>
-            <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">ONLINE</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">ENFORCED</span>
           </div>
         </div>
       </div>

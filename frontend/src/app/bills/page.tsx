@@ -22,49 +22,66 @@ export default function BillsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {bills.map((bill) => (
-          <div key={bill.id} className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 space-y-4 hover:border-cyan-500/40 transition-all shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase font-mono">Invoice Number</span>
-                <span className="text-base font-mono font-extrabold text-cyan-700 dark:text-cyan-400">{bill.billNumber}</span>
+      {bills.length === 0 ? (
+        <div className="glass-card rounded-3xl p-12 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 text-center space-y-3 shadow-sm">
+          <FileText className="w-10 h-10 text-cyan-600 dark:text-cyan-400 mx-auto" />
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">No Digital Invoices Yet</h3>
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+            Completed charging sessions automatically generate audited Section 6 tax invoices here.
+          </p>
+          <Link
+            href="/charging/start"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white dark:text-navy-950 text-xs font-bold transition-colors"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>Start a Charging Session</span>
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {bills.map((bill) => (
+            <div key={bill.id} className="glass-card rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900/60 space-y-4 hover:border-cyan-500/40 transition-all shadow-sm">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase font-mono">Invoice Number</span>
+                  <span className="text-base font-mono font-extrabold text-cyan-700 dark:text-cyan-400">{bill.billNumber}</span>
+                </div>
+                <StatusBadge status={bill.status} size="sm" />
               </div>
-              <StatusBadge status={bill.status} size="sm" />
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Station</span>
-                <span className="font-bold text-slate-900 dark:text-white">{bill.chargerName}</span>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Station</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{bill.chargerName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 text-[10px] block">ToD Slot</span>
+                  <span className="text-purple-700 dark:text-purple-300 font-mono font-bold">{bill.todSlotActive || 'S_2: Standard'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Energy Delivered</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{bill.energyKwh.toFixed(3)} kWh</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Total Amount (Inc. 18% GST)</span>
+                  <span className="font-extrabold text-cyan-700 dark:text-cyan-400 text-sm font-mono">₹{bill.totalAmount.toFixed(2)}</span>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 text-[10px] block">ToD Slot</span>
-                <span className="text-purple-700 dark:text-purple-300 font-mono font-bold">{bill.todSlotActive || 'S_2: Standard'}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Energy Delivered</span>
-                <span className="font-bold text-slate-900 dark:text-white">{bill.energyKwh.toFixed(3)} kWh</span>
-              </div>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Total Amount (Inc. 18% GST)</span>
-                <span className="font-extrabold text-cyan-700 dark:text-cyan-400 text-sm font-mono">₹{bill.totalAmount.toFixed(2)}</span>
-              </div>
-            </div>
 
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Snapshot Rate: ₹{bill.tariffRate.toFixed(2)}/kWh</span>
-              <Link
-                href={`/bills/${bill.id}`}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-cyan-500 hover:text-white dark:bg-navy-800 dark:hover:bg-cyan-500 dark:hover:text-navy-950 text-cyan-700 dark:text-cyan-400 text-xs font-semibold border border-slate-200 dark:border-transparent transition-all flex items-center gap-1 shadow-sm"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>View Full Bill</span>
-              </Link>
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Snapshot Rate: ₹{bill.tariffRate.toFixed(2)}/kWh</span>
+                <Link
+                  href={`/bills/${bill.id}`}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-cyan-500 hover:text-white dark:bg-navy-800 dark:hover:bg-cyan-500 dark:hover:text-navy-950 text-cyan-700 dark:text-cyan-400 text-xs font-semibold border border-slate-200 dark:border-transparent transition-all flex items-center gap-1 shadow-sm"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>View Full Bill</span>
+                </Link>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
     </div>
   );

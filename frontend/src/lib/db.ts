@@ -1,11 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import { User, Charger, ChargingSession } from '@/types/ev';
+import { User, Charger, ChargingSession, Wallet, WalletTransaction, Vehicle, Bill } from '@/types/ev';
 
 export interface DatabaseSchema {
   users: (User & { passwordHash?: string })[];
   chargers: Charger[];
   sessions: ChargingSession[];
+  wallets?: Record<string, Wallet>;
+  walletTransactions?: WalletTransaction[];
+  vehicles?: Vehicle[];
+  bills?: Bill[];
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -168,7 +172,23 @@ const INITIAL_DATA: DatabaseSchema = {
     },
   ],
   sessions: [],
+  wallets: {},
+  walletTransactions: [],
+  vehicles: [],
+  bills: [],
 };
+
+function normalizeSchema(raw: DatabaseSchema): DatabaseSchema {
+  return {
+    users: Array.isArray(raw.users) ? raw.users : [],
+    chargers: Array.isArray(raw.chargers) ? raw.chargers : INITIAL_DATA.chargers,
+    sessions: Array.isArray(raw.sessions) ? raw.sessions : [],
+    wallets: raw.wallets && typeof raw.wallets === 'object' ? raw.wallets : {},
+    walletTransactions: Array.isArray(raw.walletTransactions) ? raw.walletTransactions : [],
+    vehicles: Array.isArray(raw.vehicles) ? raw.vehicles : [],
+    bills: Array.isArray(raw.bills) ? raw.bills : [],
+  };
+}
 
 function ensureDbFile(): DatabaseSchema {
   try {
@@ -177,13 +197,13 @@ function ensureDbFile(): DatabaseSchema {
     }
     if (!fs.existsSync(DB_FILE)) {
       fs.writeFileSync(DB_FILE, JSON.stringify(INITIAL_DATA, null, 2), 'utf-8');
-      return INITIAL_DATA;
+      return normalizeSchema(INITIAL_DATA);
     }
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(raw);
+    return normalizeSchema(JSON.parse(raw));
   } catch (err) {
     console.error('[DB] Fallback to in-memory store:', err);
-    return INITIAL_DATA;
+    return normalizeSchema(INITIAL_DATA);
   }
 }
 
@@ -245,55 +265,39 @@ export const db = {
     const cleanEmail = (user.email || '').trim().toLowerCase();
     const cleanName = (user.name || 'Anonymous User').trim();
     const cleanPhone = (user.phone || '+91 00000 00000').trim();
+    const cleanRole = (user.role || 'USER') as User['role'];
 
-    let existing = data.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
+    if (!['USER', 'OPERATOR', 'ADMIN'].includes(cleanRole)) {
+      const err: any = new Error('Invalid account role specified.');
+      err.statusCode = 400;
+      throw err;
+    }
 
-    // Resolve charger helper matching id, code, or index fallback
+    const existing = data.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
+    if (existing) {
+      const err: any = new Error('An account with this email already exists. Please sign in instead.');
+      err.statusCode = 409;
+      throw err;
+    }
+
+    // Resolve charger helper matching id or chargerCode strictly (no silent fallback)
     const resolveCharger = (stationIdentifier?: string): Charger | undefined => {
       if (!stationIdentifier) return undefined;
-      let c = data.chargers.find(ch => 
-        ch.id === stationIdentifier || 
+      return data.chargers.find(ch =>
+        ch.id === stationIdentifier ||
         ch.chargerCode === stationIdentifier ||
         (ch.chargerCode && ch.chargerCode.toLowerCase() === stationIdentifier.toLowerCase())
       );
-      if (c) return c;
-      // If UUID was sent, attempt matching by name or fallback to station 1
-      return data.chargers[0];
     };
 
-    if (existing) {
-      // If user exists, update their profile and station mapping seamlessly
-      existing.name = cleanName || existing.name;
-      existing.phone = cleanPhone || existing.phone;
-      if (user.password) existing.passwordHash = user.password;
-      if (user.operatorBadgeId) existing.operatorBadgeId = user.operatorBadgeId.trim();
-      if (user.role) existing.role = user.role;
-      if (user.vehicleModel) existing.vehicleModel = user.vehicleModel;
-
-      if (existing.role === 'OPERATOR' && user.assignedStationId) {
-        const charger = resolveCharger(user.assignedStationId);
-        if (charger) {
-          data.users.forEach(u => {
-            if (u.id !== existing!.id && (u.assignedStationId === charger.id || u.assignedStationId === charger.chargerCode)) {
-              u.assignedStationId = undefined;
-            }
-          });
-          data.chargers.forEach(c => {
-            if (c.id !== charger.id && c.assignedOperatorId === existing!.id) {
-              c.assignedOperatorId = undefined;
-              c.assignedOperatorName = 'Unassigned';
-            }
-          });
-
-          charger.assignedOperatorId = existing.id;
-          charger.assignedOperatorName = `${existing.name} (${existing.operatorBadgeId || 'OP'})`;
-          existing.assignedStationId = charger.id;
-        }
+    let boundCharger: Charger | undefined;
+    if (cleanRole === 'OPERATOR') {
+      boundCharger = resolveCharger(user.assignedStationId);
+      if (!boundCharger) {
+        const err: any = new Error('Selected EV charging station was not found.');
+        err.statusCode = 400;
+        throw err;
       }
-
-      saveDbFile(data);
-      const { passwordHash, ...safeUser } = existing;
-      return safeUser as User;
     }
 
     const newUser = {
@@ -301,9 +305,9 @@ export const db = {
       name: cleanName,
       email: cleanEmail,
       phone: cleanPhone,
-      role: user.role || 'USER',
+      role: cleanRole,
       passwordHash: user.password,
-      assignedStationId: user.assignedStationId,
+      assignedStationId: boundCharger ? boundCharger.id : undefined,
       operatorBadgeId: user.operatorBadgeId ? user.operatorBadgeId.trim() : undefined,
       vehicleModel: user.vehicleModel,
       avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`,
@@ -313,28 +317,23 @@ export const db = {
     data.users.push(newUser);
 
     // If operator and station assigned, update charger's assignedOperator
-    if (newUser.role === 'OPERATOR' && newUser.assignedStationId) {
-      const charger = resolveCharger(newUser.assignedStationId);
-      if (charger) {
-        // Unassign old operator from this charger
-        data.users.forEach(u => {
-          if (u.id !== newUser.id && (u.assignedStationId === charger.id || u.assignedStationId === charger.chargerCode)) {
-            u.assignedStationId = undefined;
-          }
-        });
+    if (newUser.role === 'OPERATOR' && boundCharger) {
+      data.users.forEach(u => {
+        if (u.id !== newUser.id && (u.assignedStationId === boundCharger!.id || u.assignedStationId === boundCharger!.chargerCode)) {
+          u.assignedStationId = undefined;
+        }
+      });
 
-        // Clear any other charger currently assigned to this user
-        data.chargers.forEach(c => {
-          if (c.id !== charger.id && c.assignedOperatorId === newUser.id) {
-            c.assignedOperatorId = undefined;
-            c.assignedOperatorName = 'Unassigned';
-          }
-        });
+      data.chargers.forEach(c => {
+        if (c.id !== boundCharger!.id && c.assignedOperatorId === newUser.id) {
+          c.assignedOperatorId = undefined;
+          c.assignedOperatorName = 'Unassigned';
+        }
+      });
 
-        charger.assignedOperatorId = newUser.id;
-        charger.assignedOperatorName = `${newUser.name} (${newUser.operatorBadgeId || 'OP'})`;
-        newUser.assignedStationId = charger.id;
-      }
+      boundCharger.assignedOperatorId = newUser.id;
+      boundCharger.assignedOperatorName = `${newUser.name} (${newUser.operatorBadgeId || 'OP'})`;
+      newUser.assignedStationId = boundCharger.id;
     }
 
     saveDbFile(data);
@@ -384,14 +383,11 @@ export const db = {
 
   assignOperatorToStation: (stationId: string, operatorId: string): Charger | null => {
     const data = ensureDbFile();
-    let charger = data.chargers.find(c => 
+    const charger = data.chargers.find(c => 
       c.id === stationId || 
       c.chargerCode === stationId ||
       (c.chargerCode && c.chargerCode.toLowerCase() === stationId.toLowerCase())
     );
-    if (!charger && data.chargers.length > 0) {
-      charger = data.chargers[0];
-    }
     if (!charger) return null;
 
     if (!operatorId || operatorId === 'none' || operatorId === 'unassigned') {
@@ -465,10 +461,6 @@ export const db = {
         charger = data.chargers.find(c => c.id === op.assignedStationId || c.chargerCode === op.assignedStationId);
       }
     }
-    if (!charger && data.chargers.length > 0) {
-      charger = data.chargers[0];
-    }
-
     if (!charger) {
       return null;
     }
@@ -530,6 +522,176 @@ export const db = {
       })),
       operators: data.users.filter(u => u.role === 'OPERATOR').map(({ passwordHash, ...op }) => op),
     };
+  },
+
+  // PER-USER & FLEET PERSISTENCE (WALLET, VEHICLES, SESSIONS, BILLS)
+  getUserState: (userId: string, role: User['role']) => {
+    const data = ensureDbFile();
+    const now = new Date().toISOString();
+    const wallets = data.wallets || {};
+    const wallet: Wallet = wallets[userId] || {
+      id: `wal-${userId}`,
+      userId,
+      balance: 0,
+      currency: 'INR',
+      updatedAt: now,
+    };
+    const allTx = data.walletTransactions || [];
+    const allVehicles = data.vehicles || [];
+    const allBills = data.bills || [];
+    const allSessions = data.sessions || [];
+
+    return {
+      wallet,
+      walletTransactions: role === 'ADMIN' ? allTx : allTx.filter(tx => tx.walletId === wallet.id),
+      vehicles: allVehicles.filter(v => v.userId === userId),
+      sessions: role === 'ADMIN' ? allSessions : allSessions.filter(s => s.userId === userId),
+      bills: role === 'ADMIN' ? allBills : allBills.filter(b => b.userId === userId),
+      chargers: data.chargers,
+    };
+  },
+
+  topUpWallet: (userId: string, amount: number) => {
+    const data = ensureDbFile();
+    const now = new Date().toISOString();
+    if (!data.wallets) data.wallets = {};
+    if (!data.walletTransactions) data.walletTransactions = [];
+
+    const existing: Wallet = data.wallets[userId] || {
+      id: `wal-${userId}`,
+      userId,
+      balance: 0,
+      currency: 'INR',
+      updatedAt: now,
+    };
+
+    const updatedWallet: Wallet = {
+      ...existing,
+      balance: +(existing.balance + amount).toFixed(2),
+      updatedAt: now,
+    };
+    data.wallets[userId] = updatedWallet;
+
+    const tx: WalletTransaction = {
+      id: `wtx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      walletId: updatedWallet.id,
+      type: 'CREDIT',
+      amount,
+      reference: `UPI/ONLINE/${Math.floor(100000 + Math.random() * 900000)}`,
+      description: 'Wallet top-up via UPI Online Payment',
+      createdAt: now,
+    };
+    data.walletTransactions.unshift(tx);
+    saveDbFile(data);
+    return { wallet: updatedWallet, transaction: tx };
+  },
+
+  addVehicle: (userId: string, vehicle: Omit<Vehicle, 'id' | 'userId' | 'createdAt'>) => {
+    const data = ensureDbFile();
+    if (!data.vehicles) data.vehicles = [];
+    const newV: Vehicle = {
+      ...vehicle,
+      id: `veh-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      userId,
+      createdAt: new Date().toISOString(),
+    };
+    data.vehicles.push(newV);
+    saveDbFile(data);
+    return newV;
+  },
+
+  startSession: (session: ChargingSession) => {
+    const data = ensureDbFile();
+    data.sessions.unshift(session);
+    const charger = data.chargers.find(c => c.id === session.chargerId);
+    if (charger) {
+      charger.status = 'CHARGING';
+      charger.lastSeenAt = new Date().toISOString();
+    }
+    saveDbFile(data);
+    return { session, charger };
+  },
+
+  stopSession: (
+    userId: string,
+    sessionId: string,
+    meteredEnergyKwh: number,
+    durationSeconds: number,
+    penaltyApplies: boolean
+  ) => {
+    const data = ensureDbFile();
+    if (!data.bills) data.bills = [];
+    const idx = data.sessions.findIndex(s => s.id === sessionId);
+    if (idx === -1) return null;
+
+    const targetSession = data.sessions[idx];
+    const endTime = new Date().toISOString();
+    const finalEnergy = +Math.max(0, meteredEnergyKwh).toFixed(3);
+    const energySubtotal = +(finalEnergy * targetSession.tariffRate).toFixed(2);
+    const serviceFee = 5.0;
+    const taxableSubtotal = +(energySubtotal + serviceFee).toFixed(2);
+    const gstTax = +(taxableSubtotal * 0.18).toFixed(2);
+    const penaltyFee = penaltyApplies ? 500.0 : 0.0;
+    const finalTotal = +(taxableSubtotal + gstTax + penaltyFee).toFixed(2);
+
+    const updatedSession: ChargingSession = {
+      ...targetSession,
+      status: 'COMPLETED',
+      endTime,
+      energyKwh: finalEnergy,
+      durationSeconds: Math.max(0, Math.round(durationSeconds)),
+      finalCost: finalTotal,
+      estimatedCost: finalTotal,
+      serviceFee,
+      gstAmount: gstTax,
+      penaltyAmount: penaltyFee,
+      paymentStatus: 'SUCCESS',
+    };
+    data.sessions[idx] = updatedSession;
+
+    const charger = data.chargers.find(c => c.id === targetSession.chargerId);
+    if (charger) {
+      charger.status = 'AVAILABLE';
+      charger.totalEarnedRevenue = +((charger.totalEarnedRevenue ?? 0) + finalTotal).toFixed(2);
+      charger.totalEnergyConsumedKwh = +((charger.totalEnergyConsumedKwh ?? 0) + finalEnergy).toFixed(3);
+      charger.lastSeenAt = endTime;
+    }
+
+    const newBill: Bill = {
+      id: `bill-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      billNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      sessionId,
+      userId: targetSession.userId || userId,
+      chargerName: targetSession.chargerName,
+      energyKwh: finalEnergy,
+      tariffRate: targetSession.tariffRate,
+      subtotal: energySubtotal,
+      serviceFee,
+      tax: gstTax,
+      penaltyAmount: penaltyFee,
+      totalAmount: finalTotal,
+      todSlotActive: targetSession.todSlotActive || 'S_2: Standard (06:00 AM - 06:00 PM)',
+      status: 'PAID',
+      issuedAt: endTime,
+      paidAt: endTime,
+    };
+    data.bills.unshift(newBill);
+
+    // Also log debit transaction in ledger for global auditability
+    if (!data.walletTransactions) data.walletTransactions = [];
+    const debitTx: WalletTransaction = {
+      id: `wtx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      walletId: `wal-${targetSession.userId || userId}`,
+      type: 'DEBIT',
+      amount: finalTotal,
+      reference: newBill.billNumber,
+      description: `EV Charging @ ${targetSession.chargerName} (${finalEnergy.toFixed(3)} kWh)`,
+      createdAt: endTime,
+    };
+    data.walletTransactions.unshift(debitTx);
+
+    saveDbFile(data);
+    return { session: updatedSession, bill: newBill, charger, transaction: debitTx };
   },
 
   // SESSION & PAYMENT RECORDING

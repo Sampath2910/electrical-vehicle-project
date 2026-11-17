@@ -72,8 +72,8 @@ export default function AdminOperationsDashboard() {
     );
   }
 
-  const totalRevenue = adminStats?.totalFleetRevenue ?? 12490.00;
-  const totalEnergy = adminStats?.totalFleetEnergyKwh ?? 1086.80;
+  const totalRevenue = adminStats?.totalFleetRevenue ?? 0;
+  const totalEnergy = adminStats?.totalFleetEnergyKwh ?? 0;
   const stationsList = adminStats?.stations ?? [];
 
   return (
@@ -153,8 +153,8 @@ export default function AdminOperationsDashboard() {
         {/* TOTAL ACTIVE STATIONS */}
         <MetricCard
           title="Total Stations in Fleet"
-          value={adminStats?.totalStations ?? 5}
-          subtitle={`${adminStats?.availableStations ?? 4} Available • ${adminStats?.chargingStations ?? 1} In-Session`}
+          value={adminStats?.totalStations ?? 0}
+          subtitle={`${adminStats?.availableStations ?? 0} Available • ${adminStats?.chargingStations ?? 0} In-Session`}
           icon={Building2}
           variant="default"
         />
@@ -162,7 +162,7 @@ export default function AdminOperationsDashboard() {
         {/* ASSIGNED STATION OPERATORS */}
         <MetricCard
           title="On-Duty Operators"
-          value={adminStats?.totalOperators ?? 2}
+          value={adminStats?.totalOperators ?? 0}
           subtitle="Dedicated per-station personnel"
           icon={UserCheck}
           variant="amber"

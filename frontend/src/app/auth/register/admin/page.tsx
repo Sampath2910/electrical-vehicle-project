@@ -126,13 +126,13 @@ export default function AdminRegisterPage() {
               <input
                 type="password"
                 required
-                placeholder="Enter ADMIN2026"
+                placeholder="Enter Admin Master Passcode"
                 value={adminMasterKey}
                 onChange={(e) => setAdminMasterKey(e.target.value)}
                 className="w-full bg-navy-950 border border-rose-500/40 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-400 font-mono"
               />
             </div>
-            <p className="text-[10px] text-slate-400">Default authorization passcode for evaluation: <code className="text-rose-400">ADMIN2026</code></p>
+            <p className="text-[10px] text-slate-400">Authorized personnel only. Contact your fleet administrator for the master passcode.</p>
           </div>
 
           <div className="space-y-1">

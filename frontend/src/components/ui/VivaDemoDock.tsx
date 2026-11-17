@@ -18,8 +18,13 @@ import { useStore } from '@/lib/storeContext';
 
 export const VivaDemoDock: React.FC = () => {
   const router = useRouter();
-  const { playSound, chargers, startChargingSession } = useStore();
+  const { currentUser, playSound, chargers, startChargingSession } = useStore();
   const [alertNotice, setAlertNotice] = useState<string | null>(null);
+
+  // Only show quick charging simulation dock for signed-in EV Drivers (USER role)
+  if (!currentUser || currentUser.role !== 'USER') {
+    return null;
+  }
 
   const firstAvailableCharger = chargers.find(c => c.status === 'AVAILABLE') || chargers[0];
 

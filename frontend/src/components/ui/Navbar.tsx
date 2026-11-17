@@ -312,8 +312,51 @@ export const Navbar: React.FC = () => {
                         )}
                       </div>
 
+                      {/* Account & Role Quick Links */}
+                      <div className="space-y-0.5 pt-1 border-t border-slate-200 dark:border-slate-800">
+                        <Link
+                          href="/profile"
+                          onClick={() => setRoleDropdownOpen(false)}
+                          className="w-full px-3 py-1.5 text-xs rounded-xl flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                        >
+                          <UserIcon className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                          <span>My Profile</span>
+                        </Link>
+                        <Link
+                          href={currentUser.role === 'ADMIN' ? '/admin/settings' : '/settings'}
+                          onClick={() => setRoleDropdownOpen(false)}
+                          className="w-full px-3 py-1.5 text-xs rounded-xl flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                          <span>{currentUser.role === 'ADMIN' ? 'Admin Settings & Reset' : 'System Settings'}</span>
+                        </Link>
+
+                        {currentUser.role === 'ADMIN' && (
+                          <div className="pt-1 mt-1 border-t border-slate-200 dark:border-slate-800 space-y-0.5">
+                            <span className="px-3 text-[9px] uppercase font-bold tracking-wider text-slate-400 block">
+                              Admin Directory
+                            </span>
+                            <Link href="/admin/users" onClick={() => setRoleDropdownOpen(false)} className="block px-3 py-1.5 text-xs rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                              Users &amp; Roles
+                            </Link>
+                            <Link href="/admin/sessions" onClick={() => setRoleDropdownOpen(false)} className="block px-3 py-1.5 text-xs rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                              Global Sessions
+                            </Link>
+                            <Link href="/admin/payments" onClick={() => setRoleDropdownOpen(false)} className="block px-3 py-1.5 text-xs rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                              Payments Ledger
+                            </Link>
+                            <Link href="/admin/faults" onClick={() => setRoleDropdownOpen(false)} className="block px-3 py-1.5 text-xs rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                              Fault Center
+                            </Link>
+                            <Link href="/admin/analytics" onClick={() => setRoleDropdownOpen(false)} className="block px-3 py-1.5 text-xs rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                              Fleet Analytics
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+
                       {/* Log Out Option (Operators cannot change roles directly) */}
-                      <div className="pt-1.5 border-t border-slate-800">
+                      <div className="pt-1.5 border-t border-slate-200 dark:border-slate-800">
                         <button
                           onClick={() => {
                             setRoleDropdownOpen(false);
@@ -361,14 +404,20 @@ export const Navbar: React.FC = () => {
       {mobileMenuOpen && (
         <div className="lg:hidden border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl px-4 py-4 space-y-4 shadow-2xl animate-fadeIn">
 
-          {/* Quick Wallet Bar on Mobile */}
-          <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-slate-300">Wallet Balance:</span>
-            </div>
-            <span className="text-sm font-extrabold text-white font-mono">₹{wallet.balance.toFixed(2)}</span>
-          </div>
+          {/* Quick Wallet Bar on Mobile (Drivers ONLY) */}
+          {mounted && currentUser?.role === 'USER' && (
+            <Link
+              href="/wallet"
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                <span className="text-xs text-slate-700 dark:text-slate-300">Wallet Balance:</span>
+              </div>
+              <span className="text-sm font-extrabold text-slate-900 dark:text-white font-mono">₹{wallet.balance.toFixed(2)}</span>
+            </Link>
+          )}
 
           {/* Navigation Links */}
           <div className="space-y-1">

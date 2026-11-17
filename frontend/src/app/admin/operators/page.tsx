@@ -117,6 +117,7 @@ export default function AdminOperatorsPage() {
           role: 'OPERATOR',
           assignedStationId: operatorForm.assignedStationId,
           operatorBadgeId: operatorForm.badgeId || `KLE-OP-${Math.floor(100 + Math.random() * 900)}`,
+          skipSessionCookie: true,
         }),
       });
 

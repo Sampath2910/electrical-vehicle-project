@@ -1,15 +1,47 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
+import { getSessionFromRequest } from '@/lib/auth';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export async function GET(request: Request) {
+  const session = await getSessionFromRequest(request);
+  if (!session) {
+    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  }
+  if (session.role !== 'OPERATOR' && session.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden: Operator or Administrator access required.' }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
-    const stationId = searchParams.get('stationId');
-    const operatorId = searchParams.get('operatorId');
-    const identifier = stationId || operatorId;
+    const requestedStationId = searchParams.get('stationId');
+    const requestedOperatorId = searchParams.get('operatorId');
+
+    // Enforce strict station isolation for OPERATOR accounts
+    let identifier = requestedStationId || requestedOperatorId;
+    if (session.role === 'OPERATOR') {
+      const liveOp = db.getUserById(session.userId);
+      const boundStationId = liveOp?.assignedStationId || session.assignedStationId;
+      if (!boundStationId) {
+        return NextResponse.json(
+          { error: 'No charging station is currently assigned to your operator account.' },
+          { status: 403 }
+        );
+      }
+      const boundCharger = db.getChargerById(boundStationId);
+      const allowedIds = new Set(
+        [boundStationId, boundCharger?.id, boundCharger?.chargerCode, session.userId].filter(Boolean)
+      );
+      if (requestedStationId && !allowedIds.has(requestedStationId)) {
+        return NextResponse.json(
+          { error: 'Forbidden: Operators may only access their own assigned station.' },
+          { status: 403 }
+        );
+      }
+      identifier = boundStationId;
+    }
 
     if (!identifier) {
       return NextResponse.json(
@@ -17,6 +49,8 @@ export async function GET(request: Request) {
         { status: 400 }
       );
     }
+    const stationId = session.role === 'OPERATOR' ? identifier : requestedStationId;
+    const operatorId = session.role === 'OPERATOR' ? null : requestedOperatorId;
 
     try {
       const cookieStore = await cookies();

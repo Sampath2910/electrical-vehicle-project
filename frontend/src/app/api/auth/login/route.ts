@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { signSessionToken } from '@/lib/auth';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -35,13 +36,10 @@ export async function POST(request: Request) {
     const user = db.getUserByIdentifier(rawId);
 
     if (user) {
-      // User account exists — check password
+      // Strictly validate against this specific account's stored password (no universal backdoors)
       const isPasswordValid = (
         user.passwordHash === cleanPassword ||
-        (user as any).password === cleanPassword ||
-        cleanPassword === 'admin123' ||
-        cleanPassword === 'operator123' ||
-        cleanPassword === 'password123'
+        (user as any).password === cleanPassword
       );
 
       if (!isPasswordValid) {
@@ -52,9 +50,14 @@ export async function POST(request: Request) {
         );
       }
 
-      // Password is correct — authenticate and issue session
+      // Password is correct — authenticate and issue signed role-bearing session token
       const { passwordHash, ...safeUser } = user;
-      const mockJwt = `mock_jwt_${user.id}_${Date.now()}`;
+      const signedJwt = await signSessionToken({
+        userId: user.id,
+        role: user.role,
+        email: user.email,
+        assignedStationId: user.assignedStationId,
+      });
       const targetRedirect = user.role === 'OPERATOR' ? '/operator' : user.role === 'ADMIN' ? '/admin' : '/dashboard';
 
       const response = NextResponse.json({
@@ -63,13 +66,13 @@ export async function POST(request: Request) {
           ? `Authenticated as ${user.role}. Redirecting to your console.` 
           : 'Login successful.',
         user: safeUser,
-        token: mockJwt,
+        token: signedJwt,
         role: user.role,
         redirectTo: targetRedirect,
         roleMismatch: Boolean(expectedRole && user.role !== expectedRole),
       });
 
-      response.cookies.set('jwt_token', mockJwt, {
+      response.cookies.set('jwt_token', signedJwt, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',

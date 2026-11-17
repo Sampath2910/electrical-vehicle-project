@@ -58,7 +58,12 @@ interface StoreContextType {
     vehicleId?: string,
     isPriorityBayConsentGiven?: boolean
   ) => Promise<ChargingSession>;
-  stopChargingSession: (sessionId: string, penaltyApplies?: boolean) => Promise<ChargingSession>;
+  stopChargingSession: (
+    sessionId: string,
+    penaltyApplies?: boolean,
+    meteredEnergyKwh?: number,
+    elapsedDurationSec?: number
+  ) => Promise<ChargingSession>;
 
   // PDF Section 2: Priority Preemption Protocol (120-second eviction)
   isEvictionWarningActive: boolean;
@@ -164,7 +169,35 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [bills, setBills] = useState<Bill[]>(mockBills);
   const [faults, setFaults] = useState<Fault[]>(mockFaults);
   const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
-  const [dataMode] = useState<'mock' | 'real'>('mock');
+  const [dataMode] = useState<'mock' | 'real'>('real');
+
+  // Hydrate persisted per-user (or global admin) state from db.json whenever user session changes
+  useEffect(() => {
+    if (!currentUser) {
+      setSessions([]);
+      setWallet(mockWallet);
+      setWalletTransactions([]);
+      setVehicles([]);
+      setBills([]);
+      return;
+    }
+
+    fetch('/api/user/state', { cache: 'no-store' })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data && data.success) {
+          if (data.wallet) setWallet(data.wallet);
+          if (Array.isArray(data.walletTransactions)) setWalletTransactions(data.walletTransactions);
+          if (Array.isArray(data.vehicles)) setVehicles(data.vehicles);
+          if (Array.isArray(data.sessions)) setSessions(data.sessions);
+          if (Array.isArray(data.bills)) setBills(data.bills);
+          if (Array.isArray(data.chargers) && data.chargers.length > 0) setChargers(data.chargers);
+        }
+      })
+      .catch(err => {
+        console.warn('Persisted user state sync skipped:', err);
+      });
+  }, [currentUser]);
 
   const updateUserSession = (user: User | null) => {
     setCurrentUser(user);
@@ -183,8 +216,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (typeof window !== 'undefined') {
       localStorage.removeItem('smart_ev_user');
       localStorage.removeItem('jwt_token');
-      localStorage.removeItem('tariffs');
-      window.location.href = '/auth/login';
+      localStorage.removeItem('smart_ev_tariffs');
+      fetch('/api/auth/logout', { method: 'POST' })
+        .catch(() => {})
+        .finally(() => {
+          window.location.href = '/auth/login';
+        });
     }
   };
 
@@ -429,22 +466,39 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       vehicleName: selectedVehicle ? `${selectedVehicle.model} (${selectedVehicle.registration})` : undefined,
       startTime: new Date().toISOString(),
       status: 'CHARGING',
-      energyKwh: 0.10,
-      durationSeconds: 5,
+      energyKwh: 0,
+      durationSeconds: 0,
       tariffRate: effectiveRate,
-      estimatedCost: +(0.10 * effectiveRate + 5.00 * 1.18).toFixed(2),
+      estimatedCost: +(5.00 * 1.18).toFixed(2),
       serviceFee: 5.00,
       gstAmount: +(5.00 * 0.18).toFixed(2),
       todSlotActive: todSlotDesc,
-      maxCurrentA: 14.1,
-      avgVoltageV: 230.2,
+      maxCurrentA: 0,
+      avgVoltageV: 0,
       isPriorityBay: isPriority,
       paymentMethod: 'QR_UPI',
       paymentStatus: 'SUCCESS',
     };
 
+    // Persist active session and CHARGING charger state to db.json
+    try {
+      const res = await fetch('/api/user/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start_session', session: newSession }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.charger) {
+          setChargers(prev => prev.map(c => c.id === chargerId ? data.charger : c));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to persist session start:', err);
+    }
+
     setSessions(prev => [newSession, ...prev]);
-    updateChargerStatus(chargerId, 'CHARGING');
+    setChargers(prev => prev.map(c => c.id === chargerId ? { ...c, status: 'CHARGING', lastSeenAt: new Date().toISOString() } : c));
     playSound('start');
 
     // Add notification
@@ -461,27 +515,34 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return newSession;
   };
 
-  const stopChargingSession = async (sessionId: string, penaltyApplies = false): Promise<ChargingSession> => {
-    let targetSession = sessions.find(s => s.id === sessionId);
+  const stopChargingSession = async (
+    sessionId: string,
+    penaltyApplies = false,
+    meteredEnergyKwh?: number,
+    elapsedDurationSec?: number
+  ): Promise<ChargingSession> => {
+    const targetSession = sessions.find(s => s.id === sessionId);
     if (!targetSession) throw new Error('Session not found');
 
     const endTime = new Date().toISOString();
-    const finalEnergy = +(targetSession.energyKwh + 0.4).toFixed(2);
+    const finalEnergy = +(Math.max(0, meteredEnergyKwh ?? targetSession.energyKwh ?? 0)).toFixed(3);
+    const finalDuration = Math.max(0, Math.round(elapsedDurationSec ?? targetSession.durationSeconds ?? 0));
 
     // PDF Section 6 Official Billing Formula:
     // Total Billed Amount = (Energy kWh Delivered × ToD Rate) + Service Fee + 18% GST (+ Penalty)
     const energySubtotal = +(finalEnergy * targetSession.tariffRate).toFixed(2);
-    const serviceFee = 5.00; // Fixed Service Fee
+    const serviceFee = 5.00;
     const taxableSubtotal = +(energySubtotal + serviceFee).toFixed(2);
-    const gstTax = +(taxableSubtotal * 0.18).toFixed(2); // 18% GST
+    const gstTax = +(taxableSubtotal * 0.18).toFixed(2);
     const penaltyFee = penaltyApplies || penaltyApplied ? 500.00 : 0.00;
     const finalTotal = +(taxableSubtotal + gstTax + penaltyFee).toFixed(2);
 
-    const updatedSession: ChargingSession = {
+    let updatedSession: ChargingSession = {
       ...targetSession,
       status: 'COMPLETED',
       endTime,
       energyKwh: finalEnergy,
+      durationSeconds: finalDuration,
       finalCost: finalTotal,
       estimatedCost: finalTotal,
       serviceFee,
@@ -490,23 +551,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       paymentStatus: 'SUCCESS',
     };
 
-    setSessions(prev => prev.map(s => s.id === sessionId ? updatedSession : s));
-    setChargers(prev => prev.map(c => {
-      if (c.id === targetSession.chargerId) {
-        return {
-          ...c,
-          status: 'AVAILABLE',
-          totalEarnedRevenue: (c.totalEarnedRevenue ?? 0) + finalTotal,
-          totalEnergyConsumedKwh: (c.totalEnergyConsumedKwh ?? 0) + finalEnergy,
-          lastSeenAt: new Date().toISOString(),
-        };
-      }
-      return c;
-    }));
-    playSound(penaltyFee > 0 ? 'alert' : 'success');
-
-    // Create official digital bill conforming to PDF Section 6
-    const newBill: Bill = {
+    let newBill: Bill = {
       id: `bill-${Date.now()}`,
       billNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       sessionId,
@@ -524,6 +569,50 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       issuedAt: endTime,
       paidAt: endTime,
     };
+
+    // Persist completed session, bill, ledger entry, and reset charger status back to AVAILABLE in db.json
+    try {
+      const res = await fetch('/api/user/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'stop_session',
+          sessionId,
+          energyKwh: finalEnergy,
+          durationSeconds: finalDuration,
+          penaltyApplies: penaltyApplies || penaltyApplied,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.session) updatedSession = data.session;
+        if (data.bill) newBill = data.bill;
+        if (data.transaction) {
+          setWalletTransactions(prev => [data.transaction, ...prev]);
+        }
+        if (data.charger) {
+          setChargers(prev => prev.map(c => c.id === targetSession.chargerId ? data.charger : c));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to persist session stop:', err);
+    }
+
+    setSessions(prev => prev.map(s => s.id === sessionId ? updatedSession : s));
+    setChargers(prev => prev.map(c => {
+      if (c.id === targetSession.chargerId) {
+        return {
+          ...c,
+          status: 'AVAILABLE',
+          totalEarnedRevenue: +((c.totalEarnedRevenue ?? 0) + finalTotal).toFixed(2),
+          totalEnergyConsumedKwh: +((c.totalEnergyConsumedKwh ?? 0) + finalEnergy).toFixed(3),
+          lastSeenAt: endTime,
+        };
+      }
+      return c;
+    }));
+    playSound(penaltyFee > 0 ? 'alert' : 'success');
+
     setBills(prev => [newBill, ...prev]);
 
     setNotifications(prev => [{
@@ -539,6 +628,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const topUpWallet = async (amount: number) => {
+    try {
+      const res = await fetch('/api/user/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'topup_wallet', amount }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.wallet) setWallet(data.wallet);
+        if (data.transaction) setWalletTransactions(prev => [data.transaction, ...prev]);
+        playSound('success');
+        return;
+      }
+    } catch (err) {
+      console.error('Failed to persist wallet top-up:', err);
+    }
+
     const now = new Date().toISOString();
     setWallet(prev => ({ ...prev, balance: +(prev.balance + amount).toFixed(2), updatedAt: now }));
     setWalletTransactions(prev => [{
@@ -575,14 +681,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const addVehicle = (v: Omit<Vehicle, 'id' | 'userId' | 'createdAt'>) => {
-    const newV: Vehicle = {
+    const optimisticV: Vehicle = {
       ...v,
       id: `veh-${Date.now()}`,
       userId: currentUser?.id || 'guest-user',
       createdAt: new Date().toISOString(),
     };
-    setVehicles(prev => [...prev, newV]);
+    setVehicles(prev => [...prev, optimisticV]);
     playSound('success');
+
+    fetch('/api/user/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add_vehicle', vehicle: v }),
+    })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data?.vehicle) {
+          setVehicles(prev => prev.map(item => item.id === optimisticV.id ? data.vehicle : item));
+        }
+      })
+      .catch(err => console.error('Failed to persist vehicle:', err));
   };
 
   const updateTariff = (tariffId: string, updateOrPrice: number | Partial<Tariff>) => {

@@ -93,7 +93,12 @@ export default function LiveChargingPage({ params }: { params: Promise<{ session
     setIsStopping(true);
     playSound('alert');
     try {
-      const completedSession = await stopChargingSession(currentSession.id, false);
+      const completedSession = await stopChargingSession(
+        currentSession.id,
+        false,
+        liveMeasurement.energyKwh,
+        elapsedSeconds
+      );
       router.push(`/charging/${completedSession.id}/complete`);
     } catch (err) {
       console.error(err);

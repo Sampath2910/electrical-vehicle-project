@@ -1,14 +1,27 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getSessionFromRequest, signSessionToken } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, phone, password, role, assignedStationId, operatorBadgeId, vehicleModel, adminMasterKey } = body;
+    const {
+      name,
+      email,
+      phone,
+      password,
+      role,
+      assignedStationId,
+      operatorBadgeId,
+      vehicleModel,
+      adminMasterKey,
+      skipSessionCookie,
+    } = body;
 
     const sanitizedName = (name || '').trim();
     const sanitizedEmail = (email || '').trim().toLowerCase();
     const sanitizedPhone = (phone || '').trim();
+    const targetRole = (role || 'USER') as 'USER' | 'OPERATOR' | 'ADMIN';
 
     if (!sanitizedEmail || !password || !sanitizedName) {
       return NextResponse.json(
@@ -17,8 +30,15 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!['USER', 'OPERATOR', 'ADMIN'].includes(targetRole)) {
+      return NextResponse.json(
+        { error: 'Invalid account role.' },
+        { status: 400 }
+      );
+    }
+
     // Role-specific validations
-    if (role === 'ADMIN') {
+    if (targetRole === 'ADMIN') {
       const cleanKey = (adminMasterKey || '').trim();
       if (cleanKey !== 'ADMIN2026' && cleanKey !== 'smartev-admin') {
         return NextResponse.json(
@@ -28,7 +48,7 @@ export async function POST(request: Request) {
       }
     }
 
-    if (role === 'OPERATOR') {
+    if (targetRole === 'OPERATOR') {
       if (!assignedStationId) {
         return NextResponse.json(
           { error: 'Station selection is required for Operator accounts.' },
@@ -42,9 +62,9 @@ export async function POST(request: Request) {
       email: sanitizedEmail,
       phone: sanitizedPhone || '+91 00000 00000',
       password: typeof password === 'string' ? password.trim() : password,
-      role: role || 'USER',
+      role: targetRole,
       assignedStationId,
-      operatorBadgeId: operatorBadgeId ? operatorBadgeId.trim() : (role === 'OPERATOR' ? `OP-${Math.floor(100 + Math.random() * 900)}` : undefined),
+      operatorBadgeId: operatorBadgeId ? operatorBadgeId.trim() : (targetRole === 'OPERATOR' ? `OP-${Math.floor(100 + Math.random() * 900)}` : undefined),
       vehicleModel,
     });
 
@@ -59,8 +79,8 @@ export async function POST(request: Request) {
           email: sanitizedEmail,
           phone: sanitizedPhone || '+91 00000 00000',
           password,
-          role: role || 'USER',
-          assignedStationId,
+          role: targetRole,
+          assignedStationId: newUser.assignedStationId,
           operatorBadgeId: newUser.operatorBadgeId,
           vehicleModel,
         }),
@@ -70,28 +90,42 @@ export async function POST(request: Request) {
       // Backend offline or user exists in backend, local DB is authoritative
     }
 
-    const mockJwt = `mock_jwt_${newUser.id}_${Date.now()}`;
-    const response = NextResponse.json({
-      success: true,
-      message: 'Account successfully registered and authenticated.',
-      user: newUser,
-      token: mockJwt,
+    // Check if an existing ADMIN is provisioning another account (preserve admin cookie)
+    const callerSession = skipSessionCookie ? await getSessionFromRequest(request) : null;
+    const preserveAdminSession = Boolean(skipSessionCookie && callerSession?.role === 'ADMIN');
+
+    const signedToken = await signSessionToken({
+      userId: newUser.id,
+      role: newUser.role,
+      email: newUser.email,
+      assignedStationId: newUser.assignedStationId,
     });
 
-    // Set secure HttpOnly JWT cookie so middleware permits immediate route navigation
-    response.cookies.set('jwt_token', mockJwt, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 86400, // 24 hours
-      path: '/',
+    const response = NextResponse.json({
+      success: true,
+      message: preserveAdminSession
+        ? 'Account provisioned successfully.'
+        : 'Account successfully registered and authenticated.',
+      user: newUser,
+      token: preserveAdminSession ? undefined : signedToken,
     });
+
+    if (!preserveAdminSession) {
+      response.cookies.set('jwt_token', signedToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 86400, // 24 hours
+        path: '/',
+      });
+    }
 
     return response;
   } catch (err: any) {
+    const status = typeof err?.statusCode === 'number' ? err.statusCode : 400;
     return NextResponse.json(
       { error: err.message || 'Internal server error during registration.' },
-      { status: 400 }
+      { status }
     );
   }
 }
