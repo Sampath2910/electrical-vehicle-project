@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { postAuthWithRetry } from '@/lib/authClient';
 import { 
   Zap, 
   Radio, 
@@ -60,16 +61,15 @@ export default function AuthLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password, expectedRole: activeRole }),
-      });
-
-      const data = await res.json();
+      const { res, data } = await postAuthWithRetry(
+        '/api/auth/login',
+        { identifier, password, expectedRole: activeRole },
+        { onWaking: (a, m) => setError(`Charging service is waking up — retrying automatically (${a}/${m})…`) }
+      );
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to authenticate.');
+        throw new Error(data?.error || 'Failed to authenticate.');
       }
+      setError('');
 
       playSound('success');
       setCurrentUser(data.user);

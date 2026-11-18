@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Lock, Mail, User as UserIcon, Phone, Radio, ArrowRight, AlertCircle, Building2, BadgeCheck, Eye, EyeOff } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
+import { postAuthWithRetry } from '@/lib/authClient';
 import { Charger } from '@/types/ev';
 
 export default function OperatorRegisterPage() {
@@ -41,10 +42,9 @@ export default function OperatorRegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { res, data } = await postAuthWithRetry(
+        '/api/auth/register',
+        {
           name,
           email,
           phone,
@@ -53,13 +53,13 @@ export default function OperatorRegisterPage() {
           assignedStationId,
           operatorBadgeId: operatorBadgeId || `OP-${Date.now().toString().slice(-4)}`,
           skipSessionCookie: currentUser?.role === 'ADMIN',
-        }),
-      });
-
-      const data = await res.json();
+        },
+        { onWaking: (a, m) => setError(`Charging service is waking up — retrying automatically (${a}/${m})…`) }
+      );
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to register operator.');
+        throw new Error(data?.error || 'Failed to register operator.');
       }
+      setError('');
 
       if (currentUser?.role === 'ADMIN') {
         // Admin stays logged in (no new session cookie); soft nav keeps their SPA state.

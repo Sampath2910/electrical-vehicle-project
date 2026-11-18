@@ -4,6 +4,9 @@ import { signSessionToken } from '@/lib/auth';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
+// Allow a little more headroom for backend cold starts where the hosting plan permits.
+export const maxDuration = 20;
+
 export async function POST(request: Request) {
   let body: any;
   try {
@@ -42,13 +45,14 @@ export async function POST(request: Request) {
     }
 
     // 2. Authoritative check on Spring Boot backend (if configured & reachable)
+    let backendUnreachable = false;
     if (BACKEND_URL) {
       try {
         const backendRes = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: rawId, password: cleanPassword, expectedRole }),
-          signal: AbortSignal.timeout(8000),
+          signal: AbortSignal.timeout(9000),
         });
 
         const backendData = await backendRes.json();
@@ -106,7 +110,9 @@ export async function POST(request: Request) {
           );
         }
       } catch {
-        // Backend offline or timeout; fallback to local DB
+        // Backend offline or timeout (e.g. free-tier cold start). Remember this so we
+        // can tell "backend is waking up" apart from "account genuinely doesn't exist".
+        backendUnreachable = true;
       }
     }
 
@@ -160,7 +166,22 @@ export async function POST(request: Request) {
       return response;
     }
 
-    // EXACT ERROR: No account found
+    // If the authoritative backend was unreachable (cold start / timeout) and the
+    // account is not one of the local seed accounts, do NOT claim it doesn't exist —
+    // the account may well live in the backend that just failed to answer. Return a
+    // retryable 503 so the client can wait for the service to warm up and try again.
+    if (backendUnreachable) {
+      return NextResponse.json(
+        {
+          error: 'The charging service is starting up (this can take a few seconds on first use). Please wait a moment — we will retry automatically.',
+          retryable: true,
+          code: 'BACKEND_WAKING',
+        },
+        { status: 503 }
+      );
+    }
+
+    // EXACT ERROR: No account found (backend answered, or no backend, and not local)
     return NextResponse.json(
       { error: 'No account found with this Email, Username, or Mobile Number. Please check your credentials or register a new account.' },
       { status: 404 }

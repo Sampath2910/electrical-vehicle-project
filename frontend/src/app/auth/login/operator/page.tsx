@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Lock, Mail, ArrowRight, Radio, AlertCircle, Cpu, Eye, EyeOff } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
+import { postAuthWithRetry } from '@/lib/authClient';
 
 export default function OperatorLoginPage() {
   const router = useRouter();
@@ -27,16 +28,15 @@ export default function OperatorLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password, expectedRole: 'OPERATOR' }),
-      });
-
-      const data = await res.json();
+      const { res, data } = await postAuthWithRetry(
+        '/api/auth/login',
+        { identifier, password, expectedRole: 'OPERATOR' },
+        { onWaking: (a, m) => setError(`Charging service is waking up — retrying automatically (${a}/${m})…`) }
+      );
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to authenticate operator.');
+        throw new Error(data?.error || 'Failed to authenticate operator.');
       }
+      setError('');
 
       setCurrentUser(data.user);
       // Hard navigation (not router.push) so the freshly-set jwt_token cookie is

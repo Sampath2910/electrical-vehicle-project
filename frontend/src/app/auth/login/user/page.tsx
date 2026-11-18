@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Zap, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
+import { postAuthWithRetry } from '@/lib/authClient';
 
 export default function UserLoginPage() {
   const router = useRouter();
@@ -27,16 +28,15 @@ export default function UserLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password, expectedRole: 'USER' }),
-      });
-
-      const data = await res.json();
+      const { res, data } = await postAuthWithRetry(
+        '/api/auth/login',
+        { identifier, password, expectedRole: 'USER' },
+        { onWaking: (a, m) => setError(`Charging service is waking up — retrying automatically (${a}/${m})…`) }
+      );
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to authenticate driver.');
+        throw new Error(data?.error || 'Failed to authenticate driver.');
       }
+      setError('');
 
       setCurrentUser(data.user);
       // Hard navigation (not router.push) so the freshly-set jwt_token cookie is

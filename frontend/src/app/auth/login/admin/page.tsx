@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShieldAlert, Lock, Mail, ArrowRight, KeyRound, AlertCircle, BarChart3, Eye, EyeOff } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
+import { postAuthWithRetry } from '@/lib/authClient';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -27,16 +28,15 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password, expectedRole: 'ADMIN' }),
-      });
-
-      const data = await res.json();
+      const { res, data } = await postAuthWithRetry(
+        '/api/auth/login',
+        { identifier, password, expectedRole: 'ADMIN' },
+        { onWaking: (a, m) => setError(`Charging service is waking up — retrying automatically (${a}/${m})…`) }
+      );
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to authenticate system administrator.');
+        throw new Error(data?.error || 'Failed to authenticate system administrator.');
       }
+      setError('');
 
       setCurrentUser(data.user);
       // Hard navigation (not router.push) so the freshly-set jwt_token cookie is

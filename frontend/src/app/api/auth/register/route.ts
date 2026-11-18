@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionFromRequest, signSessionToken } from '@/lib/auth';
 
+// Allow a little more headroom for backend cold starts where the hosting plan permits.
+export const maxDuration = 20;
+
 export async function POST(request: Request) {
   let body: any;
   try {
@@ -78,6 +81,7 @@ export async function POST(request: Request) {
     const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
     let backendUser: any = null;
     let backendToken: string | null = null;
+    let backendUnreachable = false;
 
     if (BACKEND_URL) {
       try {
@@ -94,7 +98,7 @@ export async function POST(request: Request) {
             operatorBadgeId: operatorBadgeId ? operatorBadgeId.trim() : (targetRole === 'OPERATOR' ? `OP-${Math.floor(100 + Math.random() * 900)}` : undefined),
             vehicleModel,
           }),
-          signal: AbortSignal.timeout(8000),
+          signal: AbortSignal.timeout(9000),
         });
 
         const backendData = await backendRes.json();
@@ -108,7 +112,8 @@ export async function POST(request: Request) {
           );
         }
       } catch {
-        // Backend offline or timeout; fallback to local DB
+        // Backend offline or timeout (e.g. free-tier cold start).
+        backendUnreachable = true;
       }
     }
 
@@ -127,6 +132,19 @@ export async function POST(request: Request) {
       });
     } catch (dbErr: any) {
       if (!backendUser) {
+        // Could not reach the authoritative backend AND could not persist locally
+        // (the deployment filesystem is read-only). Do not pretend to create an
+        // account that won't exist — return a retryable "service waking up" signal.
+        if (backendUnreachable) {
+          return NextResponse.json(
+            {
+              error: 'The charging service is starting up (this can take a few seconds on first use). Please wait a moment and try creating your account again.',
+              retryable: true,
+              code: 'BACKEND_WAKING',
+            },
+            { status: 503 }
+          );
+        }
         throw dbErr;
       }
     }

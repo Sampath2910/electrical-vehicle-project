@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Zap, Lock, Mail, User as UserIcon, Phone, Bike, ArrowRight, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
+import { postAuthWithRetry } from '@/lib/authClient';
 
 export default function UserRegisterPage() {
   const router = useRouter();
@@ -24,23 +25,15 @@ export default function UserRegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          password,
-          role: 'USER',
-          vehicleModel,
-        }),
-      });
-
-      const data = await res.json();
+      const { res, data } = await postAuthWithRetry(
+        '/api/auth/register',
+        { name, email, phone, password, role: 'USER', vehicleModel },
+        { onWaking: (a, m) => setError(`Charging service is waking up — retrying automatically (${a}/${m})…`) }
+      );
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to create driver account.');
+        throw new Error(data?.error || 'Failed to create driver account.');
       }
+      setError('');
 
       setCurrentUser(data.user);
       // Hard navigation so the new session cookie is applied before middleware runs.

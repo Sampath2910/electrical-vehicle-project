@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShieldAlert, Lock, Mail, User as UserIcon, Phone, KeyRound, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
+import { postAuthWithRetry } from '@/lib/authClient';
 
 export default function AdminRegisterPage() {
   const router = useRouter();
@@ -25,23 +26,15 @@ export default function AdminRegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          password,
-          role: 'ADMIN',
-          adminMasterKey,
-        }),
-      });
-
-      const data = await res.json();
+      const { res, data } = await postAuthWithRetry(
+        '/api/auth/register',
+        { name, email, phone, password, role: 'ADMIN', adminMasterKey },
+        { onWaking: (a, m) => setError(`Charging service is waking up — retrying automatically (${a}/${m})…`) }
+      );
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to provision admin account.');
+        throw new Error(data?.error || 'Failed to provision admin account.');
       }
+      setError('');
 
       setCurrentUser(data.user);
       // Hard navigation so the new session cookie is applied before middleware runs.
