@@ -74,48 +74,74 @@ export async function POST(request: Request) {
       }
     }
 
-    const newUser = db.createUser({
-      name: sanitizedName,
-      email: sanitizedEmail,
-      phone: sanitizedPhone || '+91 00000 00000',
-      password: typeof password === 'string' ? password.trim() : password,
-      role: targetRole,
-      assignedStationId,
-      operatorBadgeId: operatorBadgeId ? operatorBadgeId.trim() : (targetRole === 'OPERATOR' ? `OP-${Math.floor(100 + Math.random() * 900)}` : undefined),
-      vehicleModel,
-    });
+    // 1. Authoritative registration via Spring Boot backend if configured
+    const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    let backendUser: any = null;
+    let backendToken: string | null = null;
 
-    // Best-effort forward to Spring Boot backend if running
-    try {
-      const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-      await fetch(`${BACKEND_URL}/api/v1/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: sanitizedName,
-          email: sanitizedEmail,
-          phone: sanitizedPhone || '+91 00000 00000',
-          password,
-          role: targetRole,
-          assignedStationId: newUser.assignedStationId,
-          operatorBadgeId: newUser.operatorBadgeId,
-          vehicleModel,
-        }),
-        signal: AbortSignal.timeout(1000),
-      });
-    } catch {
-      // Backend offline or user exists in backend, local DB is authoritative
+    if (BACKEND_URL) {
+      try {
+        const backendRes = await fetch(`${BACKEND_URL}/api/v1/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: sanitizedName,
+            email: sanitizedEmail,
+            phone: sanitizedPhone || '+91 00000 00000',
+            password,
+            role: targetRole,
+            assignedStationId,
+            operatorBadgeId: operatorBadgeId ? operatorBadgeId.trim() : (targetRole === 'OPERATOR' ? `OP-${Math.floor(100 + Math.random() * 900)}` : undefined),
+            vehicleModel,
+          }),
+          signal: AbortSignal.timeout(8000),
+        });
+
+        const backendData = await backendRes.json();
+        if (backendRes.ok && backendData.success) {
+          backendUser = backendData.user;
+          backendToken = backendData.token;
+        } else if (backendData.error && backendData.error.toLowerCase().includes('already exists')) {
+          return NextResponse.json(
+            { error: 'An account with this email address already exists. Please sign in instead.' },
+            { status: 409 }
+          );
+        }
+      } catch {
+        // Backend offline or timeout; fallback to local DB
+      }
     }
+
+    // 2. Local DB persistence (best-effort or fallback)
+    let localUser: any = null;
+    try {
+      localUser = db.createUser({
+        name: sanitizedName,
+        email: sanitizedEmail,
+        phone: sanitizedPhone || '+91 00000 00000',
+        password: typeof password === 'string' ? password.trim() : password,
+        role: targetRole,
+        assignedStationId,
+        operatorBadgeId: operatorBadgeId ? operatorBadgeId.trim() : (targetRole === 'OPERATOR' ? `OP-${Math.floor(100 + Math.random() * 900)}` : undefined),
+        vehicleModel,
+      });
+    } catch (dbErr: any) {
+      if (!backendUser) {
+        throw dbErr;
+      }
+    }
+
+    const resolvedUser = backendUser || localUser;
 
     // Check if an existing ADMIN is provisioning another account (preserve admin cookie)
     const callerSession = skipSessionCookie ? await getSessionFromRequest(request) : null;
     const preserveAdminSession = Boolean(skipSessionCookie && callerSession?.role === 'ADMIN');
 
-    const signedToken = await signSessionToken({
-      userId: newUser.id,
-      role: newUser.role,
-      email: newUser.email,
-      assignedStationId: newUser.assignedStationId,
+    const signedToken = backendToken || await signSessionToken({
+      userId: resolvedUser.id,
+      role: resolvedUser.role,
+      email: resolvedUser.email,
+      assignedStationId: resolvedUser.assignedStationId,
     });
 
     const response = NextResponse.json({
@@ -123,7 +149,7 @@ export async function POST(request: Request) {
       message: preserveAdminSession
         ? 'Account provisioned successfully.'
         : 'Account successfully registered and authenticated.',
-      user: newUser,
+      user: resolvedUser,
       token: preserveAdminSession ? undefined : signedToken,
     });
 

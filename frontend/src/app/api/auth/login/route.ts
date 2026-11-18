@@ -41,18 +41,59 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Authoritative Local Database Lookup
+    // 2. Authoritative check on Spring Boot backend (if configured & reachable)
+    if (BACKEND_URL) {
+      try {
+        const backendRes = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: rawId, password: cleanPassword, expectedRole }),
+          signal: AbortSignal.timeout(8000),
+        });
+
+        const backendData = await backendRes.json();
+        if (backendRes.ok && backendData.success) {
+          const targetRedirect = backendData.user.role === 'OPERATOR' ? '/operator' : backendData.user.role === 'ADMIN' ? '/admin' : '/dashboard';
+          const response = NextResponse.json({
+            success: true,
+            message: 'Login successful via Spring Boot Security.',
+            user: backendData.user,
+            token: backendData.token,
+            role: backendData.user.role,
+            redirectTo: targetRedirect,
+          });
+
+          response.cookies.set('jwt_token', backendData.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 86400,
+            path: '/',
+          });
+
+          return response;
+        } else if (backendRes.status === 401 && (backendData.error?.includes('Bad credentials') || backendData.error?.includes('password'))) {
+          return NextResponse.json(
+            { error: 'Incorrect password. Please verify your password and try again.' },
+            { status: 401 }
+          );
+        }
+      } catch {
+        // Backend offline or timeout; fallback to local DB
+      }
+    }
+
+    // 3. Fallback Local Database Lookup
     const user = db.getUserByIdentifier(rawId);
 
     if (user) {
-      // Strictly validate against this specific account's stored password (no universal backdoors)
+      // Strictly validate against this specific account's stored password
       const isPasswordValid = (
         user.passwordHash === cleanPassword ||
         (user as any).password === cleanPassword
       );
 
       if (!isPasswordValid) {
-        // EXACT ERROR: Account exists, but password was incorrect
         return NextResponse.json(
           { error: 'Incorrect password. Please verify your password and try again.' },
           { status: 401 }
@@ -90,41 +131,6 @@ export async function POST(request: Request) {
       });
 
       return response;
-    }
-
-    // 3. Fallback check on Spring Boot backend (if running)
-    try {
-      const backendRes = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: rawId, password: cleanPassword, expectedRole }),
-        signal: AbortSignal.timeout(800),
-      });
-
-      const backendData = await backendRes.json();
-      if (backendRes.ok && backendData.success) {
-        const targetRedirect = backendData.user.role === 'OPERATOR' ? '/operator' : backendData.user.role === 'ADMIN' ? '/admin' : '/dashboard';
-        const response = NextResponse.json({
-          success: true,
-          message: 'Login successful via Spring Boot Security.',
-          user: backendData.user,
-          token: backendData.token,
-          role: backendData.user.role,
-          redirectTo: targetRedirect,
-        });
-
-        response.cookies.set('jwt_token', backendData.token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 86400,
-          path: '/',
-        });
-
-        return response;
-      }
-    } catch {
-      // Backend offline or timeout; local DB is authoritative
     }
 
     // EXACT ERROR: No account found
