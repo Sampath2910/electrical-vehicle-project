@@ -11,7 +11,7 @@ import { ChargerStatus } from '@/types/ev';
 export default function AdminChargerDetail({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const resolvedParams = use(params);
-  const { chargers, updateChargerStatus, updateChargerRating, currentUser } = useStore();
+  const { chargers, updateChargerStatus, updateChargerRating, currentUser, authHydrated } = useStore();
 
   const charger = chargers.find(c => c.id === resolvedParams.id || c.chargerCode === resolvedParams.id) || chargers[0];
   const [status, setStatus] = useState<ChargerStatus>(charger?.status || 'AVAILABLE');
@@ -26,6 +26,7 @@ export default function AdminChargerDetail({ params }: { params: Promise<{ id: s
   }, [charger?.status, charger?.powerRating]);
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login/admin');
     } else if (currentUser.role === 'OPERATOR') {
@@ -33,7 +34,7 @@ export default function AdminChargerDetail({ params }: { params: Promise<{ id: s
     } else if (currentUser.role === 'USER') {
       router.replace('/dashboard');
     }
-  }, [currentUser, router]);
+  }, [authHydrated, currentUser, router]);
 
   if (!currentUser || currentUser.role !== 'ADMIN') {
     return (

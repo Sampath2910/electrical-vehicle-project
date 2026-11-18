@@ -8,13 +8,14 @@ import { useStore } from '@/lib/storeContext';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { currentUser } = useStore();
+  const { currentUser, authHydrated } = useStore();
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login');
     }
-  }, [currentUser, router]);
+  }, [authHydrated, currentUser, router]);
 
   if (!currentUser) {
     return (

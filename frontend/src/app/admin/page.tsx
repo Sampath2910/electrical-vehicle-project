@@ -26,7 +26,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export default function AdminOperationsDashboard() {
   const router = useRouter();
-  const { faults, currentUser, playSound } = useStore();
+  const { faults, currentUser, authHydrated, playSound } = useStore();
   const [adminStats, setAdminStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +46,7 @@ export default function AdminOperationsDashboard() {
   };
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login/admin');
     } else if (currentUser.role === 'OPERATOR') {
@@ -53,7 +54,7 @@ export default function AdminOperationsDashboard() {
     } else if (currentUser.role === 'USER') {
       router.replace('/dashboard');
     }
-  }, [currentUser, router]);
+  }, [authHydrated, currentUser, router]);
 
   useEffect(() => {
     if (currentUser?.role === 'ADMIN') {

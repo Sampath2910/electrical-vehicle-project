@@ -80,9 +80,10 @@ const REAL_EV_BIKE_SHOWCASE = [
 
 export default function HomePage() {
   const router = useRouter();
-  const { chargers, currentUser } = useStore();
+  const { chargers, currentUser, authHydrated } = useStore();
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login');
     } else if (currentUser.role === 'OPERATOR') {
@@ -90,7 +91,7 @@ export default function HomePage() {
     } else if (currentUser.role === 'ADMIN') {
       router.replace('/admin');
     }
-  }, [currentUser, router]);
+  }, [authHydrated, currentUser, router]);
 
   if (!currentUser) {
     return (

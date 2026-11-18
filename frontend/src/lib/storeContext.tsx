@@ -33,6 +33,7 @@ import { getTariffForKw } from '@/lib/tariffHelper';
 
 interface StoreContextType {
   currentUser: User | null;
+  authHydrated: boolean;
   setCurrentUser: (user: User | null) => void;
   logout: () => void;
   switchRole: (role: 'USER' | 'OPERATOR' | 'ADMIN') => void;
@@ -108,6 +109,11 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // Becomes true once we have attempted to restore the session from localStorage.
+  // Protected pages must wait for this before deciding the user is logged out —
+  // otherwise, after a full page load (hard navigation), the brief window where
+  // currentUser is still null would bounce an authenticated user back to login.
+  const [authHydrated, setAuthHydrated] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -115,8 +121,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (savedUser) {
         setCurrentUser(JSON.parse(savedUser));
       }
-    } catch (e) {
+    } catch {
       // ignore
+    } finally {
+      setAuthHydrated(true);
     }
   }, []);
   const [chargers, setChargers] = useState<Charger[]>(mockChargers);
@@ -787,6 +795,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <StoreContext.Provider value={{
       currentUser,
+      authHydrated,
       setCurrentUser: updateUserSession,
       logout,
       switchRole,

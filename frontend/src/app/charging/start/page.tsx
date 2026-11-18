@@ -28,13 +28,14 @@ import { QrScannerModal } from '@/components/ui/QrScannerModal';
 function StartChargingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentUser, chargers, vehicles, startChargingSession, playSound } = useStore();
+  const { currentUser, authHydrated, chargers, vehicles, startChargingSession, playSound } = useStore();
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login/user');
     }
-  }, [currentUser, router]);
+  }, [authHydrated, currentUser, router]);
 
   const preselectedChargerId = searchParams.get('chargerId') || chargers[0]?.id || '';
 

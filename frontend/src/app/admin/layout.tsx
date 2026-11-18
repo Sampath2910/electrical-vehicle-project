@@ -7,7 +7,7 @@ import { useStore } from '@/lib/storeContext';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentUser } = useStore();
+  const { currentUser, authHydrated } = useStore();
 
   const isLiveTelemetryRoute = pathname === '/admin/live' || pathname.startsWith('/admin/live/');
   const isAuthorized =
@@ -15,12 +15,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     (isLiveTelemetryRoute && currentUser?.role === 'OPERATOR');
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login/admin');
     } else if (!isAuthorized) {
       router.replace(currentUser.role === 'OPERATOR' ? '/operator' : '/dashboard');
     }
-  }, [currentUser, isAuthorized, router]);
+  }, [authHydrated, currentUser, isAuthorized, router]);
 
   if (!currentUser || !isAuthorized) {
     return (

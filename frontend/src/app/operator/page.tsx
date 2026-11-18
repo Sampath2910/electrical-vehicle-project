@@ -34,7 +34,7 @@ import { getTariffForKw } from '@/lib/tariffHelper';
 
 function OperatorConsoleContent() {
   const router = useRouter();
-  const { currentUser, playSound, logout, updateChargerRating, updateChargerStatus, clearStationHistory, historySessions } = useStore();
+  const { currentUser, authHydrated, playSound, logout, updateChargerRating, updateChargerStatus, clearStationHistory, historySessions } = useStore();
   const [stationStats, setStationStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [relayTripped, setRelayTripped] = useState(false);
@@ -80,12 +80,13 @@ function OperatorConsoleContent() {
   }, [assignedStationId]);
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login/operator');
     } else if (currentUser.role !== 'OPERATOR' && currentUser.role !== 'ADMIN') {
       router.replace('/dashboard');
     }
-  }, [currentUser, router]);
+  }, [authHydrated, currentUser, router]);
 
   const fetchStats = async () => {
     try {

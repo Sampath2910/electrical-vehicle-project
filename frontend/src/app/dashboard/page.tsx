@@ -31,13 +31,14 @@ import { getCurrentToDSlot } from '@/lib/providers';
 
 export default function DriverDashboardPage() {
   const router = useRouter();
-  const { currentUser, wallet, activeSession, historySessions, vehicles, tariffs } = useStore();
+  const { currentUser, authHydrated, wallet, activeSession, historySessions, vehicles, tariffs } = useStore();
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login/user');
     }
-  }, [currentUser, router]);
+  }, [authHydrated, currentUser, router]);
 
   if (!currentUser) {
     return (

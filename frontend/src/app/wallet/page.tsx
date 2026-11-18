@@ -8,12 +8,13 @@ import { MetricCard } from '@/components/ui/MetricCard';
 
 export default function WalletPage() {
   const router = useRouter();
-  const { currentUser, wallet, walletTransactions, topUpWallet } = useStore();
+  const { currentUser, authHydrated, wallet, walletTransactions, topUpWallet } = useStore();
   const [topUpAmount, setTopUpAmount] = useState<number>(500);
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login/user');
     } else if (currentUser.role === 'ADMIN') {
@@ -21,7 +22,7 @@ export default function WalletPage() {
     } else if (currentUser.role === 'OPERATOR') {
       router.replace('/operator');
     }
-  }, [currentUser, router]);
+  }, [authHydrated, currentUser, router]);
 
   if (!currentUser || currentUser.role !== 'USER') {
     return (

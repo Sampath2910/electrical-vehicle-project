@@ -10,9 +10,10 @@ import { ChargerStatus } from '@/types/ev';
 
 export default function AdminChargersPage() {
   const router = useRouter();
-  const { chargers, updateChargerRating, updateChargerStatus, currentUser } = useStore();
+  const { chargers, updateChargerRating, updateChargerStatus, currentUser, authHydrated } = useStore();
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!currentUser) {
       router.replace('/auth/login/admin');
     } else if (currentUser.role === 'OPERATOR') {
@@ -20,7 +21,7 @@ export default function AdminChargersPage() {
     } else if (currentUser.role === 'USER') {
       router.replace('/dashboard');
     }
-  }, [currentUser, router]);
+  }, [authHydrated, currentUser, router]);
 
   if (!currentUser || currentUser.role !== 'ADMIN') {
     return (
