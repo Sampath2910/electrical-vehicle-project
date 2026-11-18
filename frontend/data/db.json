@@ -66,6 +66,27 @@
       "operatorBadgeId": "OP-0031",
       "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=deepak@ev",
       "createdAt": "2026-11-17T18:07:00.067Z"
+    },
+    {
+      "id": "user-1794981676308-eybjm",
+      "name": "sampath yadav",
+      "email": "sampath@gmail.com",
+      "phone": "9705525829",
+      "role": "USER",
+      "passwordHash": "S@mpath2562",
+      "vehicleModel": "Ola S1 Pro (4.0 kWh)",
+      "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=sampath@gmail.com",
+      "createdAt": "2026-11-18T06:01:16.308Z"
+    },
+    {
+      "id": "user-1794983085271-mgjct",
+      "name": "Test Cloud Rider",
+      "email": "testcloud@smartev.com",
+      "phone": "+91 99999 88888",
+      "role": "USER",
+      "passwordHash": "testpassword123",
+      "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=testcloud@smartev.com",
+      "createdAt": "2026-11-18T06:24:45.271Z"
     }
   ],
   "chargers": [
@@ -80,14 +101,14 @@
       "connectorType": "IEC 60309 (Industrial 3-pin)",
       "status": "AVAILABLE",
       "pricePerKwh": 10.5,
-      "lastSeenAt": "2026-11-17T19:09:08.470Z",
+      "lastSeenAt": "2026-11-18T07:23:20.006Z",
       "maxCurrentA": 14.3,
       "voltageV": 230,
       "firmwareVersion": "v3.2.0-esp32-pzem",
       "assignedOperatorId": "user-1794938820067-y5msm",
       "assignedOperatorName": "suresh (OP-0031)",
-      "totalEarnedRevenue": 0,
-      "totalEnergyConsumedKwh": 0
+      "totalEarnedRevenue": 5.9,
+      "totalEnergyConsumedKwh": 3
     },
     {
       "id": "ch-102",
@@ -175,7 +196,17 @@
   ],
   "sessions": [],
   "wallets": {},
-  "walletTransactions": [],
+  "walletTransactions": [
+    {
+      "id": "wtx-1794986600006-4su5",
+      "walletId": "wal-user-drv-001",
+      "type": "DEBIT",
+      "amount": 5.9,
+      "reference": "INV-2026-6031",
+      "description": "Direct UPI Settlement @ X (3.000 kWh)",
+      "createdAt": "2026-11-18T07:23:20.006Z"
+    }
+  ],
   "vehicles": [],
   "bills": []
 }

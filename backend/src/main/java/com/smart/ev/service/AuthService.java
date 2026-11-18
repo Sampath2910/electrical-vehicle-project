@@ -29,42 +29,50 @@ public class AuthService {
 
     @Transactional
     public AuthDto.AuthResponse login(AuthDto.LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        String rawIdentifier = request.getEmail() != null ? request.getEmail().trim() : "";
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
+        User user = userRepository.findByIdentifier(rawIdentifier)
+                .orElseThrow(() -> new IllegalArgumentException("No account found with this Email, Username, or Mobile Number."));
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + request.getEmail()));
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.getEmail(), request.getPassword())
+            );
 
-        if (request.getExpectedRole() != null && user.getRole() != request.getExpectedRole()) {
-            throw new IllegalArgumentException(String.format(
-                    "Access Denied: Account registered as %s, but attempting to access %s portal.",
-                    user.getRole(), request.getExpectedRole()
-            ));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = tokenProvider.generateToken(authentication);
+
+            String message = "Login successful.";
+            if (request.getExpectedRole() != null && user.getRole() != request.getExpectedRole()) {
+                message = String.format(
+                        "Signed in as %s. Redirecting to your %s portal.",
+                        user.getRole(), user.getRole().name().toLowerCase()
+                );
+            }
+
+            return AuthDto.AuthResponse.builder()
+                    .success(true)
+                    .token(jwt)
+                    .tokenType("Bearer")
+                    .message(message)
+                    .user(toUserDto(user))
+                    .build();
+        } catch (org.springframework.security.authentication.BadCredentialsException ex) {
+            throw new IllegalArgumentException("Incorrect password. Please verify your password and try again.");
         }
-
-        return AuthDto.AuthResponse.builder()
-                .success(true)
-                .token(jwt)
-                .tokenType("Bearer")
-                .message("Login successful.")
-                .user(toUserDto(user))
-                .build();
     }
 
     @Transactional
     public AuthDto.AuthResponse register(AuthDto.RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new IllegalArgumentException("An account with this email address already exists.");
         }
 
         User user = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .phone(request.getPhone() != null ? request.getPhone() : "+91 00000 00000")
+                .name(request.getName() != null ? request.getName().trim() : "EV Driver")
+                .email(email)
+                .phone(request.getPhone() != null ? request.getPhone().trim() : "+91 00000 00000")
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole() != null ? request.getRole() : User.Role.USER)
                 .vehicleModel(request.getVehicleModel())
@@ -84,7 +92,7 @@ public class AuthService {
         walletRepository.save(wallet);
 
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(user.getEmail(), request.getPassword())
         );
         String jwt = tokenProvider.generateToken(authentication);
 

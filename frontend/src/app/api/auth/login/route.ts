@@ -54,13 +54,15 @@ export async function POST(request: Request) {
         const backendData = await backendRes.json();
         if (backendRes.ok && backendData.success) {
           const targetRedirect = backendData.user.role === 'OPERATOR' ? '/operator' : backendData.user.role === 'ADMIN' ? '/admin' : '/dashboard';
+          const isRoleMismatch = Boolean(expectedRole && backendData.user.role !== expectedRole);
           const response = NextResponse.json({
             success: true,
-            message: 'Login successful via Spring Boot Security.',
+            message: backendData.message || 'Login successful via Spring Boot Security.',
             user: backendData.user,
             token: backendData.token,
             role: backendData.user.role,
             redirectTo: targetRedirect,
+            roleMismatch: isRoleMismatch,
           });
 
           response.cookies.set('jwt_token', backendData.token, {
@@ -72,10 +74,11 @@ export async function POST(request: Request) {
           });
 
           return response;
-        } else if (backendRes.status === 401 && (backendData.error?.includes('Bad credentials') || backendData.error?.includes('password'))) {
+        } else if (backendData && backendData.error) {
+          // Precise error from Spring Boot backend (e.g. "No account found..." or "Incorrect password...")
           return NextResponse.json(
-            { error: 'Incorrect password. Please verify your password and try again.' },
-            { status: 401 }
+            { error: backendData.error },
+            { status: backendRes.status || 401 }
           );
         }
       } catch {

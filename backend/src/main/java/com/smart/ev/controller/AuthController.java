@@ -18,6 +18,9 @@ public class AuthController {
         try {
             AuthDto.AuthResponse response = authService.login(request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            int status = ex.getMessage().contains("No account found") ? 404 : 401;
+            return ResponseEntity.status(status).body(new ErrorResponse(ex.getMessage()));
         } catch (Exception ex) {
             return ResponseEntity.status(401).body(new ErrorResponse(ex.getMessage()));
         }
