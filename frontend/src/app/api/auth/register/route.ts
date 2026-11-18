@@ -137,7 +137,13 @@ export async function POST(request: Request) {
     const callerSession = skipSessionCookie ? await getSessionFromRequest(request) : null;
     const preserveAdminSession = Boolean(skipSessionCookie && callerSession?.role === 'ADMIN');
 
-    const signedToken = backendToken || await signSessionToken({
+    // IMPORTANT: Always mint OUR OWN signed session token for the cookie. The Spring
+    // Boot backend's HS384 JWT (backendToken) is NOT verifiable by the frontend
+    // middleware / auth layer (src/lib/auth.ts), so storing it would leave the newly
+    // registered user unable to open any protected page. (backendToken is intentionally
+    // ignored here for the session cookie.)
+    void backendToken;
+    const signedToken = await signSessionToken({
       userId: resolvedUser.id,
       role: resolvedUser.role,
       email: resolvedUser.email,

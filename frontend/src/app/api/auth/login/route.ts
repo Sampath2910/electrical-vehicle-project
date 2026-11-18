@@ -55,17 +55,28 @@ export async function POST(request: Request) {
         if (backendRes.ok && backendData.success) {
           const targetRedirect = backendData.user.role === 'OPERATOR' ? '/operator' : backendData.user.role === 'ADMIN' ? '/admin' : '/dashboard';
           const isRoleMismatch = Boolean(expectedRole && backendData.user.role !== expectedRole);
+          // IMPORTANT: The Spring Boot backend returns its own HS384 JWT, which the
+          // frontend middleware / auth layer (src/lib/auth.ts) cannot verify. We must
+          // re-issue OUR OWN signed session token so middleware and /api/* routes
+          // recognise the logged-in session; otherwise every protected page bounces
+          // the user straight back to the login screen.
+          const signedJwt = await signSessionToken({
+            userId: backendData.user.id,
+            role: backendData.user.role,
+            email: backendData.user.email,
+            assignedStationId: backendData.user.assignedStationId,
+          });
           const response = NextResponse.json({
             success: true,
             message: backendData.message || 'Login successful via Spring Boot Security.',
             user: backendData.user,
-            token: backendData.token,
+            token: signedJwt,
             role: backendData.user.role,
             redirectTo: targetRedirect,
             roleMismatch: isRoleMismatch,
           });
 
-          response.cookies.set('jwt_token', backendData.token, {
+          response.cookies.set('jwt_token', signedJwt, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
