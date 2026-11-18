@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShieldAlert, Lock, Mail, User as UserIcon, Phone, KeyRound, ArrowRight, AlertCircle } from 'lucide-react';
+import { ShieldAlert, Lock, Mail, User as UserIcon, Phone, KeyRound, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 
 export default function AdminRegisterPage() {
@@ -13,7 +13,9 @@ export default function AdminRegisterPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [adminMasterKey, setAdminMasterKey] = useState('');
+  const [showMasterKey, setShowMasterKey] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -124,13 +126,22 @@ export default function AdminRegisterPage() {
             <div className="relative">
               <KeyRound className="w-4 h-4 text-rose-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showMasterKey ? "text" : "password"}
                 required
                 placeholder="Enter Admin Master Passcode"
                 value={adminMasterKey}
                 onChange={(e) => setAdminMasterKey(e.target.value)}
-                className="w-full bg-navy-950 border border-rose-500/40 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-400 font-mono"
+                className="w-full bg-navy-950 border border-rose-500/40 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white focus:outline-none focus:border-rose-400 font-mono"
               />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowMasterKey(!showMasterKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 focus:outline-none transition-colors cursor-pointer"
+                aria-label={showMasterKey ? "Hide passcode" : "Show passcode"}
+              >
+                {showMasterKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
             <p className="text-[10px] text-slate-400">Authorized personnel only. Contact your fleet administrator for the master passcode.</p>
           </div>
@@ -140,13 +151,22 @@ export default function AdminRegisterPage() {
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
+                className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
               />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 focus:outline-none transition-colors cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

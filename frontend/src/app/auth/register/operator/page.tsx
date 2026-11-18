@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Lock, Mail, User as UserIcon, Phone, Radio, ArrowRight, AlertCircle, Building2, BadgeCheck } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, User as UserIcon, Phone, Radio, ArrowRight, AlertCircle, Building2, BadgeCheck, Eye, EyeOff } from 'lucide-react';
 import { useStore } from '@/lib/storeContext';
 import { Charger } from '@/types/ev';
 
@@ -16,6 +16,7 @@ export default function OperatorRegisterPage() {
   const [operatorBadgeId, setOperatorBadgeId] = useState('');
   const [assignedStationId, setAssignedStationId] = useState('ch-101');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [stations, setStations] = useState<Charger[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -185,13 +186,22 @@ export default function OperatorRegisterPage() {
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-navy-950 border border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
               />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 focus:outline-none transition-colors cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
