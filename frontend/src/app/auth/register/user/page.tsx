@@ -43,7 +43,8 @@ export default function UserRegisterPage() {
       }
 
       setCurrentUser(data.user);
-      router.push('/dashboard');
+      // Hard navigation so the new session cookie is applied before middleware runs.
+      window.location.assign('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Registration failed.');
     } finally {

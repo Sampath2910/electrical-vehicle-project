@@ -44,7 +44,8 @@ export default function AdminRegisterPage() {
       }
 
       setCurrentUser(data.user);
-      router.push('/admin');
+      // Hard navigation so the new session cookie is applied before middleware runs.
+      window.location.assign('/admin');
     } catch (err: any) {
       setError(err.message || 'Admin provisioning failed.');
     } finally {

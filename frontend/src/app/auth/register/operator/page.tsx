@@ -62,10 +62,12 @@ export default function OperatorRegisterPage() {
       }
 
       if (currentUser?.role === 'ADMIN') {
+        // Admin stays logged in (no new session cookie); soft nav keeps their SPA state.
         router.push('/admin/operators');
       } else {
         setCurrentUser(data.user);
-        router.push('/operator');
+        // Hard navigation so the new operator session cookie is applied before middleware runs.
+        window.location.assign('/operator');
       }
     } catch (err: any) {
       setError(err.message || 'Operator registration failed.');

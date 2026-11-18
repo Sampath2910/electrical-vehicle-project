@@ -39,7 +39,9 @@ export default function OperatorLoginPage() {
       }
 
       setCurrentUser(data.user);
-      router.push(data.redirectTo || '/operator');
+      // Hard navigation (not router.push) so the freshly-set jwt_token cookie is
+      // sent on a full request and middleware lands the user reliably every time.
+      window.location.assign(data.redirectTo || '/operator');
     } catch (err: any) {
       setError(err.message || 'Operator login error.');
     } finally {

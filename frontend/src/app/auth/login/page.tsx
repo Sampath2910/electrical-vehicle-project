@@ -83,9 +83,14 @@ export default function AuthLoginPage() {
         data.user.role === 'ADMIN' ? '/admin' : '/dashboard'
       );
 
-      setTimeout(() => {
-        router.push(targetPath);
-      }, data.roleMismatch ? 400 : 100);
+      // Hard navigation (not router.push) so the freshly-set jwt_token cookie is
+      // sent on a full request and middleware lands the user reliably every time.
+      // On a role mismatch we briefly show the notice before navigating.
+      if (data.roleMismatch) {
+        setTimeout(() => window.location.assign(targetPath), 600);
+      } else {
+        window.location.assign(targetPath);
+      }
 
     } catch (err: any) {
       playSound('alert');

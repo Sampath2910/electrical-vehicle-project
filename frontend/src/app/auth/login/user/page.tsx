@@ -39,7 +39,9 @@ export default function UserLoginPage() {
       }
 
       setCurrentUser(data.user);
-      router.push(data.redirectTo || '/dashboard');
+      // Hard navigation (not router.push) so the freshly-set jwt_token cookie is
+      // sent on a full request and middleware lands the user reliably every time.
+      window.location.assign(data.redirectTo || '/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login error occurred.');
     } finally {
