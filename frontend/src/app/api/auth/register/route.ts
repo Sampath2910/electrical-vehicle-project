@@ -140,9 +140,8 @@ export async function POST(request: Request) {
     // IMPORTANT: Always mint OUR OWN signed session token for the cookie. The Spring
     // Boot backend's HS384 JWT (backendToken) is NOT verifiable by the frontend
     // middleware / auth layer (src/lib/auth.ts), so storing it would leave the newly
-    // registered user unable to open any protected page. (backendToken is intentionally
-    // ignored here for the session cookie.)
-    void backendToken;
+    // registered user unable to open any protected page. (backendToken is still
+    // stored in a separate backend_jwt cookie below for backend proxying.)
     const signedToken = await signSessionToken({
       userId: resolvedUser.id,
       role: resolvedUser.role,
@@ -167,6 +166,18 @@ export async function POST(request: Request) {
         maxAge: 86400, // 24 hours
         path: '/',
       });
+
+      // Keep the backend's own JWT alongside so server-side admin/operator routes
+      // can authenticate to the Spring Boot backend on this user's behalf.
+      if (backendToken) {
+        response.cookies.set('backend_jwt', backendToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 86400,
+          path: '/',
+        });
+      }
     }
 
     return response;

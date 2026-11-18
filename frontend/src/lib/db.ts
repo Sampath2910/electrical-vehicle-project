@@ -260,6 +260,28 @@ export const db = {
     return data.users.find(u => u.id === id);
   },
 
+  // Best-effort local removal of a user and their loosely-coupled records.
+  // Refuses to delete ADMIN accounts. Returns true if a user was removed.
+  deleteUserByEmail: (email: string): boolean => {
+    const data = ensureDbFile();
+    const target = (email || '').trim().toLowerCase();
+    const idx = data.users.findIndex(u => (u.email || '').trim().toLowerCase() === target);
+    if (idx === -1) return false;
+    const user = data.users[idx];
+    if (user.role === 'ADMIN') return false;
+
+    data.users.splice(idx, 1);
+    data.sessions = (data.sessions || []).filter(s => s.userId !== user.id);
+    data.bills = (data.bills || []).filter(b => b.userId !== user.id);
+    data.vehicles = (data.vehicles || []).filter(v => v.userId !== user.id);
+    if (data.wallets) delete data.wallets[user.id];
+    if (data.walletTransactions) {
+      data.walletTransactions = data.walletTransactions.filter(t => t.walletId !== `wal-${user.id}`);
+    }
+    saveDbFile(data);
+    return true;
+  },
+
   createUser: (user: Partial<User> & { password: string }): User => {
     const data = ensureDbFile();
     const cleanEmail = (user.email || '').trim().toLowerCase();

@@ -19,8 +19,10 @@ export async function GET(request: Request) {
 
     try {
       const cookieStore = await cookies();
-      const token = cookieStore.get('jwt_token')?.value;
-      const authHeader = request.headers.get('authorization') || (token ? `Bearer ${token}` : '');
+      // Prefer the backend's own JWT for authenticating to Spring Boot; the
+      // frontend session token (jwt_token) is not valid at the backend.
+      const backendToken = cookieStore.get('backend_jwt')?.value || cookieStore.get('jwt_token')?.value;
+      const authHeader = request.headers.get('authorization') || (backendToken ? `Bearer ${backendToken}` : '');
 
       if (authHeader) {
         const res = await fetch(`${BACKEND_URL}/api/v1/admin/stats`, {

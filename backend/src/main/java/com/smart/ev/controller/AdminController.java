@@ -11,14 +11,19 @@ import com.smart.ev.repository.ChargerRepository;
 import com.smart.ev.repository.ChargingSessionRepository;
 import com.smart.ev.repository.FaultRepository;
 import com.smart.ev.repository.UserRepository;
+import com.smart.ev.repository.VehicleRepository;
+import com.smart.ev.repository.WalletRepository;
+import com.smart.ev.repository.WalletTransactionRepository;
 import com.smart.ev.service.AuthService;
 import com.smart.ev.service.ChargerService;
 import com.smart.ev.service.DataInitializerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
@@ -36,9 +41,55 @@ public class AdminController {
     private final ChargerRepository chargerRepository;
     private final ChargingSessionRepository sessionRepository;
     private final FaultRepository faultRepository;
+    private final WalletRepository walletRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
+    private final VehicleRepository vehicleRepository;
     private final ChargerService chargerService;
     private final AuthService authService;
     private final DataInitializerService dataInitializerService;
+
+    /**
+     * Targeted deletion of a single non-admin user by email, plus their loosely
+     * coupled records (sessions, vehicles, wallet + wallet transactions). Unlike
+     * {@code /reset-db}, this preserves all other accounts and data. Restricted to
+     * ADMIN (see SecurityConfig: /api/v1/admin/** hasRole ADMIN) and refuses to
+     * delete ADMIN accounts.
+     */
+    @DeleteMapping("/users")
+    public ResponseEntity<?> deleteUserByEmail(@RequestParam("email") String email) {
+        var userOpt = userRepository.findByEmailIgnoreCase(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "success", false,
+                    "error", "No user found with email: " + email
+            ));
+        }
+        User user = userOpt.get();
+        if (user.getRole() == User.Role.ADMIN) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "success", false,
+                    "error", "Refusing to delete an ADMIN account via this endpoint."
+            ));
+        }
+
+        sessionRepository.findByUserIdOrderByStartTimeDesc(user.getId())
+                .forEach(sessionRepository::delete);
+        vehicleRepository.findByUserId(user.getId())
+                .forEach(vehicleRepository::delete);
+        walletRepository.findByUserId(user.getId()).ifPresent(wallet -> {
+            walletTransactionRepository.findByWalletIdOrderByCreatedAtDesc(wallet.getId())
+                    .forEach(walletTransactionRepository::delete);
+            walletRepository.delete(wallet);
+        });
+        userRepository.delete(user);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "User and related records deleted.",
+                "email", email,
+                "role", user.getRole().name()
+        ));
+    }
 
     @PostMapping("/reset-db")
     public ResponseEntity<?> resetDatabase() {

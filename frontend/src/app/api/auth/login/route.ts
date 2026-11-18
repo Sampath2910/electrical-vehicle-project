@@ -84,6 +84,19 @@ export async function POST(request: Request) {
             path: '/',
           });
 
+          // Keep the backend's own JWT in a separate cookie so server-side admin/
+          // operator routes can authenticate to the Spring Boot backend on the
+          // user's behalf (the frontend session token above is not valid there).
+          if (backendData.token) {
+            response.cookies.set('backend_jwt', backendData.token, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              maxAge: 86400,
+              path: '/',
+            });
+          }
+
           return response;
         } else if (backendData && backendData.error) {
           // Precise error from Spring Boot backend (e.g. "No account found..." or "Incorrect password...")
