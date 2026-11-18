@@ -13,15 +13,18 @@ import com.smart.ev.repository.FaultRepository;
 import com.smart.ev.repository.UserRepository;
 import com.smart.ev.service.AuthService;
 import com.smart.ev.service.ChargerService;
+import com.smart.ev.service.DataInitializerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -35,6 +38,16 @@ public class AdminController {
     private final FaultRepository faultRepository;
     private final ChargerService chargerService;
     private final AuthService authService;
+    private final DataInitializerService dataInitializerService;
+
+    @PostMapping("/reset-db")
+    public ResponseEntity<?> resetDatabase() {
+        dataInitializerService.resetAndReseed();
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Database successfully wiped and re-seeded to factory Day-Zero state."
+        ));
+    }
 
     @GetMapping("/stats")
     public ResponseEntity<StatsDto.AdminStatsResponse> getAdminStats() {

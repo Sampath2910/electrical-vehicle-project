@@ -4,10 +4,7 @@ import com.smart.ev.domain.Charger;
 import com.smart.ev.domain.Tariff;
 import com.smart.ev.domain.User;
 import com.smart.ev.domain.Wallet;
-import com.smart.ev.repository.ChargerRepository;
-import com.smart.ev.repository.TariffRepository;
-import com.smart.ev.repository.UserRepository;
-import com.smart.ev.repository.WalletRepository;
+import com.smart.ev.repository.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +24,28 @@ public class DataInitializerService {
     private final ChargerRepository chargerRepository;
     private final TariffRepository tariffRepository;
     private final WalletRepository walletRepository;
+    private final ChargingSessionRepository sessionRepository;
+    private final FaultRepository faultRepository;
+    private final BillRepository billRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
+    private final VehicleRepository vehicleRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    public void resetAndReseed() {
+        log.info("Executing full database purge and reseed to Day-Zero state...");
+        sessionRepository.deleteAll();
+        faultRepository.deleteAll();
+        billRepository.deleteAll();
+        walletTransactionRepository.deleteAll();
+        walletRepository.deleteAll();
+        vehicleRepository.deleteAll();
+        chargerRepository.deleteAll();
+        tariffRepository.deleteAll();
+        userRepository.deleteAll();
+
+        seedInitialData();
+    }
 
     @PostConstruct
     @Transactional

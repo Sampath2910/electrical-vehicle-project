@@ -17,6 +17,7 @@
       "phone": "+91 98765 11111",
       "role": "OPERATOR",
       "passwordHash": "operator123",
+      "assignedStationId": "ch-101",
       "operatorBadgeId": "KLE-OP-101",
       "avatarUrl": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150",
       "createdAt": "2024-11-10T10:00:00Z"
@@ -35,17 +36,6 @@
     },
     {
       "id": "user-drv-001",
-      "name": "EV Rider Driver",
-      "email": "driver@smartev.com",
-      "phone": "+91 98765 43210",
-      "role": "USER",
-      "passwordHash": "password123",
-      "vehicleModel": "Ather 450X (3.7 kWh)",
-      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-      "createdAt": "2025-01-15T08:30:00Z"
-    },
-    {
-      "id": "user-drv-002",
       "name": "Alex Rivera",
       "email": "alex.rivera@example.com",
       "phone": "+91 98765 43210",
@@ -54,39 +44,6 @@
       "vehicleModel": "Ather 450X (3.7 kWh)",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
       "createdAt": "2025-01-15T08:30:00Z"
-    },
-    {
-      "id": "user-1794938820067-y5msm",
-      "name": "suresh",
-      "email": "deepak@ev",
-      "phone": "8529638524",
-      "role": "OPERATOR",
-      "passwordHash": "123456789",
-      "assignedStationId": "ch-101",
-      "operatorBadgeId": "OP-0031",
-      "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=deepak@ev",
-      "createdAt": "2026-11-17T18:07:00.067Z"
-    },
-    {
-      "id": "user-1794981676308-eybjm",
-      "name": "sampath yadav",
-      "email": "sampath@gmail.com",
-      "phone": "9705525829",
-      "role": "USER",
-      "passwordHash": "S@mpath2562",
-      "vehicleModel": "Ola S1 Pro (4.0 kWh)",
-      "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=sampath@gmail.com",
-      "createdAt": "2026-11-18T06:01:16.308Z"
-    },
-    {
-      "id": "user-1794983085271-mgjct",
-      "name": "Test Cloud Rider",
-      "email": "testcloud@smartev.com",
-      "phone": "+91 99999 88888",
-      "role": "USER",
-      "passwordHash": "testpassword123",
-      "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=testcloud@smartev.com",
-      "createdAt": "2026-11-18T06:24:45.271Z"
     }
   ],
   "chargers": [
@@ -101,14 +58,14 @@
       "connectorType": "IEC 60309 (Industrial 3-pin)",
       "status": "AVAILABLE",
       "pricePerKwh": 10.5,
-      "lastSeenAt": "2026-11-18T07:23:20.006Z",
+      "lastSeenAt": "2026-11-18T08:00:00.000Z",
       "maxCurrentA": 14.3,
       "voltageV": 230,
       "firmwareVersion": "v3.2.0-esp32-pzem",
-      "assignedOperatorId": "user-1794938820067-y5msm",
-      "assignedOperatorName": "suresh (OP-0031)",
-      "totalEarnedRevenue": 5.9,
-      "totalEnergyConsumedKwh": 3
+      "assignedOperatorId": "user-op-101",
+      "assignedOperatorName": "Ramesh Kumar (KLE-OP-101)",
+      "totalEarnedRevenue": 0,
+      "totalEnergyConsumedKwh": 0
     },
     {
       "id": "ch-102",
@@ -121,7 +78,7 @@
       "connectorType": "Standard 16A Socket",
       "status": "AVAILABLE",
       "pricePerKwh": 18.5,
-      "lastSeenAt": "2026-11-11T12:00:00.000Z",
+      "lastSeenAt": "2026-11-18T08:00:00.000Z",
       "maxCurrentA": 14.3,
       "voltageV": 230,
       "firmwareVersion": "v3.2.0-esp32-pzem",
@@ -142,7 +99,7 @@
       "connectorType": "BSS Swappable Dock",
       "status": "AVAILABLE",
       "pricePerKwh": 10.5,
-      "lastSeenAt": "2026-11-11T12:00:00.000Z",
+      "lastSeenAt": "2026-11-18T08:00:00.000Z",
       "maxCurrentA": 14.3,
       "voltageV": 230,
       "firmwareVersion": "v3.1.0-esp32",
@@ -164,7 +121,7 @@
       "connectorType": "Standard 16A Socket",
       "status": "AVAILABLE",
       "pricePerKwh": 10.5,
-      "lastSeenAt": "2026-11-11T12:00:00.000Z",
+      "lastSeenAt": "2026-11-18T08:00:00.000Z",
       "maxCurrentA": 14.3,
       "voltageV": 230,
       "firmwareVersion": "v3.0.0-esp32",
@@ -184,7 +141,7 @@
       "connectorType": "LEV AC (IS 17017)",
       "status": "AVAILABLE",
       "pricePerKwh": 10.5,
-      "lastSeenAt": "2026-11-11T12:00:00.000Z",
+      "lastSeenAt": "2026-11-18T08:00:00.000Z",
       "maxCurrentA": 14.3,
       "voltageV": 230,
       "firmwareVersion": "v3.1.2-esp32",
@@ -196,17 +153,7 @@
   ],
   "sessions": [],
   "wallets": {},
-  "walletTransactions": [
-    {
-      "id": "wtx-1794986600006-4su5",
-      "walletId": "wal-user-drv-001",
-      "type": "DEBIT",
-      "amount": 5.9,
-      "reference": "INV-2026-6031",
-      "description": "Direct UPI Settlement @ X (3.000 kWh)",
-      "createdAt": "2026-11-18T07:23:20.006Z"
-    }
-  ],
+  "walletTransactions": [],
   "vehicles": [],
   "bills": []
 }
